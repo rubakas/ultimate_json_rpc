@@ -62,6 +62,7 @@ module Reclamo
     def methods_info = @handler.methods_info
     def method?(method_name) = @handler.method?(method_name)
     def size = @handler.size
+    def empty? = @handler.empty?
 
     private
 

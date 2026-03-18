@@ -50,6 +50,7 @@ module Reclamo
     def methods_list = @targets.keys.sort
     def methods_info = @targets.keys.sort.map { |name| method_info(name) }
     def size = @targets.size
+    def empty? = @targets.empty?
 
     def freeze
       @targets.freeze

@@ -95,6 +95,12 @@ class TestServerCalls < Minitest::Test
     assert_equal 4, @server.size
   end
 
+  def test_server_empty
+    empty_server = Reclamo::Server.new
+    assert_predicate empty_server, :empty?
+    refute_predicate @server, :empty?
+  end
+
   def test_server_methods_info
     info = @server.methods_info
     add_info = info.find { |m| m["name"] == "add" }

@@ -66,6 +66,7 @@ module Reclamo
     def methods_list: () -> Array[String]
     def methods_info: () -> Array[Hash[String, untyped]]
     def size: () -> Integer
+    def empty?: () -> bool
     def freeze: () -> self
   end
 
@@ -86,6 +87,7 @@ module Reclamo
     def methods_list: () -> Array[String]
     def methods_info: () -> Array[Hash[String, untyped]]
     def size: () -> Integer
+    def empty?: () -> bool
     def freeze: () -> self
   end
 end
