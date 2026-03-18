@@ -8,9 +8,10 @@ module Reclamo
   class Handler
     def initialize
       @targets = {}
+      @descriptions = {}
     end
 
-    def expose(target, namespace: nil, only: nil, except: nil)
+    def expose(target, namespace: nil, only: nil, except: nil, descriptions: nil)
       raise ArgumentError, "cannot use both :only and :except" if only && except
 
       prefix = namespace.to_s.then { |ns| ns.empty? ? "" : "#{ns}." }
@@ -20,16 +21,18 @@ module Reclamo
         validate_method_name!(full_name)
         check_duplicate!(full_name)
         @targets[full_name] = [target, method_name]
+        store_description(full_name, method_name, descriptions)
       end
     end
 
-    def expose_method(name, &block)
+    def expose_method(name, description: nil, &block)
       raise ArgumentError, "block required" unless block
 
       name = name.to_s
       validate_method_name!(name)
       check_duplicate!(name)
       @targets[name] = block
+      @descriptions[name] = description.to_s if description
     end
 
     def call(method_name, params)
@@ -55,6 +58,7 @@ module Reclamo
       entry = @targets[name]
       callable = entry.is_a?(Array) ? entry[0].method(entry[1].to_sym) : entry
       info = { "name" => name }
+      info["description"] = @descriptions[name] if @descriptions.key?(name)
       params = callable.parameters.filter_map { |type, pname| param_descriptor(type, pname) }
       info["params"] = params unless params.empty?
       info
@@ -68,6 +72,13 @@ module Reclamo
       desc["variadic"] = true if %i[rest keyrest].include?(type)
       desc["keyword"] = true if %i[key keyreq keyrest].include?(type)
       desc
+    end
+
+    def store_description(full_name, method_name, descriptions)
+      return unless descriptions
+
+      desc = descriptions[method_name.to_sym] || descriptions[method_name.to_s]
+      @descriptions[full_name] = desc.to_s if desc
     end
 
     def callable_methods(target)

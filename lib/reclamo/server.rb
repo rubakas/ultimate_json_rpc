@@ -11,13 +11,13 @@ module Reclamo
       @middleware = []
     end
 
-    def expose(target, namespace: nil, only: nil, except: nil)
-      @handler.expose(target, namespace: namespace, only: only, except: except)
+    def expose(target, namespace: nil, only: nil, except: nil, descriptions: nil)
+      @handler.expose(target, namespace: namespace, only: only, except: except, descriptions: descriptions)
       self
     end
 
-    def expose_method(name, &)
-      @handler.expose_method(name, &)
+    def expose_method(name, description: nil, &)
+      @handler.expose_method(name, description: description, &)
       self
     end
 
@@ -40,10 +40,13 @@ module Reclamo
 
       case data
       when Array then handle_batch(data)
-      when Hash then handle_single(data)
+      when Hash then serialize_single(data)
       else JSON.generate(Response.error(INVALID_REQUEST, nil))
       end
     end
+
+    def to_proc = method(:call).to_proc
+    def inspect = "#<#{self.class} methods=#{size} middleware=#{@middleware.size}>"
 
     def methods_list = @handler.methods_list
     def methods_info = @handler.methods_info
@@ -65,10 +68,6 @@ module Reclamo
       return nil if json_parts.empty?
 
       "[#{json_parts.join(",")}]"
-    end
-
-    def handle_single(data)
-      serialize_single(data)
     end
 
     def serialize_single(data)
