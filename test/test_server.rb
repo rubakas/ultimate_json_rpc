@@ -327,6 +327,94 @@ class TestServerEdgeCases < Minitest::Test
     assert server.method?("add")
     assert server.method?("ping")
   end
+
+  def test_result_false_is_not_nil
+    server = Reclamo::Server.new
+    server.expose_method("falsy") { false }
+
+    request = { "jsonrpc" => "2.0", "method" => "falsy", "id" => 1 }
+    response = JSON.parse(server.handle(JSON.generate(request)))
+
+    assert_equal false, response["result"]
+    assert response.key?("result")
+    refute response.key?("error")
+  end
+
+  def test_result_zero_is_not_nil
+    server = Reclamo::Server.new
+    server.expose_method("zero") { 0 }
+
+    request = { "jsonrpc" => "2.0", "method" => "zero", "id" => 1 }
+    response = JSON.parse(server.handle(JSON.generate(request)))
+
+    assert_equal 0, response["result"]
+  end
+
+  def test_result_empty_string
+    server = Reclamo::Server.new
+    server.expose_method("blank") { "" }
+
+    request = { "jsonrpc" => "2.0", "method" => "blank", "id" => 1 }
+    response = JSON.parse(server.handle(JSON.generate(request)))
+
+    assert_equal "", response["result"]
+  end
+
+  def test_result_empty_array
+    server = Reclamo::Server.new
+    server.expose_method("empty") { [] }
+
+    request = { "jsonrpc" => "2.0", "method" => "empty", "id" => 1 }
+    response = JSON.parse(server.handle(JSON.generate(request)))
+
+    assert_equal [], response["result"]
+  end
+
+  def test_unicode_in_params_and_result
+    server = Reclamo::Server.new
+    server.expose_method("echo") { |msg| msg }
+
+    request = { "jsonrpc" => "2.0", "method" => "echo", "params" => ["\u{1F600} \u{1F4A9}"], "id" => 1 }
+    response = JSON.parse(server.handle(JSON.generate(request)))
+
+    assert_equal "\u{1F600} \u{1F4A9}", response["result"]
+  end
+
+  def test_unicode_in_keyword_params
+    server = Reclamo::Server.new
+    server.expose_method("greet") { |name:| "Hola, #{name}!" }
+
+    request = { "jsonrpc" => "2.0", "method" => "greet",
+                "params" => { "name" => "\u00e9\u00e8\u00ea" }, "id" => 1 }
+    response = JSON.parse(server.handle(JSON.generate(request)))
+
+    assert_equal "Hola, \u00e9\u00e8\u00ea!", response["result"]
+  end
+
+  def test_deeply_nested_params
+    server = Reclamo::Server.new
+    server.expose_method("deep") { |data| data }
+
+    nested = { "a" => { "b" => { "c" => [1, [2, [3]]] } } }
+    request = { "jsonrpc" => "2.0", "method" => "deep", "params" => [nested], "id" => 1 }
+    response = JSON.parse(server.handle(JSON.generate(request)))
+
+    assert_equal nested, response["result"]
+  end
+
+  def test_class_does_not_expose_new
+    klass = Class.new do
+      def self.work
+        "done"
+      end
+    end
+    server = Reclamo::Server.new
+    server.expose(klass)
+
+    refute_includes server.methods_list, "new"
+    refute_includes server.methods_list, "allocate"
+    assert_includes server.methods_list, "work"
+  end
 end
 
 class TestServerFreeze < Minitest::Test

@@ -85,6 +85,8 @@ module Reclamo
 
     def callable_methods(target)
       case target
+      when Class
+        (target.public_methods(false) - Class.public_instance_methods).map(&:to_s)
       when Module
         (target.public_methods(false) - Module.public_instance_methods).map(&:to_s)
       else

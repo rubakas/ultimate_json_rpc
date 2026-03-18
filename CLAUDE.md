@@ -46,6 +46,7 @@ bin/console            # Interactive console with gem loaded
 - `test/test_helper.rb` — test setup, loads support fixtures
 - `test/support/fixtures.rb` — shared test fixtures (Calculator, Greeter)
 - `test/test_reclamo.rb` — version, constants, error class hierarchy
+- `test/test_request.rb` — Request unit tests: validation, notification?, freezing, edge cases
 - `test/test_server.rb` — core dispatch, notifications, handle_parsed, callable, edge cases, freeze
 - `test/test_handler.rb` — handler unit tests
 - `test/test_errors.rb` — server errors, application errors, server errors, request/param validation
