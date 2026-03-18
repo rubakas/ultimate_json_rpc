@@ -3,8 +3,8 @@
 > Product Requirements Document for Reclamo, a network-agnostic Ruby gem
 > that exposes Ruby objects through JSON-RPC 2.0.
 >
-> Current version: 0.2.0 | Ruby >= 3.2 | 26 items — 22 done, 4 pending
-> (3 P0 ✓, 8 P1 — 7 done, 10 P2 — 8 done, 5 P3 — 4 done)
+> Current version: 0.2.0 | Ruby >= 3.2 | 26 items — 24 done, 2 pending
+> (3 P0 ✓, 8 P1 — 7 done, 10 P2 — 10 ✓, 5 P3 — 4 done)
 
 ---
 
@@ -105,9 +105,9 @@ Server configuration:
   Allow swapping the JSON encoder/decoder (e.g., `Oj`, `yajl-ruby`) via `Reclamo::Server.new(json: Oj)`. The gem currently hard-codes `JSON.parse` / `JSON.generate`.
   *Depends on: nothing.*
 
-- [ ] **Versioned API support**
+- [x] **Versioned API support**
   Run multiple API versions side by side via version prefix (`v1.add`, `v2.add`) or negotiation. Important for long-lived services evolving without breaking consumers.
-  *Depends on: nothing, but design should consider namespace interaction.*
+  *Supported via namespaces: `expose(CalcV1, namespace: "v1")`. See examples/multi_namespace.rb.*
 
 Transport & integration:
 
@@ -161,7 +161,7 @@ Testing:
   Generate human-readable HTML or Markdown docs from the OpenRPC schema.
   *Depends on: OpenRPC schema generation (P0).*
 
-- [ ] **Usage examples**
+- [x] **Usage examples**
   Runnable examples for common integration patterns: basic Rack/Puma server, Rails controller integration, MCP server over stdio, multi-namespace composition, error handling patterns, and testing patterns. Examples are the fastest path to adoption.
   *Depends on: Rack adapter (P0), Rails integration (P1), MCP compatibility (P2).*
 
