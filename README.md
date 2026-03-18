@@ -402,6 +402,21 @@ recorder.exchanges  # => [{"method" => "add", "params" => [2, 3], "result" => 5,
 recorder = Reclamo::Recorder.new(server, output: File.open("exchanges.jsonl", "a"))
 ```
 
+### Mock server
+
+Canned responses for contract testing:
+
+```ruby
+require "reclamo/mock_server"
+
+mock = Reclamo::MockServer.new
+mock.stub("add", [2, 3], 5)
+mock.stub("greet", { "name" => "Alice" }, "Hi Alice")
+mock.stub_any("ping", "pong")  # matches any params
+
+response = mock.handle('{"jsonrpc":"2.0","method":"add","params":[2,3],"id":1}')
+```
+
 ### Test helpers
 
 Reclamo ships with optional test helpers for cleaner assertions:

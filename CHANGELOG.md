@@ -28,6 +28,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - MCP (Model Context Protocol) adapter: `require "reclamo/mcp"` provides `Reclamo::MCP.new(server)` for AI tool integration over stdio, mapping methods to MCP tools with schema support
 - Rate limiting: `require "reclamo/rate_limit"` adds `server.rate_limit(max:, period:)` with sliding window, per-caller keying, and per-method scoping
 - Per-method profiling: `require "reclamo/profiler"` provides `Reclamo::Profiler.new(server)` collecting count, min/max/avg, and p50/p95/p99 per method
+- Mock server: `require "reclamo/mock_server"` provides `Reclamo::MockServer` with `stub`/`stub_any` for consumer-driven contract testing
 
 ### Changed
 - `rpc.discover` output restructured: service metadata moved to `info` object (`name` → `info.title`), method `returns` → `result` in OpenRPC contentDescriptor format
