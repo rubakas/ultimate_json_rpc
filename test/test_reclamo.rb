@@ -25,4 +25,13 @@ class TestReclamo < Minitest::Test
     assert_equal(-32_768, Reclamo::RESERVED_ERROR_MIN)
     assert_equal(-32_000, Reclamo::RESERVED_ERROR_MAX)
   end
+
+  def test_error_class_hierarchy
+    assert_operator Reclamo::InvalidRequest, :<, Reclamo::Error
+    assert_operator Reclamo::InvalidParams, :<, Reclamo::Error
+    assert_operator Reclamo::MethodNotFound, :<, Reclamo::Error
+    assert_operator Reclamo::ApplicationError, :<, Reclamo::Error
+    assert_operator Reclamo::ServerError, :<, Reclamo::Error
+    assert_operator Reclamo::Error, :<, StandardError
+  end
 end

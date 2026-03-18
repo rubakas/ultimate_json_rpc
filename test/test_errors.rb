@@ -15,6 +15,7 @@ class TestServerErrors < Minitest::Test
 
     assert_equal(-32_601, response["error"]["code"])
     assert_equal "Method not found", response["error"]["message"]
+    assert_equal "nonexistent", response["error"]["data"]
   end
 
   def test_parse_error

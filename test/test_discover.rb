@@ -66,6 +66,16 @@ class TestServerDiscover < Minitest::Test
     refute_includes server.methods_list, "rpc.discover"
   end
 
+  def test_rpc_discover_callable_methods
+    server = Reclamo::Server.new
+    server.expose_method("double", ->(n) { n * 2 })
+    methods = discover(server)
+    double_method = methods.find { |m| m["name"] == "double" }
+
+    assert double_method
+    assert_equal 1, double_method["params"].size
+  end
+
   private
 
   def discover_methods(target)
