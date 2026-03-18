@@ -3,8 +3,8 @@
 > Product Requirements Document for Reclamo, a network-agnostic Ruby gem
 > that exposes Ruby objects through JSON-RPC 2.0.
 >
-> Current version: 0.2.0 | Ruby >= 3.2 | 26 items — 11 done, 15 pending
-> (3 P0 ✓, 8 P1 — 7 done, 10 P2 — 1 done, 5 P3)
+> Current version: 0.2.0 | Ruby >= 3.2 | 26 items — 12 done, 14 pending
+> (3 P0 ✓, 8 P1 — 7 done, 10 P2 — 2 done, 5 P3)
 
 ---
 
@@ -14,7 +14,7 @@
 
 **v0.2.0** — `InvalidParams` error class, callable objects in `expose_method`, `empty?`, descriptive error messages, immutable request params, `expose_errors` flag, dangerous method denylist, security hardening.
 
-**Unreleased** — Method-level middleware (`only:/except:` on `use`), Rack adapter, stdio adapter, OpenRPC 1.3.2 schema, instrumentation hooks, request timeout, return type annotations, method deprecation markers, richer test helpers, parameter validation with JSON Schema types, concurrent batch execution.
+**Unreleased** — Method-level middleware (`only:/except:` on `use`), Rack adapter, stdio adapter, OpenRPC 1.3.2 schema, instrumentation hooks, request timeout, return type annotations, method deprecation markers, richer test helpers, parameter validation with JSON Schema types, concurrent batch execution, error catalog.
 
 ---
 
@@ -95,7 +95,7 @@ Discovery & metadata:
   Mark methods as deprecated in discovery metadata (`deprecated: true` or `deprecated: "Use add_v2 instead"`). Deprecated methods still work but appear flagged in `rpc.discover` / OpenRPC output.
   *Depends on: nothing (enhances `rpc.discover`).*
 
-- [ ] **Error catalog**
+- [x] **Error catalog**
   A registry for application-specific error codes and their meanings: `server.register_error(42, "InsufficientFunds", "Account balance too low")`. Registered errors appear in `rpc.discover` output so consumers know which error codes to expect.
   *Depends on: nothing (enhances `rpc.discover`).*
 

@@ -31,8 +31,25 @@ module Reclamo
   end
   private_constant :BatchProcessor
 
+  module OpenRPCBuilder
+    private
+
+    def build_openrpc_document
+      doc = { "openrpc" => "1.3.2", "info" => build_info, "methods" => @handler.methods_info }
+      doc.delete("info") if doc["info"].empty?
+      doc["components"] = { "errors" => @error_catalog } if @error_catalog&.any?
+      doc
+    end
+
+    def build_info
+      { "title" => @name, "version" => @version, "description" => @description }.compact
+    end
+  end
+  private_constant :OpenRPCBuilder
+
   class Server
     include BatchProcessor
+    include OpenRPCBuilder
 
     attr_reader :name, :version, :description, :max_batch_size
 
@@ -80,6 +97,18 @@ module Reclamo
       self
     end
 
+    def register_error(code, message, description = nil)
+      raise ArgumentError, "error code must be an Integer" unless code.is_a?(Integer)
+
+      @error_catalog ||= []
+      raise ArgumentError, "error code #{code} is already registered" if @error_catalog.any? { |e| e["code"] == code }
+
+      entry = { "code" => code, "message" => message.to_s }
+      entry["data"] = description.to_s if description
+      @error_catalog << entry
+      self
+    end
+
     def handle(json_string)
       handle_parsed(JSON.parse(json_string))
     rescue JSON::ParserError, TypeError, EncodingError
@@ -104,6 +133,7 @@ module Reclamo
     def freeze
       @hooks.each_value(&:freeze)
       [@handler, @middleware, @hooks].each(&:freeze)
+      @error_catalog&.freeze
       super
     end
 
@@ -199,16 +229,6 @@ module Reclamo
       return @handler.call(request.method_name, request.params) unless request.method_name == "rpc.discover"
 
       build_openrpc_document
-    end
-
-    def build_openrpc_document
-      doc = { "openrpc" => "1.3.2", "info" => build_info, "methods" => @handler.methods_info }
-      doc.delete("info") if doc["info"].empty?
-      doc
-    end
-
-    def build_info
-      { "title" => @name, "version" => @version, "description" => @description }.compact
     end
 
     def error_details(err)

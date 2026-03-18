@@ -53,6 +53,7 @@ bin/console            # Interactive console with gem loaded
 - `test/test_response.rb` — Response module unit tests: success/error structure, data handling
 - `test/test_server.rb` — core dispatch, notifications, handle_parsed, callable, edge cases, freeze
 - `test/test_handler.rb` — handler unit tests, freeze, param descriptors, dangerous methods
+- `test/test_error_catalog.rb` — error catalog: register_error, discover output, freeze, validation
 - `test/test_errors.rb` — server errors, application errors, server errors, request/param validation, expose_errors option
 - `test/test_batch.rb` — batch requests, batch size limits
 - `test/test_concurrent_batch.rb` — concurrent batch execution: threading, order, timeout, middleware, hooks

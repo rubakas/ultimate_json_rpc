@@ -181,6 +181,17 @@ server.expose(Calculator, deprecated: { add: "Use add_v2" })
 
 Deprecated methods still work normally but appear flagged in `rpc.discover` output.
 
+### Error catalog
+
+Register application-specific error codes for discovery:
+
+```ruby
+server.register_error(42, "InsufficientFunds", "Account balance too low")
+server.register_error(43, "AccountLocked")
+```
+
+Registered errors appear in `rpc.discover` under `components.errors`, so consumers know which error codes to expect.
+
 ### Error handling
 
 Raise `ApplicationError` for custom error codes, or `ServerError` for implementation-defined errors:
@@ -234,6 +245,7 @@ server.handle(request)  # still works
 - **Parameter validation** — `params_schema:` with JSON Schema types and enum constraints
 - **Request timeout** — `Server.new(timeout: 5)` prevents slow handlers from blocking
 - **Method deprecation** — mark methods as deprecated in discovery metadata
+- **Error catalog** — `register_error` documents app error codes in `rpc.discover`
 - **Error handling** — standard JSON-RPC error codes, `ApplicationError`, and `ServerError`
 - **Error visibility** — `expose_errors: true` to include exception messages in error responses
 - **Security** — dangerous methods (eval, system, exec, etc.) are automatically blocked
