@@ -26,6 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Structured logging: `require "reclamo/logging"` adds `server.log_to(logger, level: :info)` for logger-agnostic observability
 - Request/response recorder: `require "reclamo/recorder"` provides `Reclamo::Recorder.new(server)` capturing exchanges for replay testing, with optional JSONL file output
 - MCP (Model Context Protocol) adapter: `require "reclamo/mcp"` provides `Reclamo::MCP.new(server)` for AI tool integration over stdio, mapping methods to MCP tools with schema support
+- Rate limiting: `require "reclamo/rate_limit"` adds `server.rate_limit(max:, period:)` with sliding window, per-caller keying, and per-method scoping
 
 ### Changed
 - `rpc.discover` output restructured: service metadata moved to `info` object (`name` → `info.title`), method `returns` → `result` in OpenRPC contentDescriptor format

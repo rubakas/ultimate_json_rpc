@@ -206,6 +206,18 @@ server.log_to(Rails.logger, level: :debug)   # custom level
 
 Successful responses log at the specified level; errors always log at ERROR.
 
+### Rate limiting
+
+Sliding-window rate limiting with per-caller keying:
+
+```ruby
+require "reclamo/rate_limit"
+
+server.rate_limit(max: 100, period: 60)                          # 100 req/min global
+server.rate_limit(max: 10, period: 60, only: ["expensive.*"])    # per-method
+server.rate_limit(max: 50, period: 60, key: :api_key)           # per-caller via context
+```
+
 ### Authorization
 
 Declarative access control with glob patterns:
@@ -287,6 +299,7 @@ server.handle(request)  # still works
 - **Authorization** — `authorize("admin.*") { |req| ... }` for declarative access control
 - **Error handling** — standard JSON-RPC error codes, `ApplicationError`, and `ServerError`
 - **Error visibility** — `expose_errors: true` to include exception messages in error responses
+- **Rate limiting** — sliding-window `rate_limit(max:, period:)` with per-caller keying
 - **Security** — dangerous methods (eval, system, exec, etc.) are automatically blocked
 - **Chainable API** — all setup methods return `self`
 - **Callable** — `to_proc` enables `requests.map(&server)`

@@ -3,8 +3,8 @@
 > Product Requirements Document for Reclamo, a network-agnostic Ruby gem
 > that exposes Ruby objects through JSON-RPC 2.0.
 >
-> Current version: 0.2.0 | Ruby >= 3.2 | 26 items — 17 done, 9 pending
-> (3 P0 ✓, 8 P1 — 7 done, 10 P2 — 7 done, 5 P3)
+> Current version: 0.2.0 | Ruby >= 3.2 | 26 items — 18 done, 8 pending
+> (3 P0 ✓, 8 P1 — 7 done, 10 P2 — 8 done, 5 P3)
 
 ---
 
@@ -125,7 +125,7 @@ Security & middleware:
   Declarative way to require roles or permissions per method: `server.authorize("admin.*") { |req| req.context[:role] == :admin }`.
   *Depends on: method-level middleware (P0).*
 
-- [ ] **Built-in rate-limiting middleware**
+- [x] **Built-in rate-limiting middleware**
   Optional `Reclamo::Middleware::RateLimit` with token-bucket or sliding-window algorithm, keyed by caller identity from `request.context`.
   *Depends on: method-level middleware (P0) for per-method limits.*
 
