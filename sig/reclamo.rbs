@@ -67,6 +67,7 @@ module Reclamo
     def use: () { (Request, Proc) -> untyped } -> self
     def method?: (String) -> bool
     def handle: (String?) -> String?
+    alias call handle
     def handle_parsed: (untyped) -> String?
     def methods_list: () -> Array[String]
     def methods_info: () -> Array[Hash[String, untyped]]

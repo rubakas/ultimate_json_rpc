@@ -1061,6 +1061,47 @@ class TestServerEdgeCases < Minitest::Test
     assert server.method?("add")
     assert server.method?("ping")
   end
+
+  def test_call_is_alias_for_handle
+    server = Reclamo::Server.new
+    server.expose(Calculator)
+
+    request = JSON.generate({ "jsonrpc" => "2.0", "method" => "add", "params" => [2, 3], "id" => 1 })
+    assert_equal server.handle(request), server.call(request)
+  end
+
+  def test_call_with_method_object
+    server = Reclamo::Server.new
+    server.expose(Calculator)
+    callable = server.method(:call)
+
+    request = JSON.generate({ "jsonrpc" => "2.0", "method" => "add", "params" => [2, 3], "id" => 1 })
+    response = JSON.parse(callable.call(request))
+
+    assert_equal 5, response["result"]
+  end
+
+  def test_encoding_error_returns_parse_error
+    server = Reclamo::Server.new
+    server.expose(Calculator)
+
+    bad_string = "\xFF\xFE".dup.force_encoding("UTF-8")
+    response = JSON.parse(server.handle(bad_string))
+
+    assert_equal(-32_700, response["error"]["code"])
+    assert_nil response["id"]
+  end
+
+  def test_method_not_found_includes_method_name_in_data
+    server = Reclamo::Server.new
+    server.expose(Calculator)
+
+    request = { "jsonrpc" => "2.0", "method" => "nonexistent", "id" => 1 }
+    response = JSON.parse(server.handle(JSON.generate(request)))
+
+    assert_equal(-32_601, response["error"]["code"])
+    assert_equal "nonexistent", response["error"]["data"]
+  end
 end
 
 class TestHandler < Minitest::Test

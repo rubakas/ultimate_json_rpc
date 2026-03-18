@@ -33,6 +33,8 @@ module Reclamo
       handle_parsed(data)
     end
 
+    alias call handle
+
     def handle_parsed(data)
       return JSON.generate(Response.error(PARSE_ERROR, nil)) if data.equal?(PARSE_FAILED)
 
@@ -52,7 +54,7 @@ module Reclamo
 
     def parse_json(json_string)
       JSON.parse(json_string)
-    rescue JSON::ParserError, TypeError
+    rescue JSON::ParserError, TypeError, EncodingError
       PARSE_FAILED
     end
 
@@ -126,7 +128,7 @@ module Reclamo
 
     def error_details(err)
       case err
-      when MethodNotFound then [METHOD_NOT_FOUND, nil, nil]
+      when MethodNotFound then [METHOD_NOT_FOUND, nil, err.message]
       when ApplicationError, ServerError then [err.code, err.message, err.rpc_data]
       when ArgumentError then [INVALID_PARAMS, nil, err.message]
       else [INTERNAL_ERROR, nil, err.message]
