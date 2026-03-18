@@ -25,10 +25,10 @@ module Reclamo
     end
 
     def handle(json_string)
-      data = parse_json(json_string)
-      return JSON.generate(Response.error(PARSE_ERROR, nil)) unless data
-
+      data = JSON.parse(json_string)
       handle_parsed(data)
+    rescue JSON::ParserError, TypeError
+      JSON.generate(Response.error(PARSE_ERROR, nil))
     end
 
     def handle_parsed(data)
@@ -48,12 +48,6 @@ module Reclamo
     end
 
     private
-
-    def parse_json(json_string)
-      JSON.parse(json_string)
-    rescue JSON::ParserError, TypeError
-      nil
-    end
 
     def handle_batch(requests)
       return JSON.generate(Response.error(INVALID_REQUEST, nil)) if requests.empty?

@@ -146,6 +146,24 @@ class TestServerErrors < Minitest::Test
     assert_nil response["id"]
   end
 
+  def test_valid_json_false_returns_invalid_request
+    response = JSON.parse(@server.handle("false"))
+
+    assert_equal(-32_600, response["error"]["code"])
+  end
+
+  def test_valid_json_null_returns_invalid_request
+    response = JSON.parse(@server.handle("null"))
+
+    assert_equal(-32_600, response["error"]["code"])
+  end
+
+  def test_valid_json_number_returns_invalid_request
+    response = JSON.parse(@server.handle("42"))
+
+    assert_equal(-32_600, response["error"]["code"])
+  end
+
   def test_invalid_request_missing_method
     request = { "jsonrpc" => "2.0", "id" => 1 }
     response = JSON.parse(@server.handle(JSON.generate(request)))
