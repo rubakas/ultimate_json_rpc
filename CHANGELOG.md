@@ -13,6 +13,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Test assertion helpers: `assert_rpc_success`, `assert_rpc_error`, `assert_rpc_notification` in `reclamo/test_helpers`
 - `Reclamo::Stdio` adapter: newline-delimited JSON-RPC over stdin/stdout with signal handling, `require "reclamo/stdio"`
 - Return type annotations: `returns:` keyword on `expose_method` and `returns:` hash on `expose`, appears in `rpc.discover`
+- OpenRPC 1.3.2 schema: `rpc.discover` now returns a full OpenRPC document with `openrpc` version, `info` object, and `result` contentDescriptors
+
+### Changed
+- `rpc.discover` output restructured: service metadata moved to `info` object (`name` → `info.title`), method `returns` → `result` in OpenRPC contentDescriptor format
 
 ## [0.2.0] - 2026-03-18
 

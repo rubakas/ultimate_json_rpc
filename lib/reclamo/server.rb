@@ -133,9 +133,17 @@ module Reclamo
     def invoke_handler(request)
       return @handler.call(request.method_name, request.params) unless request.method_name == "rpc.discover"
 
-      { "methods" => @handler.methods_info }.tap do |result|
-        { "name" => @name, "version" => @version, "description" => @description }.each { |k, v| result[k] = v if v }
-      end
+      build_openrpc_document
+    end
+
+    def build_openrpc_document
+      doc = { "openrpc" => "1.3.2", "info" => build_info, "methods" => @handler.methods_info }
+      doc.delete("info") if doc["info"].empty?
+      doc
+    end
+
+    def build_info
+      { "title" => @name, "version" => @version, "description" => @description }.compact
     end
 
     def error_details(err)

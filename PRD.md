@@ -28,7 +28,7 @@ Items within each tier are ordered by dependency (no-dependency items first, the
 
 ## P0 — Foundation
 
-- [ ] **OpenRPC schema generation**
+- [x] **OpenRPC schema generation**
   Extend `rpc.discover` to return a full [OpenRPC](https://open-rpc.org/) document. The current response already includes method names, params, and descriptions — OpenRPC formalizes this into a machine-readable spec enabling automatic client generation, interactive docs, and cross-language tooling.
   *Depends on: nothing (builds on existing `rpc.discover`).*
 

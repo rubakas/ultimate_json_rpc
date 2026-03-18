@@ -64,12 +64,12 @@ server.expose(Calculator, returns: { add: { "type" => "number" } })
 
 ### Service discovery
 
-Built-in `rpc.discover` returns method info including parameter details and return types:
+Built-in `rpc.discover` returns an [OpenRPC](https://open-rpc.org/) 1.3.2-compatible document:
 
 ```ruby
 request = '{"jsonrpc":"2.0","method":"rpc.discover","id":1}'
 server.handle(request)
-# => '{"jsonrpc":"2.0","result":{"methods":[{"name":"add","params":[...],"returns":{"type":"number"}}]},"id":1}'
+# => '{"jsonrpc":"2.0","result":{"openrpc":"1.3.2","info":{"title":"My API","version":"1.0"},"methods":[...]},"id":1}'
 ```
 
 ### Middleware
@@ -167,7 +167,7 @@ server.handle(request)  # still works
 - **Return type annotations** — `returns:` hash or keyword for discovery metadata
 - **Service metadata** — `name:` and `version:` appear in `rpc.discover` responses
 - **Positional and keyword params** — arrays map to positional args, objects map to keyword args
-- **Service discovery** — built-in `rpc.discover` method with param info
+- **Service discovery** — built-in `rpc.discover` returns OpenRPC 1.3.2-compatible schema
 - **Middleware** — `server.use { |request, next_call| ... }` for cross-cutting concerns
 - **Scoped middleware** — `only:` / `except:` with glob patterns to target specific methods or namespaces
 - **Error handling** — standard JSON-RPC error codes, `ApplicationError`, and `ServerError`

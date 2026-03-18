@@ -64,8 +64,12 @@ module Reclamo
       info["description"] = @descriptions[name] if @descriptions.key?(name)
       params = callable.parameters.filter_map { |type, pname| param_descriptor(type, pname) }
       info["params"] = params unless params.empty?
-      info["returns"] = @returns[name] if @returns.key?(name)
+      info["result"] = build_result(@returns[name]) if @returns.key?(name)
       info
+    end
+
+    def build_result(returns)
+      returns.is_a?(Hash) ? { "name" => "result" }.merge(returns) : { "name" => "result", "schema" => returns }
     end
 
     def resolve_entry(entry)
