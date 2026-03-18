@@ -23,6 +23,17 @@ module Reclamo
   RESERVED_ERROR_MIN = -32_768
   RESERVED_ERROR_MAX = -32_000
 
+  class InvalidRequest < Error; end
+
+  class MethodNotFound < Error
+    attr_reader :method_name
+
+    def initialize(method_name)
+      @method_name = method_name
+      super
+    end
+  end
+
   class ApplicationError < Error
     attr_reader :code, :rpc_data
 

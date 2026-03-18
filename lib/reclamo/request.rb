@@ -38,6 +38,4 @@ module Reclamo
       raise InvalidRequest unless id.nil? || id.is_a?(String) || id.is_a?(Numeric)
     end
   end
-
-  class InvalidRequest < Error; end
 end

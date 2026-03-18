@@ -41,12 +41,12 @@ server.expose_method("greet") { |name:, greeting: "Hello"| "#{greeting}, #{name}
 
 ### Service discovery
 
-Built-in `rpc.discover` returns the list of available methods:
+Built-in `rpc.discover` returns method info including parameter details:
 
 ```ruby
 request = '{"jsonrpc":"2.0","method":"rpc.discover","id":1}'
 server.handle(request)
-# => '{"jsonrpc":"2.0","result":{"methods":["add","divide"]},"id":1}'
+# => '{"jsonrpc":"2.0","result":{"methods":[{"name":"add","params":[...]},{"name":"divide","params":[...]}]},"id":1}'
 ```
 
 ### Middleware

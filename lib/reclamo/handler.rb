@@ -130,13 +130,4 @@ module Reclamo
       end
     end
   end
-
-  class MethodNotFound < Error
-    attr_reader :method_name
-
-    def initialize(method_name)
-      @method_name = method_name
-      super
-    end
-  end
 end
