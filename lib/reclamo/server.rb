@@ -4,6 +4,7 @@ module Reclamo
   class Server
     def initialize
       @handler = Handler.new
+      @middleware = []
     end
 
     def expose(target, namespace: nil, only: nil, except: nil)
@@ -13,6 +14,13 @@ module Reclamo
 
     def expose_method(name, &)
       @handler.expose_method(name, &)
+      self
+    end
+
+    def use(&block)
+      raise ArgumentError, "block required" unless block
+
+      @middleware << block
       self
     end
 
@@ -67,6 +75,20 @@ module Reclamo
     end
 
     def dispatch(request)
+      chain = build_chain(request)
+      chain.call
+    end
+
+    def build_chain(request)
+      core = -> { invoke_handler(request) }
+      @middleware.reverse_each do |mw|
+        prev = core
+        core = -> { mw.call(request, prev) }
+      end
+      core
+    end
+
+    def invoke_handler(request)
       case request.method_name
       when "rpc.discover"
         { "methods" => @handler.methods_list }
