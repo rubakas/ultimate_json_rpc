@@ -7,6 +7,9 @@ module Reclamo
   class InvalidRequest < Error
   end
 
+  class InvalidParams < Error
+  end
+
   class MethodNotFound < Error
     attr_reader method_name: String
 
@@ -52,10 +55,12 @@ module Reclamo
     def self.error: (Integer, untyped, ?data: untyped, ?message: String?) -> Hash[String, untyped]
   end
 
+  type callable = Proc | Method | UnboundMethod
+
   class Handler
     def initialize: () -> void
     def expose: (Module | Object, ?namespace: String | Symbol | nil, ?only: Array[Symbol | String]?, ?except: Array[Symbol | String]?, ?descriptions: Hash[Symbol | String, String]?) -> void
-    def expose_method: (String | Symbol, ?description: String?) { (*untyped) -> untyped } -> void
+    def expose_method: (String | Symbol, ?callable?, ?description: String?) ?{ (*untyped) -> untyped } -> void
     def call: (String, Array[untyped] | Hash[String, untyped] | nil) -> untyped
     def method?: (String) -> bool
     def methods_list: () -> Array[String]
@@ -70,7 +75,7 @@ module Reclamo
 
     def initialize: (?name: String?, ?version: String?) -> void
     def expose: (Module | Object, ?namespace: String | Symbol | nil, ?only: Array[Symbol | String]?, ?except: Array[Symbol | String]?, ?descriptions: Hash[Symbol | String, String]?) -> self
-    def expose_method: (String | Symbol, ?description: String?) { (*untyped) -> untyped } -> self
+    def expose_method: (String | Symbol, ?callable?, ?description: String?) ?{ (*untyped) -> untyped } -> self
     def use: () { (Request, Proc) -> untyped } -> self
     def to_proc: () -> Proc
     def inspect: () -> String
