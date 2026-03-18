@@ -8,9 +8,12 @@ module Reclamo
   DANGEROUS_METHODS = %w[
     eval instance_eval class_eval module_eval
     send public_send __send__
-    system exec spawn
+    system exec spawn fork
     define_method remove_method
     binding method_missing respond_to_missing?
+    exit exit! abort
+    require require_relative load
+    open
   ].freeze
   private_constant :DANGEROUS_METHODS
 

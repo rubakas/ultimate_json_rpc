@@ -21,10 +21,34 @@ module Reclamo
 
     def process_batch_items(requests)
       if @concurrent_batches
-        requests.map { |req| Thread.new { serialize_single(req) } }.map(&:value).compact
+        pool_dispatch(requests).compact
       else
         requests.filter_map { |req| serialize_single(req) }
       end
+    end
+
+    def pool_dispatch(requests)
+      queue = Queue.new
+      requests.each_with_index { |req, i| queue << [req, i] }
+      results = Array.new(requests.size)
+      spawn_workers(queue, results, [requests.size, @max_concurrency].min)
+      results
+    end
+
+    def spawn_workers(queue, results, pool_size)
+      pool_size.times.map do
+        Thread.new do
+          while (req, i = queue.pop(true) rescue nil) # rubocop:disable Style/RescueModifier
+            results[i] = safe_serialize(req)
+          end
+        end
+      end.each(&:join)
+    end
+
+    def safe_serialize(data)
+      serialize_single(data)
+    rescue StandardError
+      @json.generate(Response.error(INTERNAL_ERROR, nil))
     end
 
     def batch_too_large?(requests) = @max_batch_size && requests.size > @max_batch_size
@@ -84,7 +108,7 @@ module Reclamo
     private_constant :HOOK_EVENTS
 
     def initialize(name: nil, version: nil, description: nil, max_batch_size: 100, expose_errors: false,
-                   timeout: nil, concurrent_batches: false, json: JSON)
+                   timeout: nil, concurrent_batches: false, max_concurrency: 8, json: JSON)
       @name = name
       @version = version
       @description = description
@@ -92,6 +116,7 @@ module Reclamo
       @expose_errors = expose_errors
       @timeout = timeout
       @concurrent_batches = concurrent_batches
+      @max_concurrency = max_concurrency
       @json = json
       @handler = Handler.new
       @middleware = []
@@ -126,9 +151,11 @@ module Reclamo
     end
 
     def handle(json_string)
-      handle_parsed(@json.parse(json_string))
+      data = @json.parse(json_string)
     rescue StandardError
       @json.generate(Response.error(PARSE_ERROR, nil))
+    else
+      handle_parsed(data)
     end
 
     alias call handle
@@ -170,7 +197,7 @@ module Reclamo
 
       @json.generate(response)
     rescue StandardError
-      @json.generate(Response.error(INTERNAL_ERROR, response.is_a?(Hash) ? response["id"] : nil))
+      @json.generate(Response.error(INTERNAL_ERROR, request.is_a?(Request) ? request.id : nil))
     end
 
     def parse_request(data)

@@ -36,7 +36,12 @@ module Reclamo
         raise ApplicationError.new(@code, @message) if window.size >= @max
 
         window << now
+        evict_stale!(now)
       end
+    end
+
+    def evict_stale!(now)
+      @windows.delete_if { |_, w| w.none? { |t| now - t <= @period } } if @windows.size > 100
     end
   end
 

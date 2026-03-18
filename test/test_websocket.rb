@@ -73,6 +73,18 @@ class TestWebSocket < Minitest::Test
     assert_equal server, ws.server
   end
 
+  def test_call_with_raw_string_event
+    ws = build_ws
+    sent = []
+    socket = MockSocket.new(sent)
+
+    ws.call({}, socket)
+    socket.trigger(:message, '{"jsonrpc":"2.0","method":"add","params":[2,3],"id":1}')
+
+    assert_equal 1, sent.size
+    assert_equal 5, JSON.parse(sent[0])["result"]
+  end
+
   private
 
   def build_ws

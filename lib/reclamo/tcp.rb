@@ -4,12 +4,17 @@ require "socket"
 
 module Reclamo
   class TCP
-    def initialize(server, port:, host: "127.0.0.1")
+    DEFAULT_MAX_CONNECTIONS = 64
+
+    def initialize(server, port:, host: "127.0.0.1", max_connections: DEFAULT_MAX_CONNECTIONS)
       @server = server
       @host = host
       @port = port
+      @max_connections = max_connections
       @running = false
       @tcp_server = nil
+      @connection_count = 0
+      @mutex = Mutex.new
     end
 
     def run
@@ -33,13 +38,24 @@ module Reclamo
 
     def accept_loop
       while @running
-        client = begin
-          @tcp_server.accept
-        rescue IOError
-          break
-        end
-        next unless client
+        client = accept_client
+        break unless client
 
+        accept_or_reject(client)
+      end
+    end
+
+    def accept_client
+      @tcp_server.accept
+    rescue IOError
+      nil
+    end
+
+    def accept_or_reject(client)
+      if connection_limit_reached?
+        client.close
+      else
+        increment_connections
         Thread.new(client) { |c| handle_client(c) }
       end
     end
@@ -59,6 +75,19 @@ module Reclamo
       # Client disconnected
     ensure
       client.close unless client.closed?
+      decrement_connections
+    end
+
+    def connection_limit_reached?
+      @mutex.synchronize { @connection_count >= @max_connections }
+    end
+
+    def increment_connections
+      @mutex.synchronize { @connection_count += 1 }
+    end
+
+    def decrement_connections
+      @mutex.synchronize { @connection_count -= 1 }
     end
 
     def trap_signals

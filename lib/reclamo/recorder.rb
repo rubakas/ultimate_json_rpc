@@ -2,20 +2,25 @@
 
 module Reclamo
   class Recorder
-    attr_reader :exchanges
-
-    def initialize(server, output: nil)
+    def initialize(server, output: nil, json: JSON)
       @exchanges = []
       @output = output
+      @json = json
       @mutex = Mutex.new
       attach(server)
+    end
+
+    def exchanges
+      @mutex.synchronize { @exchanges.dup }
     end
 
     def clear
       @mutex.synchronize { @exchanges.clear }
     end
 
-    def size = @exchanges.size
+    def size
+      @mutex.synchronize { @exchanges.size }
+    end
 
     private
 
@@ -36,7 +41,7 @@ module Reclamo
       entry["error"] = error if error
       @mutex.synchronize do
         @exchanges << entry
-        @output&.puts(JSON.generate(entry))
+        @output&.puts(@json.generate(entry))
       end
     end
   end

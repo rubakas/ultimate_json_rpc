@@ -183,6 +183,35 @@ class TestHooksEdgeCases < Minitest::Test
     end
   end
 
+  def test_broken_response_hook_warns
+    server = Reclamo::Server.new
+    server.expose(Calculator)
+    server.on(:response) { |_req, _result, _dur| raise "response hook broke" }
+
+    assert_output(nil, /Reclamo: response hook error: response hook broke/) do
+      call(server, "add", [1, 2])
+    end
+  end
+
+  def test_broken_error_hook_warns
+    server = Reclamo::Server.new
+    server.expose(Calculator)
+    server.on(:error) { |_req, _err, _dur| raise "error hook broke" }
+
+    assert_output(nil, /Reclamo: error hook error: error hook broke/) do
+      call(server, "nonexistent")
+    end
+  end
+
+  def test_broken_response_hook_does_not_break_dispatch
+    server = Reclamo::Server.new
+    server.expose(Calculator)
+    server.on(:response) { |_req, _result, _dur| raise "response hook broke" }
+
+    response = JSON.parse(call(server, "add", [1, 2]))
+    assert_equal 3, response["result"]
+  end
+
   def test_hooks_survive_freeze
     server = Reclamo::Server.new
     server.expose(Calculator)

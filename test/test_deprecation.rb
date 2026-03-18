@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 require "test_helper"
-require "test_discover"
+require "support/discover_helper"
 require "json"
 
 class TestMethodDeprecation < Minitest::Test

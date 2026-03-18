@@ -69,12 +69,17 @@ module Reclamo
     def call: (*untyped) -> untyped
   end
 
+  interface _JsonAdapter
+    def parse: (String) -> untyped
+    def generate: (untyped) -> String
+  end
+
   type callable = Proc | Method | _Callable
 
   class Handler
     def initialize: () -> void
-    def expose: (Module | Object, ?namespace: String | Symbol | nil, ?only: Array[Symbol | String] | Symbol | String | nil, ?except: Array[Symbol | String] | Symbol | String | nil, ?descriptions: Hash[Symbol | String, String]?, ?returns: Hash[Symbol | String, untyped]?) -> void
-    def expose_method: (String | Symbol, ?callable?, ?description: String?, ?returns: untyped) ?{ (*untyped) -> untyped } -> void
+    def expose: (Module | Object, ?namespace: String | Symbol | nil, ?only: Array[Symbol | String] | Symbol | String | nil, ?except: Array[Symbol | String] | Symbol | String | nil, ?descriptions: Hash[Symbol | String, String]?, ?returns: Hash[Symbol | String, untyped]?, ?deprecated: Hash[Symbol | String, untyped]?, ?params_schema: Hash[Symbol | String, untyped]?) -> void
+    def expose_method: (String | Symbol, ?callable?, ?description: String?, ?returns: untyped, ?deprecated: (bool | String)?, ?params_schema: Hash[String | Symbol, untyped]?) ?{ (*untyped) -> untyped } -> void
     def call: (String, Array[untyped] | Hash[String, untyped] | nil) -> untyped
     def method?: (String) -> bool
     def methods_list: () -> Array[String]
@@ -90,14 +95,17 @@ module Reclamo
     attr_reader description: String?
     attr_reader max_batch_size: Integer?
 
-    def initialize: (?name: String?, ?version: String?, ?description: String?, ?max_batch_size: Integer?, ?expose_errors: bool, ?timeout: Numeric?) -> void
-    def expose: (Module | Object, ?namespace: String | Symbol | nil, ?only: Array[Symbol | String] | Symbol | String | nil, ?except: Array[Symbol | String] | Symbol | String | nil, ?descriptions: Hash[Symbol | String, String]?, ?returns: Hash[Symbol | String, untyped]?) -> self
-    def expose_method: (String | Symbol, ?callable?, ?description: String?, ?returns: untyped) ?{ (*untyped) -> untyped } -> self
+    def initialize: (?name: String?, ?version: String?, ?description: String?, ?max_batch_size: Integer?, ?expose_errors: bool, ?timeout: Numeric?, ?concurrent_batches: bool, ?max_concurrency: Integer, ?json: _JsonAdapter) -> void
+    def expose: (Module | Object, ?namespace: String | Symbol | nil, ?only: Array[Symbol | String] | Symbol | String | nil, ?except: Array[Symbol | String] | Symbol | String | nil, ?descriptions: Hash[Symbol | String, String]?, ?returns: Hash[Symbol | String, untyped]?, ?deprecated: Hash[Symbol | String, untyped]?, ?params_schema: Hash[Symbol | String, untyped]?) -> self
+    def expose_method: (String | Symbol, ?callable?, ?description: String?, ?returns: untyped, ?deprecated: (bool | String)?, ?params_schema: Hash[String | Symbol, untyped]?) ?{ (*untyped) -> untyped } -> self
     def use: (?only: Array[String | Symbol] | String | Symbol | nil, ?except: Array[String | Symbol] | String | Symbol | nil) { (Request, Proc) -> untyped } -> self
     def on: (Symbol) { (*untyped) -> void } -> self
+    def register_error: (Integer, String, ?String?) -> self
+    def authorize: (*String, ?code: Integer, ?message: String) { (Request) -> boolish } -> self
     def to_proc: () -> Proc
     def inspect: () -> String
     def expose_errors?: () -> bool
+    def concurrent_batches?: () -> bool
     def method?: (String) -> bool
     def handle: (String?) -> String?
     alias call handle
@@ -120,6 +128,73 @@ module Reclamo
     def initialize: (Server) -> void
     def call: (Hash[String, untyped]) -> [Integer, Hash[String, String], Array[String]]
     def freeze: () -> self
+  end
+
+  class TCP
+    DEFAULT_MAX_CONNECTIONS: Integer
+
+    def initialize: (Server, port: Integer, ?host: String, ?max_connections: Integer) -> void
+    def run: () -> void
+    def stop: () -> void
+    def running?: () -> bool
+  end
+
+  class WebSocket
+    attr_reader server: Server
+
+    def initialize: (Server) -> void
+    def on_message: (untyped) -> String?
+    def call: (untyped, untyped) -> void
+  end
+
+  class MCP
+    PROTOCOL_VERSION: String
+
+    def initialize: (Server, ?input: IO, ?output: IO, ?json: _JsonAdapter) -> void
+    def run: () -> void
+  end
+
+  class Profiler
+    DEFAULT_MAX_SAMPLES: Integer
+
+    def initialize: (Server, ?max_samples: Integer) -> void
+    def []: (String) -> Hash[Symbol, untyped]?
+    def methods: () -> Array[String]
+    def stats: () -> Hash[String, Hash[Symbol, untyped]]
+    def reset: () -> void
+  end
+
+  class RateLimiter
+    def initialize: (max: Integer, period: Numeric, ?key: (Symbol | Proc)?, ?code: Integer, ?message: String) -> void
+    def call: (Request, Proc) -> untyped
+  end
+
+  module RateLimitSupport
+    def rate_limit: (max: Integer, period: Numeric, ?key: (Symbol | Proc)?, ?code: Integer, ?message: String, ?only: Array[String | Symbol] | String | Symbol | nil, ?except: Array[String | Symbol] | String | Symbol | nil) -> self
+  end
+
+  module Logging
+    def log_to: (untyped, ?level: Symbol) -> self
+  end
+
+  class Recorder
+    def initialize: (Server, ?output: IO?, ?json: _JsonAdapter) -> void
+    def exchanges: () -> Array[Hash[String, untyped]]
+    def clear: () -> void
+    def size: () -> Integer
+  end
+
+  class MockServer
+    def initialize: () -> void
+    def stub: (String, untyped, untyped) -> self
+    def stub_any: (String, untyped) -> self
+    def handle: (String) -> String?
+    def handle_parsed: (untyped) -> String?
+  end
+
+  class Docs
+    def initialize: (Server) -> void
+    def to_markdown: () -> String
   end
 
   module TestHelpers

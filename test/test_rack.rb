@@ -98,11 +98,39 @@ class TestRack < Minitest::Test
     assert_equal(-32_601, response["error"]["code"])
   end
 
+  def test_head_returns_ok_with_empty_body
+    env = { "REQUEST_METHOD" => "HEAD", "rack.input" => StringIO.new("") }
+    status, headers, body = @app.call(env)
+
+    assert_equal 200, status
+    assert_equal "application/json", headers["content-type"]
+    assert_empty body
+  end
+
+  def test_method_not_allowed_returns_jsonrpc_error
+    env = { "REQUEST_METHOD" => "GET", "rack.input" => StringIO.new("") }
+    _, _, body = @app.call(env)
+    response = JSON.parse(body.first)
+
+    assert_equal "2.0", response["jsonrpc"]
+    assert_equal(-32_600, response["error"]["code"])
+    assert_nil response["id"]
+  end
+
   def test_freeze_delegates_to_server
     app = Reclamo::Rack.new(Reclamo::Server.new)
     app.freeze
 
     assert_predicate app, :frozen?
+  end
+
+  def test_frozen_rack_app_handles_requests
+    app = Reclamo::Rack.new(Reclamo::Server.new.tap { |s| s.expose(Calculator) })
+    app.freeze
+
+    status, _, body = app.call(rack_env("add", [2, 3]))
+    assert_equal 200, status
+    assert_equal 5, JSON.parse(body.first)["result"]
   end
 
   def test_nil_rack_input

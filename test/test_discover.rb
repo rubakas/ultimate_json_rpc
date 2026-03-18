@@ -107,18 +107,7 @@ class TestServerDiscover < Minitest::Test
   end
 end
 
-module DiscoverHelper
-  private
-
-  def discover_result(server)
-    request = { "jsonrpc" => "2.0", "method" => "rpc.discover", "id" => 1 }
-    JSON.parse(server.handle(JSON.generate(request)))["result"]
-  end
-
-  def discover_methods(server)
-    discover_result(server)["methods"]
-  end
-end
+require "support/discover_helper"
 
 class TestServerDiscoverOpenRPC < Minitest::Test
   include DiscoverHelper

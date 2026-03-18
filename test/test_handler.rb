@@ -247,8 +247,9 @@ class TestHandlerParamDescriptors < Minitest::Test
 end
 
 class TestHandlerDangerousMethods < Minitest::Test
-  %w[eval instance_eval class_eval module_eval send public_send __send__ system exec spawn
-     define_method remove_method binding method_missing respond_to_missing?].each do |name|
+  %w[eval instance_eval class_eval module_eval send public_send __send__ system exec spawn fork
+     define_method remove_method binding method_missing respond_to_missing?
+     exit exit! abort require require_relative load open].each do |name|
     safe_name = name.tr("?", "_q")
     define_method("test_expose_rejects_#{safe_name}") do
       handler = Reclamo::Handler.new

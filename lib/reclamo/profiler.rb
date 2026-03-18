@@ -2,9 +2,12 @@
 
 module Reclamo
   class Profiler
-    def initialize(server)
+    DEFAULT_MAX_SAMPLES = 10_000
+
+    def initialize(server, max_samples: DEFAULT_MAX_SAMPLES)
       @data = {}
       @mutex = Mutex.new
+      @max_samples = max_samples
       attach(server)
     end
 
@@ -44,6 +47,7 @@ module Reclamo
         entry[:min] = duration if duration < entry[:min]
         entry[:max] = duration if duration > entry[:max]
         entry[:durations] << duration
+        entry[:durations].shift if entry[:durations].size > @max_samples
       end
     end
 

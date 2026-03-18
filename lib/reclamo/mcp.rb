@@ -6,8 +6,9 @@ module Reclamo
   class MCP
     PROTOCOL_VERSION = "2024-11-05"
 
-    def initialize(server, input: $stdin, output: $stdout)
+    def initialize(server, input: $stdin, output: $stdout, json: JSON)
       @app_server = server
+      @json = json
       @mcp_server = build_mcp_server
       @input = input
       @output = output
@@ -20,7 +21,7 @@ module Reclamo
     private
 
     def build_mcp_server
-      mcp = Server.new(name: @app_server.name, version: @app_server.version)
+      mcp = Server.new(name: @app_server.name, version: @app_server.version, json: @json)
       mcp.expose_method("initialize") { mcp_initialize }
       mcp.expose_method("notifications/initialized") { nil }
       mcp.expose_method("tools/list") { mcp_tools_list }
@@ -45,7 +46,10 @@ module Reclamo
 
     def mcp_tools_call(name, arguments)
       request = build_call_request(name, arguments)
-      response = JSON.parse(@app_server.handle_parsed(request))
+      raw = @app_server.handle_parsed(request)
+      return format_call_response(nil) unless raw
+
+      response = @json.parse(raw)
       format_call_response(response)
     end
 
@@ -98,7 +102,7 @@ module Reclamo
         { "content" => [{ "type" => "text", "text" => response.dig("error", "message") }], "isError" => true }
       else
         result = response&.fetch("result", nil)
-        text = result.is_a?(String) ? result : JSON.generate(result)
+        text = result.is_a?(String) ? result : @json.generate(result)
         { "content" => [{ "type" => "text", "text" => text }] }
       end
     end
