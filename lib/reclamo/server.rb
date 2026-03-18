@@ -132,9 +132,9 @@ module Reclamo
 
     def error_details(err)
       case err
-      when MethodNotFound then [METHOD_NOT_FOUND, nil, err.message]
+      when MethodNotFound then [METHOD_NOT_FOUND, nil, err.method_name]
       when ApplicationError, ServerError then [err.code, err.message, err.rpc_data]
-      when ArgumentError then [INVALID_PARAMS, nil, err.message]
+      when InvalidParams, ArgumentError then [INVALID_PARAMS, nil, err.message]
       else [INTERNAL_ERROR, nil, err.message]
       end
     end

@@ -1,0 +1,152 @@
+# frozen_string_literal: true
+
+require "test_helper"
+require "json"
+
+class TestHandler < Minitest::Test
+  def test_method_query
+    handler = Reclamo::Handler.new
+    handler.expose(Calculator)
+
+    assert handler.method?("add")
+    refute handler.method?("nonexistent")
+  end
+
+  def test_handler_size
+    handler = Reclamo::Handler.new
+    assert_equal 0, handler.size
+
+    handler.expose(Calculator)
+    assert_equal 2, handler.size
+
+    handler.expose_method("ping") { "pong" }
+    assert_equal 3, handler.size
+  end
+
+  def test_expose_rejects_rpc_namespace
+    handler = Reclamo::Handler.new
+
+    assert_raises(ArgumentError) { handler.expose(Calculator, namespace: "rpc") }
+  end
+
+  def test_does_not_expose_inherited_object_methods
+    handler = Reclamo::Handler.new
+    handler.expose(Greeter.new("Hi"))
+
+    refute handler.method?("class")
+    refute handler.method?("object_id")
+  end
+
+  def test_duplicate_expose_raises
+    handler = Reclamo::Handler.new
+    handler.expose(Calculator)
+
+    assert_raises(ArgumentError) { handler.expose(Calculator) }
+  end
+
+  def test_duplicate_expose_method_raises
+    handler = Reclamo::Handler.new
+    handler.expose_method("foo") { "bar" }
+
+    assert_raises(ArgumentError) { handler.expose_method("foo") { "baz" } }
+  end
+
+  def test_duplicate_across_expose_and_expose_method
+    handler = Reclamo::Handler.new
+    handler.expose(Calculator)
+
+    assert_raises(ArgumentError) { handler.expose_method("add") { 1 } }
+  end
+
+  def test_same_method_name_different_namespace_ok
+    handler = Reclamo::Handler.new
+    handler.expose(Calculator, namespace: "a")
+    handler.expose(Calculator, namespace: "b")
+
+    assert handler.method?("a.add")
+    assert handler.method?("b.add")
+  end
+
+  def test_empty_string_namespace_treated_as_no_namespace
+    handler = Reclamo::Handler.new
+    handler.expose(Calculator, namespace: "")
+
+    assert handler.method?("add")
+    refute handler.method?(".add")
+  end
+
+  def test_symbol_namespace
+    handler = Reclamo::Handler.new
+    handler.expose(Calculator, namespace: :math)
+
+    assert handler.method?("math.add")
+    assert handler.method?("math.divide")
+  end
+
+  def test_expose_target_with_no_methods
+    handler = Reclamo::Handler.new
+    handler.expose(Object.new)
+
+    assert_equal 0, handler.size
+    assert_empty handler.methods_list
+  end
+
+  def test_methods_list_is_sorted
+    handler = Reclamo::Handler.new
+    handler.expose_method("zebra") { nil }
+    handler.expose_method("alpha") { nil }
+    handler.expose_method("middle") { nil }
+
+    assert_equal %w[alpha middle zebra], handler.methods_list
+  end
+
+  def test_methods_info_for_required_positional_params
+    handler = Reclamo::Handler.new
+    handler.expose(Calculator)
+    add_info = handler.methods_info.find { |m| m["name"] == "add" }
+
+    assert_equal(%w[left right], add_info["params"].map { |p| p["name"] })
+    assert(add_info["params"].all? { |p| p["required"] })
+  end
+
+  def test_methods_info_marks_keyword_params
+    handler = Reclamo::Handler.new
+    handler.expose(Greeter.new("Hi"))
+    greet_info = handler.methods_info.find { |m| m["name"] == "greet" }
+
+    assert_equal true, greet_info["params"][0]["keyword"]
+  end
+
+  def test_methods_info_omits_params_when_none
+    handler = Reclamo::Handler.new
+    handler.expose_method("ping") { "pong" }
+
+    refute handler.methods_info[0].key?("params")
+  end
+
+  def test_methods_info_block_params_are_optional
+    handler = Reclamo::Handler.new
+    handler.expose_method("greet") { |name, greeting| "#{greeting}, #{name}!" }
+    greet_info = handler.methods_info[0]
+
+    assert_equal 2, greet_info["params"].size
+    refute greet_info["params"][0].key?("required")
+  end
+end
+
+class TestHandlerEdgeCases < Minitest::Test
+  def test_method_not_found_exposes_method_name
+    handler = Reclamo::Handler.new
+    err = assert_raises(Reclamo::MethodNotFound) { handler.call("missing", nil) }
+
+    assert_equal "missing", err.method_name
+    assert_equal "Method not found: missing", err.message
+  end
+
+  def test_invoke_with_invalid_params_type_raises
+    handler = Reclamo::Handler.new
+    handler.expose(Calculator)
+
+    assert_raises(ArgumentError) { handler.call("add", "not valid") }
+  end
+end

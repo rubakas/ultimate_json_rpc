@@ -24,13 +24,14 @@ module Reclamo
   RESERVED_ERROR_MAX = -32_000
 
   class InvalidRequest < Error; end
+  class InvalidParams < Error; end
 
   class MethodNotFound < Error
     attr_reader :method_name
 
     def initialize(method_name)
       @method_name = method_name
-      super
+      super("Method not found: #{method_name}")
     end
   end
 
@@ -38,7 +39,9 @@ module Reclamo
     attr_reader :code, :rpc_data
 
     def initialize(code, message, data = nil)
-      if code.is_a?(Integer) && code >= RESERVED_ERROR_MIN && code <= RESERVED_ERROR_MAX
+      raise ArgumentError, "error code must be an Integer, got #{code.class}" unless code.is_a?(Integer)
+
+      if code.between?(RESERVED_ERROR_MIN, RESERVED_ERROR_MAX)
         raise ArgumentError,
               "error code #{code} is in the reserved range (#{RESERVED_ERROR_MIN}..#{RESERVED_ERROR_MAX})"
       end
