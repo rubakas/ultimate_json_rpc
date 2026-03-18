@@ -170,4 +170,46 @@ class TestServerMiddlewareEdgeCases < Minitest::Test
     assert_equal(-32_603, response["error"]["code"])
     assert_equal 42, response["id"]
   end
+
+  def test_nested_request_params_are_deeply_frozen
+    server = Reclamo::Server.new
+    server.expose(Calculator)
+    nested_frozen = nil
+
+    server.use do |request, next_call|
+      nested_frozen = request.params[0].frozen?
+      next_call.call
+    end
+
+    request = { "jsonrpc" => "2.0", "method" => "add", "params" => [{ "a" => 1 }, 2], "id" => 1 }
+    server.handle(JSON.generate(request))
+
+    assert nested_frozen, "nested params should be deeply frozen"
+  end
+
+  def test_server_error_from_middleware
+    server = Reclamo::Server.new
+    server.expose(Calculator)
+    server.use { |_request, _next_call| raise Reclamo::ServerError.new(-32_050, "Rate limited") }
+
+    request = { "jsonrpc" => "2.0", "method" => "add", "params" => [1, 2], "id" => 1 }
+    response = JSON.parse(server.handle(JSON.generate(request)))
+
+    assert_equal(-32_050, response["error"]["code"])
+    assert_equal "Rate limited", response["error"]["message"]
+  end
+
+  def test_application_error_from_middleware
+    server = Reclamo::Server.new
+    server.expose(Calculator)
+    server.use do |request, _next_call|
+      raise Reclamo::ApplicationError.new(403, "Forbidden") if request.method_name == "add"
+    end
+
+    request = { "jsonrpc" => "2.0", "method" => "add", "params" => [1, 2], "id" => 1 }
+    response = JSON.parse(server.handle(JSON.generate(request)))
+
+    assert_equal 403, response["error"]["code"]
+    assert_equal "Forbidden", response["error"]["message"]
+  end
 end

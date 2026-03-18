@@ -7,7 +7,7 @@ module Reclamo
     def initialize(data)
       validate!(data)
       @method_name = data["method"].freeze
-      @params = data["params"].freeze
+      @params = deep_freeze(data["params"])
       @id = data["id"].freeze
     end
 
@@ -25,17 +25,31 @@ module Reclamo
     end
 
     def validate_structure!(data)
-      raise InvalidRequest unless data.is_a?(Hash)
-      raise InvalidRequest unless data["jsonrpc"] == "2.0"
-      raise InvalidRequest unless data["method"].is_a?(String) && !data["method"].empty?
+      raise InvalidRequest, "request must be a JSON object" unless data.is_a?(Hash)
+      raise InvalidRequest, "jsonrpc must be \"2.0\"" unless data["jsonrpc"] == "2.0"
+
+      valid_method = data["method"].is_a?(String) && !data["method"].empty?
+      raise InvalidRequest, "method must be a non-empty String" unless valid_method
     end
 
     def validate_params!(params)
-      raise InvalidRequest unless params.is_a?(Array) || params.is_a?(Hash)
+      return if params.is_a?(Array) || params.is_a?(Hash)
+
+      raise InvalidRequest, "params must be an Array or Object"
     end
 
     def validate_id!(id)
-      raise InvalidRequest unless id.nil? || id.is_a?(String) || id.is_a?(Numeric)
+      return if id.nil? || id.is_a?(String) || id.is_a?(Numeric)
+
+      raise InvalidRequest, "id must be a String, Number, or Null"
+    end
+
+    def deep_freeze(obj)
+      case obj
+      when Hash then obj.each_value { |v| deep_freeze(v) }
+      when Array then obj.each { |v| deep_freeze(v) }
+      end
+      obj.freeze
     end
   end
 end

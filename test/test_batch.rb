@@ -85,6 +85,33 @@ class TestServerBatch < Minitest::Test
     assert_equal 2, responses[1]["id"]
   end
 
+  def test_batch_all_invalid_items
+    requests = [1, "string", true]
+    responses = JSON.parse(@server.handle(JSON.generate(requests)))
+
+    assert_equal 3, responses.size
+    responses.each do |resp|
+      assert_equal(-32_600, resp["error"]["code"])
+      assert_nil resp["id"]
+    end
+  end
+
+  def test_batch_single_notification
+    requests = [{ "jsonrpc" => "2.0", "method" => "add", "params" => [1, 2] }]
+
+    assert_nil @server.handle(JSON.generate(requests))
+  end
+
+  def test_batch_multiple_notifications
+    requests = [
+      { "jsonrpc" => "2.0", "method" => "add", "params" => [1, 2] },
+      { "jsonrpc" => "2.0", "method" => "add", "params" => [3, 4] },
+      { "jsonrpc" => "2.0", "method" => "add", "params" => [5, 6] }
+    ]
+
+    assert_nil @server.handle(JSON.generate(requests))
+  end
+
   private
 
   def batch_with_bad_and_good_responses

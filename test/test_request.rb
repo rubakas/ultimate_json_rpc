@@ -105,6 +105,32 @@ class TestRequestValidation < Minitest::Test
     assert_nil request.id
     refute_predicate request, :notification?
   end
+
+  def test_invalid_request_includes_descriptive_message
+    err = assert_raises(Reclamo::InvalidRequest) { Reclamo::Request.new("string") }
+    assert_match(/JSON object/, err.message)
+  end
+
+  def test_wrong_version_includes_descriptive_message
+    err = assert_raises(Reclamo::InvalidRequest) do
+      Reclamo::Request.new({ "jsonrpc" => "1.0", "method" => "foo" })
+    end
+    assert_match(/2\.0/, err.message)
+  end
+
+  def test_invalid_params_type_includes_descriptive_message
+    err = assert_raises(Reclamo::InvalidRequest) do
+      Reclamo::Request.new({ "jsonrpc" => "2.0", "method" => "foo", "params" => "bad" })
+    end
+    assert_match(/Array or Object/, err.message)
+  end
+
+  def test_invalid_id_type_includes_descriptive_message
+    err = assert_raises(Reclamo::InvalidRequest) do
+      Reclamo::Request.new({ "jsonrpc" => "2.0", "method" => "foo", "id" => true })
+    end
+    assert_match(/String, Number, or Null/, err.message)
+  end
 end
 
 class TestRequestNotification < Minitest::Test
@@ -156,5 +182,36 @@ class TestRequestFreezing < Minitest::Test
     request = Reclamo::Request.new({ "jsonrpc" => "2.0", "method" => "foo", "id" => 1 })
 
     assert_nil request.params
+  end
+
+  def test_nested_array_elements_are_frozen
+    data = { "jsonrpc" => "2.0", "method" => "foo", "params" => [{ "a" => 1 }, [2, 3]], "id" => 1 }
+    request = Reclamo::Request.new(data)
+
+    assert_predicate request.params[0], :frozen?
+    assert_predicate request.params[1], :frozen?
+  end
+
+  def test_nested_hash_values_are_frozen
+    data = { "jsonrpc" => "2.0", "method" => "foo", "params" => { "nested" => { "deep" => "val" } }, "id" => 1 }
+    request = Reclamo::Request.new(data)
+
+    assert_predicate request.params["nested"], :frozen?
+  end
+
+  def test_deeply_nested_structures_are_frozen
+    data = { "jsonrpc" => "2.0", "method" => "foo",
+             "params" => [{ "a" => [{ "b" => "c" }] }], "id" => 1 }
+    request = Reclamo::Request.new(data)
+
+    assert_predicate request.params[0]["a"], :frozen?
+    assert_predicate request.params[0]["a"][0], :frozen?
+  end
+
+  def test_string_values_in_params_are_frozen
+    data = { "jsonrpc" => "2.0", "method" => "foo", "params" => ["mutable?"], "id" => 1 }
+    request = Reclamo::Request.new(data)
+
+    assert_predicate request.params[0], :frozen?
   end
 end
