@@ -116,6 +116,10 @@ class TestServerCalls < Minitest::Test
     assert @server.method?("add")
     refute @server.method?("nonexistent")
   end
+
+  def test_server_size
+    assert_equal 4, @server.size
+  end
 end
 
 class TestServerErrors < Minitest::Test
@@ -291,6 +295,18 @@ class TestServerBatch < Minitest::Test
     assert_equal 2, responses.size
     assert_equal(-32_600, responses[0]["error"]["code"])
     assert_equal 3, responses[1]["result"]
+  end
+
+  def test_batch_with_non_serializable_result
+    server = Reclamo::Server.new
+    circ = {}
+    circ["self"] = circ
+    server.expose_method("bad") { circ }
+
+    requests = [{ "jsonrpc" => "2.0", "method" => "bad", "id" => 1 }]
+    response = JSON.parse(server.handle(JSON.generate(requests)))
+
+    assert_equal(-32_603, response["error"]["code"])
   end
 end
 
@@ -826,6 +842,17 @@ class TestHandler < Minitest::Test
 
     assert handler.method?("add")
     refute handler.method?("nonexistent")
+  end
+
+  def test_handler_size
+    handler = Reclamo::Handler.new
+    assert_equal 0, handler.size
+
+    handler.expose(Calculator)
+    assert_equal 2, handler.size
+
+    handler.expose_method("ping") { "pong" }
+    assert_equal 3, handler.size
   end
 
   def test_expose_rejects_rpc_namespace

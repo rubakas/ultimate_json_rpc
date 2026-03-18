@@ -43,13 +43,9 @@ module Reclamo
       end
     end
 
-    def methods_list
-      @handler.methods_list
-    end
-
-    def method?(method_name)
-      @handler.method?(method_name)
-    end
+    def methods_list = @handler.methods_list
+    def method?(method_name) = @handler.method?(method_name)
+    def size = @handler.size
 
     private
 

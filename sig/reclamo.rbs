@@ -47,6 +47,7 @@ module Reclamo
     def call: (String, Array[untyped] | Hash[String, untyped] | nil) -> untyped
     def method?: (String) -> bool
     def methods_list: () -> Array[String]
+    def size: () -> Integer
   end
 
   class Server
@@ -58,5 +59,6 @@ module Reclamo
     def handle: (String) -> String?
     def handle_parsed: (untyped) -> String?
     def methods_list: () -> Array[String]
+    def size: () -> Integer
   end
 end

@@ -48,6 +48,10 @@ module Reclamo
       @targets.keys.sort
     end
 
+    def size
+      @targets.size
+    end
+
     private
 
     def callable_methods(target)
