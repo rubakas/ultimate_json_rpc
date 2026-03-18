@@ -30,13 +30,27 @@ bin/console            # Interactive console with gem loaded
 
 ## Structure
 
+### Library
+
 - `lib/reclamo.rb` — main entry point, requires all components
 - `lib/reclamo/version.rb` — version constant
-- `lib/reclamo/errors.rb` — error codes, ERROR_MESSAGES, all error classes (InvalidRequest, MethodNotFound, ApplicationError, ServerError)
-- `lib/reclamo/request.rb` — JSON-RPC request parsing and validation
+- `lib/reclamo/errors.rb` — error codes, ERROR_MESSAGES, all error classes (InvalidRequest, InvalidParams, MethodNotFound, ApplicationError, ServerError)
+- `lib/reclamo/request.rb` — JSON-RPC request parsing, validation, immutable attributes
 - `lib/reclamo/response.rb` — JSON-RPC response building
-- `lib/reclamo/handler.rb` — method registry, dispatch, introspection, and freeze support
+- `lib/reclamo/handler.rb` — method registry, dispatch, introspection, callable support, freeze
 - `lib/reclamo/server.rb` — public API: expose, handle/call, middleware, rpc.discover, service metadata, freeze
-- `test/test_reclamo.rb` — version test
-- `test/test_server.rb` — server, handler, and integration tests
 - `sig/reclamo.rbs` — RBS type signatures
+
+### Tests
+
+- `test/test_helper.rb` — test setup, loads support fixtures
+- `test/support/fixtures.rb` — shared test fixtures (Calculator, Greeter)
+- `test/test_reclamo.rb` — version, constants, error class hierarchy
+- `test/test_server.rb` — core dispatch, notifications, handle_parsed, callable, edge cases, freeze
+- `test/test_handler.rb` — handler unit tests
+- `test/test_errors.rb` — server errors, application errors, server errors, request/param validation
+- `test/test_batch.rb` — batch requests
+- `test/test_discover.rb` — rpc.discover, descriptions, service info
+- `test/test_middleware.rb` — middleware chain, edge cases, request immutability
+- `test/test_expose.rb` — expose_method, method filtering, callable objects
+- `test/test_spec_conformance.rb` — JSON-RPC 2.0 spec conformance + integration tests
