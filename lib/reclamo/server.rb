@@ -31,11 +31,13 @@ module Reclamo
       queue = Queue.new
       requests.each_with_index { |req, i| queue << [req, i] }
       results = Array.new(requests.size)
-      spawn_workers(queue, results, [requests.size, @max_concurrency].min)
+      spawn_workers(queue:, results:, pool_size: [requests.size, @max_concurrency].min)
       results
     end
 
-    def spawn_workers(queue, results, pool_size)
+    # Thread-safety: each worker writes to a unique index in the results array.
+    # Under CRuby's GVL, unique-index array writes are safe without additional synchronization.
+    def spawn_workers(queue:, results:, pool_size:)
       pool_size.times.map do
         Thread.new do
           loop do
@@ -51,7 +53,8 @@ module Reclamo
     def safe_serialize(data)
       serialize_single(data)
     rescue StandardError
-      @json.generate(Response.error(INTERNAL_ERROR, nil))
+      id = data.is_a?(Hash) ? extract_id(data) : nil
+      @json.generate(Response.error(INTERNAL_ERROR, id))
     end
 
     def batch_too_large?(requests) = @max_batch_size && requests.size > @max_batch_size
@@ -75,7 +78,7 @@ module Reclamo
   private_constant :OpenRPCBuilder
 
   module ServerExtensions
-    def register_error(code, message, description = nil)
+    def register_error(code:, message:, description: nil)
       raise ArgumentError, "error code must be an Integer" unless code.is_a?(Integer)
 
       if code.between?(RESERVED_ERROR_MIN, RESERVED_ERROR_MAX)
@@ -97,7 +100,7 @@ module Reclamo
 
       opts = patterns.empty? ? {} : { only: patterns }
       use(**opts) do |request, next_call|
-        raise ApplicationError.new(code, message) unless block.call(request)
+        raise ApplicationError.new(code:, message:) unless block.call(request)
 
         next_call.call
       end
@@ -184,6 +187,7 @@ module Reclamo
     def freeze
       @hooks.each_value(&:freeze)
       [@handler, @middleware, @hooks].each(&:freeze)
+      @error_catalog&.each(&:freeze)
       @error_catalog&.freeze
       super
     end
@@ -223,7 +227,7 @@ module Reclamo
     def execute_request(request)
       emit(:request, request)
       result, error, duration = timed_dispatch(request)
-      error ? handle_dispatch_error(request, error, duration) : handle_dispatch_success(request, result)
+      error ? handle_dispatch_error(request:, error:, duration:) : handle_dispatch_success(request, result)
     end
 
     def timed_dispatch(request)
@@ -242,7 +246,7 @@ module Reclamo
       request.notification? ? nil : Response.success(result, request.id)
     end
 
-    def handle_dispatch_error(request, error, _duration)
+    def handle_dispatch_error(request:, error:, duration:) # rubocop:disable Lint/UnusedMethodArgument
       return nil if request.notification?
 
       code, message, data = error_details(error)

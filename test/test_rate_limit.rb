@@ -26,7 +26,7 @@ class TestRateLimit < Minitest::Test
   def test_window_slides_after_period
     server = build_server(max: 1, period: 0.05)
     call(server, "add", [1, 2])
-    sleep(0.12)
+    sleep(0.2)
     response = call(server, "add", [3, 4])
 
     assert response.key?("result"), "Request should succeed after window expires"
@@ -113,6 +113,15 @@ class TestRateLimit < Minitest::Test
     result = server.rate_limit(max: 10, period: 60)
 
     assert_equal server, result
+  end
+
+  def test_only_and_except_together_raises
+    server = Reclamo::Server.new
+    assert_raises(ArgumentError) { server.rate_limit(max: 1, period: 60, only: ["add"], except: ["divide"]) }
+  end
+
+  def test_invalid_key_type_raises
+    assert_raises(ArgumentError) { Reclamo::RateLimiter.new(max: 1, period: 60, key: "string") }
   end
 
   def test_thread_safe

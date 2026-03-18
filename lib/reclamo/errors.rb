@@ -38,7 +38,7 @@ module Reclamo
   class ApplicationError < Error
     attr_reader :code, :rpc_data
 
-    def initialize(code, message, data = nil)
+    def initialize(code:, message:, data: nil)
       raise ArgumentError, "error code must be an Integer, got #{code.class}" unless code.is_a?(Integer)
 
       if code.between?(RESERVED_ERROR_MIN, RESERVED_ERROR_MAX)
@@ -56,7 +56,7 @@ module Reclamo
   class ServerError < Error
     attr_reader :code, :rpc_data
 
-    def initialize(code, message, data = nil)
+    def initialize(code:, message:, data: nil)
       unless code.is_a?(Integer) && code.between?(SERVER_ERROR_MIN, SERVER_ERROR_MAX)
         raise ArgumentError,
               "server error code must be in range (#{SERVER_ERROR_MIN}..#{SERVER_ERROR_MAX}), got #{code}"
@@ -72,7 +72,7 @@ module Reclamo
 
   class RequestTimeout < ServerError
     def initialize(_message = nil)
-      super(REQUEST_TIMEOUT, "Request timeout")
+      super(code: REQUEST_TIMEOUT, message: "Request timeout")
     end
   end
 end

@@ -8,7 +8,7 @@ module Reclamo
       @json = json
     end
 
-    def stub(method, params, result)
+    def stub(method, params:, result:)
       @stubs[[method.to_s, normalize(params)]] = result
       self
     end
@@ -49,7 +49,7 @@ module Reclamo
       id = data["id"]
       result = lookup(method, params)
 
-      return nil unless id
+      return nil unless data.key?("id")
 
       if result == :__no_stub__
         @json.generate(Response.error(METHOD_NOT_FOUND, id, data: method))

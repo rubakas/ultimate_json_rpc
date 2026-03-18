@@ -34,12 +34,12 @@ class TestProfiler < Minitest::Test
     server = Reclamo::Server.new
     server.expose_method("fast") { 1 }
     server.expose_method("slow") do
-      sleep(0.05)
+      sleep(0.15)
       2
     end
     profiler = Reclamo::Profiler.new(server)
 
-    rpc(server, "fast", nil)
+    3.times { rpc(server, "fast", nil) }
     rpc(server, "slow", nil)
 
     assert_operator profiler["fast"][:max], :<, profiler["slow"][:min]

@@ -112,10 +112,12 @@ class TestServerApplicationError < Minitest::Test
   def setup
     @server = Reclamo::Server.new
     @server.expose_method("fail_custom") do
-      raise Reclamo::ApplicationError.new(42, "Custom error", { "detail" => "something went wrong" })
+      raise Reclamo::ApplicationError.new(
+        code: 42, message: "Custom error", data: { "detail" => "something went wrong" }
+      )
     end
     @server.expose_method("fail_simple") do
-      raise Reclamo::ApplicationError.new(100, "Simple failure")
+      raise Reclamo::ApplicationError.new(code: 100, message: "Simple failure")
     end
   end
 
@@ -146,7 +148,7 @@ class TestServerApplicationError < Minitest::Test
   def test_application_error_with_false_data
     server = Reclamo::Server.new
     server.expose_method("fail_false") do
-      raise Reclamo::ApplicationError.new(42, "Boolean error", false)
+      raise Reclamo::ApplicationError.new(code: 42, message: "Boolean error", data: false)
     end
 
     request = { "jsonrpc" => "2.0", "method" => "fail_false", "id" => 1 }
@@ -158,7 +160,7 @@ class TestServerApplicationError < Minitest::Test
   def test_application_error_with_zero_data
     server = Reclamo::Server.new
     server.expose_method("fail_zero") do
-      raise Reclamo::ApplicationError.new(42, "Zero error", 0)
+      raise Reclamo::ApplicationError.new(code: 42, message: "Zero error", data: 0)
     end
 
     request = { "jsonrpc" => "2.0", "method" => "fail_zero", "id" => 1 }
@@ -168,32 +170,32 @@ class TestServerApplicationError < Minitest::Test
   end
 
   def test_application_error_rejects_reserved_codes
-    assert_raises(ArgumentError) { Reclamo::ApplicationError.new(-32_700, "Parse error") }
-    assert_raises(ArgumentError) { Reclamo::ApplicationError.new(-32_600, "Invalid") }
-    assert_raises(ArgumentError) { Reclamo::ApplicationError.new(-32_000, "Server error") }
-    assert_raises(ArgumentError) { Reclamo::ApplicationError.new(-32_768, "Edge of range") }
+    assert_raises(ArgumentError) { Reclamo::ApplicationError.new(code: -32_700, message: "Parse error") }
+    assert_raises(ArgumentError) { Reclamo::ApplicationError.new(code: -32_600, message: "Invalid") }
+    assert_raises(ArgumentError) { Reclamo::ApplicationError.new(code: -32_000, message: "Server error") }
+    assert_raises(ArgumentError) { Reclamo::ApplicationError.new(code: -32_768, message: "Edge of range") }
   end
 
   def test_application_error_server_range_mentions_server_error
-    err = assert_raises(ArgumentError) { Reclamo::ApplicationError.new(-32_050, "In range") }
+    err = assert_raises(ArgumentError) { Reclamo::ApplicationError.new(code: -32_050, message: "In range") }
     assert_match(/ServerError/, err.message)
   end
 
   def test_application_error_allows_non_reserved_codes
-    err = Reclamo::ApplicationError.new(-31_999, "Just outside range")
+    err = Reclamo::ApplicationError.new(code: -31_999, message: "Just outside range")
     assert_equal(-31_999, err.code)
 
-    err2 = Reclamo::ApplicationError.new(-32_769, "Below range")
+    err2 = Reclamo::ApplicationError.new(code: -32_769, message: "Below range")
     assert_equal(-32_769, err2.code)
 
-    err3 = Reclamo::ApplicationError.new(1, "Positive code")
+    err3 = Reclamo::ApplicationError.new(code: 1, message: "Positive code")
     assert_equal 1, err3.code
   end
 
   def test_application_error_rejects_non_integer_code
-    assert_raises(ArgumentError) { Reclamo::ApplicationError.new("42", "String code") }
-    assert_raises(ArgumentError) { Reclamo::ApplicationError.new(1.5, "Float code") }
-    assert_raises(ArgumentError) { Reclamo::ApplicationError.new(nil, "Nil code") }
+    assert_raises(ArgumentError) { Reclamo::ApplicationError.new(code: "42", message: "String code") }
+    assert_raises(ArgumentError) { Reclamo::ApplicationError.new(code: 1.5, message: "Float code") }
+    assert_raises(ArgumentError) { Reclamo::ApplicationError.new(code: nil, message: "Nil code") }
   end
 end
 
@@ -225,29 +227,29 @@ end
 
 class TestServerError < Minitest::Test
   def test_server_error_allows_server_error_range
-    err = Reclamo::ServerError.new(-32_000, "Server busy")
+    err = Reclamo::ServerError.new(code: -32_000, message: "Server busy")
     assert_equal(-32_000, err.code)
     assert_equal "Server busy", err.message
 
-    err2 = Reclamo::ServerError.new(-32_099, "Edge of range")
+    err2 = Reclamo::ServerError.new(code: -32_099, message: "Edge of range")
     assert_equal(-32_099, err2.code)
   end
 
   def test_server_error_rejects_codes_outside_range
-    assert_raises(ArgumentError) { Reclamo::ServerError.new(-32_100, "Too low") }
-    assert_raises(ArgumentError) { Reclamo::ServerError.new(-31_999, "Too high") }
-    assert_raises(ArgumentError) { Reclamo::ServerError.new(1, "Positive") }
+    assert_raises(ArgumentError) { Reclamo::ServerError.new(code: -32_100, message: "Too low") }
+    assert_raises(ArgumentError) { Reclamo::ServerError.new(code: -31_999, message: "Too high") }
+    assert_raises(ArgumentError) { Reclamo::ServerError.new(code: 1, message: "Positive") }
   end
 
   def test_server_error_with_data
-    err = Reclamo::ServerError.new(-32_000, "Busy", { "retry_after" => 5 })
+    err = Reclamo::ServerError.new(code: -32_000, message: "Busy", data: { "retry_after" => 5 })
     assert_equal({ "retry_after" => 5 }, err.rpc_data)
   end
 
   def test_server_error_in_handler
     server = Reclamo::Server.new
     server.expose_method("shutdown") do
-      raise Reclamo::ServerError.new(-32_001, "Server shutting down")
+      raise Reclamo::ServerError.new(code: -32_001, message: "Server shutting down")
     end
 
     request = { "jsonrpc" => "2.0", "method" => "shutdown", "id" => 1 }
@@ -260,11 +262,18 @@ class TestServerError < Minitest::Test
   def test_server_error_notification_returns_nil
     server = Reclamo::Server.new
     server.expose_method("shutdown") do
-      raise Reclamo::ServerError.new(-32_001, "Shutting down")
+      raise Reclamo::ServerError.new(code: -32_001, message: "Shutting down")
     end
 
     request = { "jsonrpc" => "2.0", "method" => "shutdown" }
     assert_nil server.handle(JSON.generate(request))
+  end
+end
+
+class TestExposeErrorsPredicate < Minitest::Test
+  def test_expose_errors_predicate
+    refute Reclamo::Server.new.expose_errors?
+    assert Reclamo::Server.new(expose_errors: true).expose_errors?
   end
 end
 
@@ -463,7 +472,7 @@ class TestExposeErrorsOption < Minitest::Test
 
   def test_application_error_always_exposed
     server = Reclamo::Server.new
-    server.expose_method("fail") { raise Reclamo::ApplicationError.new(42, "Custom", "detail") }
+    server.expose_method("fail") { raise Reclamo::ApplicationError.new(code: 42, message: "Custom", data: "detail") }
 
     request = { "jsonrpc" => "2.0", "method" => "fail", "id" => 1 }
     response = JSON.parse(server.handle(JSON.generate(request)))
@@ -474,7 +483,7 @@ class TestExposeErrorsOption < Minitest::Test
 
   def test_server_error_always_exposed
     server = Reclamo::Server.new
-    server.expose_method("fail") { raise Reclamo::ServerError.new(-32_001, "Shutting down", "retry") }
+    server.expose_method("fail") { raise Reclamo::ServerError.new(code: -32_001, message: "Shutting down", data: "retry") }
 
     request = { "jsonrpc" => "2.0", "method" => "fail", "id" => 1 }
     response = JSON.parse(server.handle(JSON.generate(request)))

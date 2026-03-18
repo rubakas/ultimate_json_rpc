@@ -79,6 +79,12 @@ class TestDocs < Minitest::Test
     assert_match(/\*\*Returns:\*\* `number`/, md)
   end
 
+  def test_return_type_from_string_value
+    server = Reclamo::Server.new
+    server.expose_method("greet", returns: "string") { "hi" }
+    assert_match(/\*\*Returns:\*\* `string`/, Reclamo::Docs.new(server).to_markdown)
+  end
+
   def test_deprecated_method
     server = Reclamo::Server.new
     server.expose_method("old", deprecated: "Use new_method instead") { "old" }
@@ -98,7 +104,7 @@ class TestDocs < Minitest::Test
   def test_error_catalog
     server = Reclamo::Server.new
     server.expose_method("ping") { "pong" }
-    server.register_error(42, "InsufficientFunds", "Account balance too low")
+    server.register_error(code: 42, message: "InsufficientFunds", description: "Account balance too low")
     md = Reclamo::Docs.new(server).to_markdown
 
     assert_match(/## Error Codes/, md)
@@ -108,7 +114,7 @@ class TestDocs < Minitest::Test
   def test_pipe_in_error_description_is_escaped
     server = Reclamo::Server.new
     server.expose_method("ping") { "pong" }
-    server.register_error(42, "Pipe|Error", "Contains | chars")
+    server.register_error(code: 42, message: "Pipe|Error", description: "Contains | chars")
     md = Reclamo::Docs.new(server).to_markdown
 
     assert_match(/Pipe\\|Error/, md)
@@ -148,7 +154,7 @@ class TestDocs < Minitest::Test
     server.expose(Calculator, descriptions: { add: "Add two numbers" },
                               params_schema: { add: { left: { "type" => "number" }, right: { "type" => "number" } } },
                               returns: { add: { "type" => "number" } })
-    server.register_error(42, "Overflow", "Result too large")
+    server.register_error(code: 42, message: "Overflow", description: "Result too large")
     md = Reclamo::Docs.new(server).to_markdown
 
     assert_match(/# Math API/, md)

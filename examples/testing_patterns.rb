@@ -34,8 +34,8 @@ puts "rpc_call error: #{error_response["error"]["code"]}"
 puts "\n=== Mock Server ==="
 
 mock = Reclamo::MockServer.new
-mock.stub("users.list", nil, [{ "id" => 1, "name" => "Alice" }])
-mock.stub("users.get", { "id" => 1 }, { "id" => 1, "name" => "Alice" })
+mock.stub("users.list", params: nil, result: [{ "id" => 1, "name" => "Alice" }])
+mock.stub("users.get", params: { "id" => 1 }, result: { "id" => 1, "name" => "Alice" })
 mock.stub_any("health", "ok")
 
 puts "Mock list: #{mock.handle('{"jsonrpc":"2.0","method":"users.list","id":1}')}"

@@ -22,7 +22,7 @@ class TestServerMiddleware < Minitest::Test
     server = Reclamo::Server.new
     server.expose(Calculator)
     server.use do |request, next_call|
-      raise Reclamo::ApplicationError.new(403, "Forbidden") if request.method_name == "divide"
+      raise Reclamo::ApplicationError.new(code: 403, message: "Forbidden") if request.method_name == "divide"
 
       next_call.call
     end
@@ -190,7 +190,7 @@ class TestServerMiddlewareEdgeCases < Minitest::Test
   def test_server_error_from_middleware
     server = Reclamo::Server.new
     server.expose(Calculator)
-    server.use { |_request, _next_call| raise Reclamo::ServerError.new(-32_050, "Rate limited") }
+    server.use { |_request, _next_call| raise Reclamo::ServerError.new(code: -32_050, message: "Rate limited") }
 
     request = { "jsonrpc" => "2.0", "method" => "add", "params" => [1, 2], "id" => 1 }
     response = JSON.parse(server.handle(JSON.generate(request)))
@@ -203,7 +203,7 @@ class TestServerMiddlewareEdgeCases < Minitest::Test
     server = Reclamo::Server.new
     server.expose(Calculator)
     server.use do |request, _next_call|
-      raise Reclamo::ApplicationError.new(403, "Forbidden") if request.method_name == "add"
+      raise Reclamo::ApplicationError.new(code: 403, message: "Forbidden") if request.method_name == "add"
     end
 
     request = { "jsonrpc" => "2.0", "method" => "add", "params" => [1, 2], "id" => 1 }

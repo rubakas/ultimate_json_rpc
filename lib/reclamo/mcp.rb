@@ -8,6 +8,7 @@ module Reclamo
 
     def initialize(server, input: $stdin, output: $stdout, json: JSON)
       @app_server = server
+      @app_server.freeze
       @json = json
       @methods_cache = server.methods_info
       @methods_index = @methods_cache.to_h { |m| [m["name"], m] }

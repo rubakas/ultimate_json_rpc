@@ -15,5 +15,6 @@ module Reclamo
     end
   end
 
+  # Intentional load-time patching: adds log_to to Server when reclamo/logging is required.
   Server.include(Logging)
 end

@@ -86,7 +86,7 @@ end
 
 # Reject unauthorized calls
 server.use do |request, next_call|
-  raise Reclamo::ApplicationError.new(403, "Forbidden") unless authorized?(request)
+  raise Reclamo::ApplicationError.new(code: 403, message: "Forbidden") unless authorized?(request)
 
   next_call.call
 end
@@ -101,7 +101,7 @@ Target specific methods or namespaces with `only:` / `except:`, supporting glob 
 ```ruby
 # Only run for admin namespace methods
 server.use(only: ["admin.*"]) do |request, next_call|
-  raise Reclamo::ApplicationError.new(403, "Forbidden") unless admin?(request)
+  raise Reclamo::ApplicationError.new(code: 403, message: "Forbidden") unless admin?(request)
   next_call.call
 end
 
@@ -250,8 +250,8 @@ Returns `ApplicationError` (code 403 by default) when the block returns falsy.
 Register application-specific error codes for discovery:
 
 ```ruby
-server.register_error(42, "InsufficientFunds", "Account balance too low")
-server.register_error(43, "AccountLocked")
+server.register_error(code: 42, message: "InsufficientFunds", description: "Account balance too low")
+server.register_error(code: 43, message: "AccountLocked")
 ```
 
 Registered errors appear in `rpc.discover` under `components.errors`, so consumers know which error codes to expect.
@@ -261,8 +261,8 @@ Registered errors appear in `rpc.discover` under `components.errors`, so consume
 Raise `ApplicationError` for custom error codes, or `ServerError` for implementation-defined errors:
 
 ```ruby
-raise Reclamo::ApplicationError.new(42, "Custom error", { "detail" => "info" })
-raise Reclamo::ServerError.new(-32_001, "Server shutting down")
+raise Reclamo::ApplicationError.new(code: 42, message: "Custom error", data: { "detail" => "info" })
+raise Reclamo::ServerError.new(code: -32_001, message: "Server shutting down")
 ```
 
 Ruby's `ArgumentError` automatically maps to JSON-RPC Invalid params (`-32602`). All other exceptions become Internal error (`-32603`).
@@ -441,8 +441,8 @@ Canned responses for contract testing:
 require "reclamo/mock_server"
 
 mock = Reclamo::MockServer.new
-mock.stub("add", [2, 3], 5)
-mock.stub("greet", { "name" => "Alice" }, "Hi Alice")
+mock.stub("add", params: [2, 3], result: 5)
+mock.stub("greet", params: { "name" => "Alice" }, result: "Hi Alice")
 mock.stub_any("ping", "pong")  # matches any params
 
 response = mock.handle('{"jsonrpc":"2.0","method":"add","params":[2,3],"id":1}')

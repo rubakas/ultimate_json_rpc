@@ -20,14 +20,14 @@ module Reclamo
     attr_reader code: Integer
     attr_reader rpc_data: untyped
 
-    def initialize: (Integer, String, ?untyped) -> void
+    def initialize: (code: Integer, message: String, ?data: untyped) -> void
   end
 
   class ServerError < Error
     attr_reader code: Integer
     attr_reader rpc_data: untyped
 
-    def initialize: (Integer, String, ?untyped) -> void
+    def initialize: (code: Integer, message: String, ?data: untyped) -> void
   end
 
   REQUEST_TIMEOUT: Integer
@@ -99,7 +99,7 @@ module Reclamo
     def expose_method: (String | Symbol, ?callable, ?description: String?, ?returns: untyped, ?deprecated: (bool | String)?, ?params_schema: Hash[String | Symbol, untyped]?) ?{ (*untyped) -> untyped } -> self
     def use: (?only: Array[String | Symbol] | String | Symbol | nil, ?except: Array[String | Symbol] | String | Symbol | nil) { (Request, Proc) -> untyped } -> self
     def on: (Symbol) { (*untyped) -> void } -> self
-    def register_error: (Integer, String, ?String?) -> self
+    def register_error: (code: Integer, message: String, ?description: String?) -> self
     def authorize: (*String, ?code: Integer, ?message: String) { (Request) -> boolish } -> self
     def to_proc: () -> Proc
     def inspect: () -> String
@@ -144,6 +144,7 @@ module Reclamo
     def initialize: (Server) -> void
     def on_message: (untyped) -> String?
     def call: (untyped, untyped) -> void
+    def freeze: () -> self
   end
 
   class MCP
@@ -188,7 +189,7 @@ module Reclamo
 
   class MockServer
     def initialize: (?json: _JsonAdapter) -> void
-    def stub: (String | Symbol, untyped, untyped) -> self
+    def stub: (String | Symbol, params: untyped, result: untyped) -> self
     def stub_any: (String | Symbol, untyped) -> self
     def handle: (String) -> String?
     def handle_parsed: (untyped) -> String?
@@ -203,7 +204,7 @@ module Reclamo
     def rpc_call: (Server, String, ?params: untyped, ?id: String | Integer) -> Hash[String, untyped]
     def rpc_notify: (Server, String, ?params: untyped) -> String?
     def rpc_batch: (Server, *Hash[String, untyped]) -> Array[Hash[String, untyped]]?
-    def assert_rpc_success: (Hash[String, untyped], ?untyped, ?String?) -> void
+    def assert_rpc_success: (Hash[String, untyped], ?expected: untyped, ?msg: String?) -> void
     def assert_rpc_error: (Hash[String, untyped], ?code: Integer?, ?message: String?, ?msg: String?) -> void
     def assert_rpc_notification: (Server, String, ?params: untyped, ?msg: String?) -> void
   end

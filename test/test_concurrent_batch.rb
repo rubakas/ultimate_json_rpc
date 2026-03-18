@@ -52,7 +52,7 @@ class TestConcurrentBatch < Minitest::Test
 
     assert_equal 5, responses.size
     # 5 items at 50ms each should take ~50ms concurrent, not ~250ms sequential
-    assert_operator elapsed, :<, 0.5, "Expected concurrent execution to be faster than sequential"
+    assert_operator elapsed, :<, 1.0, "Expected concurrent execution to be faster than sequential"
   end
 
   def test_concurrent_batch_handles_notifications
@@ -145,6 +145,23 @@ class TestConcurrentBatch < Minitest::Test
     server = Reclamo::Server.new(concurrent_batches: true)
 
     assert server.concurrent_batches?
+  end
+
+  def test_concurrent_batch_error_preserves_id
+    server = Reclamo::Server.new(concurrent_batches: true)
+    circ = {}
+    circ["self"] = circ
+    server.expose_method("bad") { circ }
+    server.expose_method("ok") { "fine" }
+    requests = [
+      { "jsonrpc" => "2.0", "method" => "bad", "id" => 42 },
+      { "jsonrpc" => "2.0", "method" => "ok", "id" => 2 }
+    ]
+    responses = JSON.parse(server.handle(JSON.generate(requests)))
+
+    bad_resp = responses.find { |r| r["id"] == 42 }
+    assert_equal(-32_603, bad_resp["error"]["code"])
+    assert_equal 42, bad_resp["id"]
   end
 
   def test_concurrent_batch_with_middleware

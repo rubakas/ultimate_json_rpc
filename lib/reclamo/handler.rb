@@ -103,7 +103,9 @@ module Reclamo
       prefix = namespace.to_s.then { |ns| ns.empty? ? "" : "#{ns}." }
       methods = filter_methods(callable_methods(target), only: only, except: except)
       Kernel.warn "Reclamo: expose registered 0 methods from #{target.inspect}" if methods.empty?
-      methods.each { |m| register_exposed(prefix, m, target, descriptions, returns, deprecated, params_schema) }
+      methods.each do |m|
+        register_exposed(prefix:, method_name: m, target:, descriptions:, returns:, deprecated:, params_schema:)
+      end
     end
 
     def expose_method(name, callable = nil, description: nil, returns: nil, deprecated: nil, params_schema: nil,
@@ -143,20 +145,20 @@ module Reclamo
     def method_info(name)
       callable = resolve_entry(@targets[name])
       info = { "name" => name }
-      add_method_metadata(info, name, callable)
+      add_method_metadata(info:, name:, callable:)
       info
     end
 
-    def add_method_metadata(info, name, callable)
+    def add_method_metadata(info:, name:, callable:)
       info["description"] = @descriptions[name] if @descriptions.key?(name)
-      add_params(info, name, callable)
+      add_params(info:, name:, callable:)
       info["result"] = build_result(@returns[name]) if @returns.key?(name)
       info["deprecated"] = @deprecated[name] if @deprecated.key?(name)
     end
 
-    def add_params(info, name, callable)
+    def add_params(info:, name:, callable:)
       schema = @params_schemas[name]
-      params = callable.parameters.filter_map { |type, pname| param_descriptor(type, pname, schema) }
+      params = callable.parameters.filter_map { |type, pname| param_descriptor(type:, pname:, schema:) }
       info["params"] = params unless params.empty?
     end
 
@@ -172,26 +174,27 @@ module Reclamo
       entry.is_a?(Array) ? entry[0].method(entry[1].to_sym) : entry
     end
 
-    def param_descriptor(type, pname, method_schema)
+    def param_descriptor(type:, pname:, schema:)
       return if type == :block
 
       name = pname&.to_s || VARIADIC_DEFAULTS.fetch(type, "arg")
       desc = { "name" => name }.merge(PARAM_FLAGS.fetch(type, {}))
-      desc["schema"] = method_schema[name] if method_schema&.key?(name)
+      desc["schema"] = schema[name] if schema&.key?(name)
       desc
     end
 
-    def register_exposed(prefix, method_name, target, descriptions, returns, deprecated, params_schema)
+    def register_exposed(prefix:, method_name:, target:, descriptions:, returns:, deprecated:, params_schema:)
       full_name = "#{prefix}#{method_name}"
       validate_method_name!(full_name)
       @targets[full_name] = [target, method_name]
-      store_metadata(full_name, method_name, @descriptions, descriptions, &:to_s)
-      store_metadata(full_name, method_name, @returns, returns)
-      store_metadata(full_name, method_name, @deprecated, deprecated)
-      store_metadata(full_name, method_name, @params_schemas, params_schema) { |v| v.transform_keys(&:to_s) }
+      store_metadata(full_name:, method_name:, store: @descriptions, source: descriptions, &:to_s)
+      store_metadata(full_name:, method_name:, store: @returns, source: returns)
+      store_metadata(full_name:, method_name:, store: @deprecated, source: deprecated)
+      store_metadata(full_name:, method_name:, store: @params_schemas,
+                     source: params_schema) { |v| v.transform_keys(&:to_s) }
     end
 
-    def store_metadata(full_name, method_name, store, source, &transform)
+    def store_metadata(full_name:, method_name:, store:, source:, &transform)
       return unless source
 
       value = source[method_name.to_sym] || source[method_name.to_s]

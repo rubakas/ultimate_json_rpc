@@ -19,7 +19,7 @@ module Reclamo
       result ? JSON.parse(result) : nil
     end
 
-    def assert_rpc_success(response, expected = :__not_given__, msg = nil)
+    def assert_rpc_success(response, expected: :__not_given__, msg: nil)
       assert response.key?("result"), msg || "Expected success response but got error: #{response["error"]&.inspect}"
       refute response.key?("error"), msg || "Expected no error but got: #{response["error"]&.inspect}"
       return if expected == :__not_given__

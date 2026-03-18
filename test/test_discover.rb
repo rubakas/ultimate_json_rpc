@@ -7,7 +7,7 @@ class TestServerDiscover < Minitest::Test
   def test_rpc_discover_returns_method_names
     methods = discover_methods_for(Calculator)
 
-    assert_equal "add", methods.find { |m| m["name"] == "add" }["name"]
+    refute_nil(methods.find { |m| m["name"] == "add" })
   end
 
   def test_rpc_discover_includes_param_info

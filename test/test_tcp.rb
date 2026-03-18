@@ -67,6 +67,32 @@ class TestTCP < Minitest::Test
     end
   end
 
+  def test_rejects_connections_beyond_max
+    server = Reclamo::Server.new
+    server.expose(Calculator)
+    tcp = Reclamo::TCP.new(server, port: 0, max_connections: 1)
+
+    thread = Thread.new { tcp.run }
+    deadline = Time.now + 5
+    sleep(0.05) until tcp.running? || Time.now > deadline
+    port = tcp.instance_variable_get(:@tcp_server).addr[1]
+
+    # First connection should work
+    sock1 = TCPSocket.open("127.0.0.1", port)
+    sock1.puts('{"jsonrpc":"2.0","method":"add","params":[1,2],"id":1}')
+    assert_equal 3, JSON.parse(sock1.gets.chomp)["result"]
+
+    # Second connection should be rejected (closed by server)
+    sock2 = TCPSocket.open("127.0.0.1", port)
+    sleep(0.1) # Give server time to reject
+    assert_nil sock2.gets, "Second connection should have been closed by server"
+  ensure
+    sock1&.close
+    sock2&.close
+    tcp&.stop
+    thread&.join(2)
+  end
+
   def test_parse_error
     with_tcp_server do |port|
       response = tcp_call(port, "not json")
@@ -86,7 +112,7 @@ class TestTCP < Minitest::Test
 
     assert tcp.running?
     tcp.stop
-    thread.join(1)
+    assert thread.join(2), "TCP thread did not stop"
 
     refute tcp.running?
   end

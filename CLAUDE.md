@@ -27,6 +27,7 @@ bin/console            # Interactive console with gem loaded
 - Target Ruby version: 3.2
 - `NewCops: enable` in RuboCop config
 - `Style/Documentation` disabled (no doc comments required)
+- Methods with 3 or more arguments must use keyword arguments (positional allowed for the primary subject if natural)
 
 ## Structure
 

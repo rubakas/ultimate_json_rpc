@@ -72,7 +72,7 @@ class TestTestHelpers < Minitest::Test
 
   def test_assert_rpc_success_with_expected_value
     response = rpc_call(@server, "add", params: [2, 3])
-    assert_rpc_success(response, 5)
+    assert_rpc_success(response, expected: 5)
   end
 
   def test_assert_rpc_success_fails_for_error_response
@@ -82,14 +82,14 @@ class TestTestHelpers < Minitest::Test
 
   def test_assert_rpc_success_fails_for_wrong_value
     response = rpc_call(@server, "add", params: [2, 3])
-    assert_raises(Minitest::Assertion) { assert_rpc_success(response, 99) }
+    assert_raises(Minitest::Assertion) { assert_rpc_success(response, expected: 99) }
   end
 
   def test_assert_rpc_success_with_nil_result
     server = Reclamo::Server.new
     server.expose_method("noop") { nil }
     response = rpc_call(server, "noop")
-    assert_rpc_success(response, nil)
+    assert_rpc_success(response, expected: nil)
   end
 
   # assert_rpc_error

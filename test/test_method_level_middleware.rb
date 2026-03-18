@@ -204,7 +204,7 @@ class TestMethodLevelMiddlewareEdgeCases < Minitest::Test
     server.expose(Calculator)
 
     server.use(only: ["divide"]) do |_request, _next_call|
-      raise Reclamo::ApplicationError.new(403, "Division forbidden")
+      raise Reclamo::ApplicationError.new(code: 403, message: "Division forbidden")
     end
 
     response = call_method("divide", [10, 2], server: server)

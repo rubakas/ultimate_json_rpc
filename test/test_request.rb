@@ -229,7 +229,8 @@ class TestRequestNestingLimit < Minitest::Test
     data = { "jsonrpc" => "2.0", "method" => "foo", "params" => nested, "id" => 1 }
 
     request = Reclamo::Request.new(data)
-    assert request
+    assert_equal "foo", request.method_name
+    assert_predicate request.params, :frozen?
   end
 
   def test_nesting_beyond_max_raises

@@ -33,7 +33,7 @@ module Reclamo
       @mutex.synchronize do
         window = (@windows[bucket] ||= [])
         window.reject! { |t| now - t > @period }
-        raise ApplicationError.new(@code, @message) if window.size >= @max
+        raise ApplicationError.new(code: @code, message: @message) if window.size >= @max
 
         window << now
         evict_stale!(now)
@@ -52,5 +52,6 @@ module Reclamo
     end
   end
 
+  # Intentional load-time patching: adds rate_limit to Server when reclamo/rate_limit is required.
   Server.include(RateLimitSupport)
 end

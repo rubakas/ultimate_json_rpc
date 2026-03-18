@@ -7,7 +7,7 @@ require "json"
 class TestMockServer < Minitest::Test
   def test_stub_returns_canned_result
     mock = Reclamo::MockServer.new
-    mock.stub("add", [2, 3], 5)
+    mock.stub("add", params: [2, 3], result: 5)
     response = call(mock, "add", [2, 3])
 
     assert_equal 5, response["result"]
@@ -15,8 +15,8 @@ class TestMockServer < Minitest::Test
 
   def test_stub_different_params_different_results
     mock = Reclamo::MockServer.new
-    mock.stub("add", [2, 3], 5)
-    mock.stub("add", [10, 20], 30)
+    mock.stub("add", params: [2, 3], result: 5)
+    mock.stub("add", params: [10, 20], result: 30)
 
     assert_equal 5, call(mock, "add", [2, 3])["result"]
     assert_equal 30, call(mock, "add", [10, 20])["result"]
@@ -24,7 +24,7 @@ class TestMockServer < Minitest::Test
 
   def test_stub_with_hash_params
     mock = Reclamo::MockServer.new
-    mock.stub("greet", { "name" => "Alice" }, "Hi Alice")
+    mock.stub("greet", params: { "name" => "Alice" }, result: "Hi Alice")
     response = call(mock, "greet", { "name" => "Alice" })
 
     assert_equal "Hi Alice", response["result"]
@@ -32,7 +32,7 @@ class TestMockServer < Minitest::Test
 
   def test_stub_with_symbol_keys_matches_string_keys
     mock = Reclamo::MockServer.new
-    mock.stub("greet", { name: "Alice" }, "Hi Alice")
+    mock.stub("greet", params: { name: "Alice" }, result: "Hi Alice")
     response = call(mock, "greet", { "name" => "Alice" })
 
     assert_equal "Hi Alice", response["result"]
@@ -40,7 +40,7 @@ class TestMockServer < Minitest::Test
 
   def test_stub_with_nil_params
     mock = Reclamo::MockServer.new
-    mock.stub("ping", nil, "pong")
+    mock.stub("ping", params: nil, result: "pong")
     response = call_no_params(mock, "ping")
 
     assert_equal "pong", response["result"]
@@ -55,7 +55,7 @@ class TestMockServer < Minitest::Test
 
   def test_wrong_params_returns_method_not_found
     mock = Reclamo::MockServer.new
-    mock.stub("add", [2, 3], 5)
+    mock.stub("add", params: [2, 3], result: 5)
     response = call(mock, "add", [99, 99])
 
     assert_equal(-32_601, response["error"]["code"])
@@ -73,7 +73,7 @@ class TestMockServer < Minitest::Test
   def test_exact_stub_takes_precedence_over_any
     mock = Reclamo::MockServer.new
     mock.stub_any("add", "any")
-    mock.stub("add", [2, 3], 5)
+    mock.stub("add", params: [2, 3], result: 5)
 
     assert_equal 5, call(mock, "add", [2, 3])["result"]
     assert_equal "any", call(mock, "add", [99, 99])["result"]
@@ -81,7 +81,7 @@ class TestMockServer < Minitest::Test
 
   def test_notification_returns_nil
     mock = Reclamo::MockServer.new
-    mock.stub("ping", nil, "pong")
+    mock.stub("ping", params: nil, result: "pong")
     request = { "jsonrpc" => "2.0", "method" => "ping" }
 
     assert_nil mock.handle(JSON.generate(request))
@@ -89,8 +89,8 @@ class TestMockServer < Minitest::Test
 
   def test_batch_request
     mock = Reclamo::MockServer.new
-    mock.stub("add", [1, 2], 3)
-    mock.stub("add", [3, 4], 7)
+    mock.stub("add", params: [1, 2], result: 3)
+    mock.stub("add", params: [3, 4], result: 7)
     batch = [
       { "jsonrpc" => "2.0", "method" => "add", "params" => [1, 2], "id" => 1 },
       { "jsonrpc" => "2.0", "method" => "add", "params" => [3, 4], "id" => 2 }
@@ -118,14 +118,14 @@ class TestMockServer < Minitest::Test
 
   def test_chainable
     mock = Reclamo::MockServer.new
-    result = mock.stub("a", nil, 1).stub("b", nil, 2).stub_any("c", 3)
+    result = mock.stub("a", params: nil, result: 1).stub("b", params: nil, result: 2).stub_any("c", 3)
 
     assert_instance_of Reclamo::MockServer, result
   end
 
   def test_complex_result
     mock = Reclamo::MockServer.new
-    mock.stub("info", nil, { "status" => "ok", "items" => [1, 2, 3] })
+    mock.stub("info", params: nil, result: { "status" => "ok", "items" => [1, 2, 3] })
     response = call_no_params(mock, "info")
 
     assert_equal "ok", response["result"]["status"]
@@ -138,14 +138,14 @@ class TestMockServer < Minitest::Test
       def self.generate(obj) = JSON.generate(obj)
     end
     mock = Reclamo::MockServer.new(json: adapter)
-    mock.stub("add", [2, 3], 5)
+    mock.stub("add", params: [2, 3], result: 5)
     response = call(mock, "add", [2, 3])
     assert_equal 5, response["result"]
   end
 
   def test_invalid_id_type_returns_invalid_request
     mock = Reclamo::MockServer.new
-    mock.stub("add", [1, 2], 3)
+    mock.stub("add", params: [1, 2], result: 3)
 
     response = JSON.parse(mock.handle('{"jsonrpc":"2.0","method":"add","params":[1,2],"id":[1]}'))
     assert_equal(-32_600, response["error"]["code"])
@@ -154,9 +154,23 @@ class TestMockServer < Minitest::Test
     assert_equal(-32_600, response["error"]["code"])
   end
 
+  def test_null_id_returns_response
+    mock = Reclamo::MockServer.new
+    mock.stub("add", params: [1, 2], result: 3)
+    response = JSON.parse(mock.handle('{"jsonrpc":"2.0","method":"add","params":[1,2],"id":null}'))
+    assert_equal 3, response["result"]
+    assert_nil response["id"]
+  end
+
+  def test_stub_any_notification_returns_nil
+    mock = Reclamo::MockServer.new
+    mock.stub_any("echo", "stubbed")
+    assert_nil mock.handle(JSON.generate({ "jsonrpc" => "2.0", "method" => "echo", "params" => [1] }))
+  end
+
   def test_handle_parsed
     mock = Reclamo::MockServer.new
-    mock.stub("add", [2, 3], 5)
+    mock.stub("add", params: [2, 3], result: 5)
     data = { "jsonrpc" => "2.0", "method" => "add", "params" => [2, 3], "id" => 1 }
     response = JSON.parse(mock.handle_parsed(data))
 

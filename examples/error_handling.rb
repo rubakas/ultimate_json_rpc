@@ -12,8 +12,8 @@ require "logger"
 
 module BankService
   def self.transfer(from:, to:, amount:)
-    raise Reclamo::ApplicationError.new(1001, "Insufficient funds", { balance: 50 }) if amount > 100
-    raise Reclamo::ApplicationError.new(1002, "Account frozen") if from == "frozen"
+    raise Reclamo::ApplicationError.new(code: 1001, message: "Insufficient funds", data: { balance: 50 }) if amount > 100
+    raise Reclamo::ApplicationError.new(code: 1002, message: "Account frozen") if from == "frozen"
 
     { from:, to:, amount:, status: "completed" }
   end
@@ -21,8 +21,8 @@ end
 
 server = Reclamo::Server.new(name: "Bank API", version: "1.0", expose_errors: true)
 server.expose(BankService, descriptions: { transfer: "Transfer money between accounts" })
-server.register_error(1001, "InsufficientFunds", "Account balance too low for transfer")
-server.register_error(1002, "AccountFrozen", "Account is frozen and cannot transact")
+server.register_error(code: 1001, message: "InsufficientFunds", description: "Account balance too low for transfer")
+server.register_error(code: 1002, message: "AccountFrozen", description: "Account is frozen and cannot transact")
 server.log_to(Logger.new($stdout, level: :info))
 
 # Successful transfer

@@ -21,5 +21,10 @@ module Reclamo
         socket.send(response) if response
       end
     end
+
+    def freeze
+      @server.freeze
+      super
+    end
   end
 end

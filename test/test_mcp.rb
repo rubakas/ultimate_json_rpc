@@ -229,6 +229,16 @@ class TestMCPToolsCall < Minitest::Test
   end
 end
 
+class TestMCPFreezes < Minitest::Test
+  def test_freezes_server_on_init
+    server = Reclamo::Server.new
+    server.expose(Calculator)
+    Reclamo::MCP.new(server)
+
+    assert_predicate server, :frozen?
+  end
+end
+
 class TestMCPLifecycle < Minitest::Test
   def test_running_returns_false_before_run
     server = Reclamo::Server.new
@@ -276,6 +286,7 @@ module MCPTestHelper
 end
 
 # Include the helper in all MCP test classes
-[TestMCPInitialize, TestMCPToolsList, TestMCPToolsCall, TestMCPLifecycle, TestMCPNotifications].each do |klass|
+[TestMCPInitialize, TestMCPToolsList, TestMCPToolsCall, TestMCPFreezes,
+ TestMCPLifecycle, TestMCPNotifications].each do |klass|
   klass.include(MCPTestHelper)
 end
