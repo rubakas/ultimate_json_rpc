@@ -47,9 +47,36 @@ module Reclamo
   end
   private_constant :OpenRPCBuilder
 
+  module ServerExtensions
+    def register_error(code, message, description = nil)
+      raise ArgumentError, "error code must be an Integer" unless code.is_a?(Integer)
+
+      @error_catalog ||= []
+      raise ArgumentError, "error code #{code} is already registered" if @error_catalog.any? { |e| e["code"] == code }
+
+      entry = { "code" => code, "message" => message.to_s }
+      entry["data"] = description.to_s if description
+      @error_catalog << entry
+      self
+    end
+
+    def authorize(*patterns, code: 403, message: "Forbidden", &block)
+      raise ArgumentError, "block required" unless block
+
+      opts = patterns.empty? ? {} : { only: patterns }
+      use(**opts) do |request, next_call|
+        raise ApplicationError.new(code, message) unless block.call(request)
+
+        next_call.call
+      end
+    end
+  end
+  private_constant :ServerExtensions
+
   class Server
     include BatchProcessor
     include OpenRPCBuilder
+    include ServerExtensions
 
     attr_reader :name, :version, :description, :max_batch_size
 
@@ -95,18 +122,6 @@ module Reclamo
       raise ArgumentError, "unknown event: #{event}" unless HOOK_EVENTS.include?(event)
 
       @hooks[event] << block
-      self
-    end
-
-    def register_error(code, message, description = nil)
-      raise ArgumentError, "error code must be an Integer" unless code.is_a?(Integer)
-
-      @error_catalog ||= []
-      raise ArgumentError, "error code #{code} is already registered" if @error_catalog.any? { |e| e["code"] == code }
-
-      entry = { "code" => code, "message" => message.to_s }
-      entry["data"] = description.to_s if description
-      @error_catalog << entry
       self
     end
 

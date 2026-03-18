@@ -55,6 +55,7 @@ bin/console            # Interactive console with gem loaded
 - `test/test_handler.rb` — handler unit tests, freeze, param descriptors, dangerous methods
 - `test/test_error_catalog.rb` — error catalog: register_error, discover output, freeze, validation
 - `test/test_errors.rb` — server errors, application errors, server errors, request/param validation, expose_errors option
+- `test/test_authorize.rb` — method-level authorization: patterns, globs, context, custom codes, denial
 - `test/test_batch.rb` — batch requests, batch size limits
 - `test/test_concurrent_batch.rb` — concurrent batch execution: threading, order, timeout, middleware, hooks
 - `test/test_custom_json.rb` — custom JSON serializer: parse, generate, errors, batch, discover

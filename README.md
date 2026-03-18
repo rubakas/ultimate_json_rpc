@@ -193,6 +193,19 @@ server.expose(Calculator, deprecated: { add: "Use add_v2" })
 
 Deprecated methods still work normally but appear flagged in `rpc.discover` output.
 
+### Authorization
+
+Declarative access control with glob patterns:
+
+```ruby
+server.authorize("admin.*") { |req| req.context[:role] == :admin }
+server.authorize("users.delete", code: 1001, message: "Insufficient permissions") do |req|
+  req.context[:permissions]&.include?("delete")
+end
+```
+
+Returns `ApplicationError` (code 403 by default) when the block returns falsy.
+
 ### Error catalog
 
 Register application-specific error codes for discovery:
@@ -258,6 +271,7 @@ server.handle(request)  # still works
 - **Request timeout** — `Server.new(timeout: 5)` prevents slow handlers from blocking
 - **Method deprecation** — mark methods as deprecated in discovery metadata
 - **Error catalog** — `register_error` documents app error codes in `rpc.discover`
+- **Authorization** — `authorize("admin.*") { |req| ... }` for declarative access control
 - **Error handling** — standard JSON-RPC error codes, `ApplicationError`, and `ServerError`
 - **Error visibility** — `expose_errors: true` to include exception messages in error responses
 - **Security** — dangerous methods (eval, system, exec, etc.) are automatically blocked
