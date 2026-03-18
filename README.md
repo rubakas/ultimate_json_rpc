@@ -53,14 +53,23 @@ server = Reclamo::Server.new
 responses = json_requests.map(&server)
 ```
 
+### Return type annotations
+
+Declare return types for discovery metadata (purely informational, no runtime enforcement):
+
+```ruby
+server.expose_method("add", returns: { "type" => "number" }) { |a, b| a + b }
+server.expose(Calculator, returns: { add: { "type" => "number" } })
+```
+
 ### Service discovery
 
-Built-in `rpc.discover` returns method info including parameter details:
+Built-in `rpc.discover` returns method info including parameter details and return types:
 
 ```ruby
 request = '{"jsonrpc":"2.0","method":"rpc.discover","id":1}'
 server.handle(request)
-# => '{"jsonrpc":"2.0","result":{"methods":[{"name":"add","params":[...]},{"name":"divide","params":[...]}]},"id":1}'
+# => '{"jsonrpc":"2.0","result":{"methods":[{"name":"add","params":[...],"returns":{"type":"number"}}]},"id":1}'
 ```
 
 ### Middleware
@@ -155,6 +164,7 @@ server.handle(request)  # still works
 - **Namespacing** — `server.expose(obj, namespace: "ns")` makes methods callable as `ns.method_name`
 - **Method filtering** — `server.expose(obj, only: [:add])` or `except: [:internal]`
 - **Method descriptions** — `descriptions:` hash or `description:` keyword for discovery
+- **Return type annotations** — `returns:` hash or keyword for discovery metadata
 - **Service metadata** — `name:` and `version:` appear in `rpc.discover` responses
 - **Positional and keyword params** — arrays map to positional args, objects map to keyword args
 - **Service discovery** — built-in `rpc.discover` method with param info

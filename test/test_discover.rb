@@ -172,6 +172,83 @@ class TestServerDiscoverDescriptions < Minitest::Test
   end
 end
 
+class TestServerDiscoverReturns < Minitest::Test
+  include DiscoverHelper
+
+  def test_expose_method_with_returns
+    server = Reclamo::Server.new
+    server.expose_method("add", returns: { "type" => "number" }) { |a, b| a + b }
+    method_info = discover_methods(server).find { |m| m["name"] == "add" }
+
+    assert_equal({ "type" => "number" }, method_info["returns"])
+  end
+
+  def test_expose_with_returns_hash
+    server = Reclamo::Server.new
+    server.expose(Calculator, returns: { add: { "type" => "number" }, divide: { "type" => "number" } })
+    methods = discover_methods(server)
+
+    assert_equal({ "type" => "number" }, methods.find { |m| m["name"] == "add" }["returns"])
+    assert_equal({ "type" => "number" }, methods.find { |m| m["name"] == "divide" }["returns"])
+  end
+
+  def test_expose_with_returns_string_keys
+    server = Reclamo::Server.new
+    server.expose(Calculator, returns: { "add" => { "type" => "integer" } })
+
+    assert_equal({ "type" => "integer" }, discover_methods(server).find { |m| m["name"] == "add" }["returns"])
+  end
+
+  def test_expose_with_returns_and_namespace
+    server = Reclamo::Server.new
+    server.expose(Calculator, namespace: "math", returns: { add: { "type" => "number" } })
+    method_info = discover_methods(server).find { |m| m["name"] == "math.add" }
+
+    assert_equal({ "type" => "number" }, method_info["returns"])
+  end
+
+  def test_omits_returns_when_not_provided
+    server = Reclamo::Server.new
+    server.expose_method("ping") { "pong" }
+
+    refute discover_methods(server).find { |m| m["name"] == "ping" }.key?("returns")
+  end
+
+  def test_returns_with_description
+    server = Reclamo::Server.new
+    server.expose_method("add", description: "Sum", returns: { "type" => "number" }) { |a, b| a + b }
+    method_info = discover_methods(server).find { |m| m["name"] == "add" }
+
+    assert_equal "Sum", method_info["description"]
+    assert_equal({ "type" => "number" }, method_info["returns"])
+  end
+
+  def test_returns_with_callable
+    server = Reclamo::Server.new
+    server.expose_method("double", ->(n) { n * 2 }, returns: { "type" => "number" })
+    method_info = discover_methods(server).find { |m| m["name"] == "double" }
+
+    assert_equal({ "type" => "number" }, method_info["returns"])
+  end
+
+  def test_returns_survives_freeze
+    server = Reclamo::Server.new
+    server.expose_method("add", returns: { "type" => "number" }) { |a, b| a + b }
+    server.freeze
+    method_info = discover_methods(server).find { |m| m["name"] == "add" }
+
+    assert_equal({ "type" => "number" }, method_info["returns"])
+  end
+
+  def test_returns_string_value
+    server = Reclamo::Server.new
+    server.expose_method("greet", returns: "string") { |name| "Hi #{name}" }
+    method_info = discover_methods(server).find { |m| m["name"] == "greet" }
+
+    assert_equal "string", method_info["returns"]
+  end
+end
+
 class TestServerDiscoverServiceInfo < Minitest::Test
   include DiscoverHelper
 

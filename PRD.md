@@ -50,7 +50,7 @@ Schema & discovery:
   Allow methods to declare parameter schemas validated before dispatch. Return `InvalidParams` (-32602) with descriptive messages on mismatch. Schemas feed into `rpc.discover` / OpenRPC output. Declared via `expose_method("add", params_schema: { ... })` or inferred from Ruby signatures with optional type hints.
   *Depends on: nothing (enhances OpenRPC when both are present, but works standalone).*
 
-- [ ] **Return type annotations**
+- [x] **Return type annotations**
   Let methods declare their return type for discovery metadata: `expose_method("add", returns: { type: "number" })`. Purely informational — no runtime enforcement. Feeds into OpenRPC output and enables richer client generation.
   *Depends on: nothing (enhances OpenRPC when both are present).*
 

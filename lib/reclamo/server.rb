@@ -17,13 +17,14 @@ module Reclamo
       @middleware = []
     end
 
-    def expose(target, namespace: nil, only: nil, except: nil, descriptions: nil)
-      @handler.expose(target, namespace: namespace, only: only, except: except, descriptions: descriptions)
+    def expose(target, namespace: nil, only: nil, except: nil, descriptions: nil, returns: nil)
+      @handler.expose(target, namespace: namespace, only: only, except: except,
+                              descriptions: descriptions, returns: returns)
       self
     end
 
-    def expose_method(name, callable = nil, description: nil, &)
-      @handler.expose_method(name, callable, description: description, &)
+    def expose_method(name, callable = nil, description: nil, returns: nil, &)
+      @handler.expose_method(name, callable, description: description, returns: returns, &)
       self
     end
 

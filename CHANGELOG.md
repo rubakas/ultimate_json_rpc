@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `Reclamo::Rack` built-in Rack adapter: Content-Type handling, 200/204/405 responses, `require "reclamo/rack"` to opt in
 - Test assertion helpers: `assert_rpc_success`, `assert_rpc_error`, `assert_rpc_notification` in `reclamo/test_helpers`
 - `Reclamo::Stdio` adapter: newline-delimited JSON-RPC over stdin/stdout with signal handling, `require "reclamo/stdio"`
+- Return type annotations: `returns:` keyword on `expose_method` and `returns:` hash on `expose`, appears in `rpc.discover`
 
 ## [0.2.0] - 2026-03-18
 

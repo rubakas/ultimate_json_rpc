@@ -67,8 +67,8 @@ module Reclamo
 
   class Handler
     def initialize: () -> void
-    def expose: (Module | Object, ?namespace: String | Symbol | nil, ?only: Array[Symbol | String] | Symbol | String | nil, ?except: Array[Symbol | String] | Symbol | String | nil, ?descriptions: Hash[Symbol | String, String]?) -> void
-    def expose_method: (String | Symbol, ?callable?, ?description: String?) ?{ (*untyped) -> untyped } -> void
+    def expose: (Module | Object, ?namespace: String | Symbol | nil, ?only: Array[Symbol | String] | Symbol | String | nil, ?except: Array[Symbol | String] | Symbol | String | nil, ?descriptions: Hash[Symbol | String, String]?, ?returns: Hash[Symbol | String, untyped]?) -> void
+    def expose_method: (String | Symbol, ?callable?, ?description: String?, ?returns: untyped) ?{ (*untyped) -> untyped } -> void
     def call: (String, Array[untyped] | Hash[String, untyped] | nil) -> untyped
     def method?: (String) -> bool
     def methods_list: () -> Array[String]
@@ -85,8 +85,8 @@ module Reclamo
     attr_reader max_batch_size: Integer?
 
     def initialize: (?name: String?, ?version: String?, ?description: String?, ?max_batch_size: Integer?, ?expose_errors: bool) -> void
-    def expose: (Module | Object, ?namespace: String | Symbol | nil, ?only: Array[Symbol | String] | Symbol | String | nil, ?except: Array[Symbol | String] | Symbol | String | nil, ?descriptions: Hash[Symbol | String, String]?) -> self
-    def expose_method: (String | Symbol, ?callable?, ?description: String?) ?{ (*untyped) -> untyped } -> self
+    def expose: (Module | Object, ?namespace: String | Symbol | nil, ?only: Array[Symbol | String] | Symbol | String | nil, ?except: Array[Symbol | String] | Symbol | String | nil, ?descriptions: Hash[Symbol | String, String]?, ?returns: Hash[Symbol | String, untyped]?) -> self
+    def expose_method: (String | Symbol, ?callable?, ?description: String?, ?returns: untyped) ?{ (*untyped) -> untyped } -> self
     def use: (?only: Array[String | Symbol] | String | Symbol | nil, ?except: Array[String | Symbol] | String | Symbol | nil) { (Request, Proc) -> untyped } -> self
     def to_proc: () -> Proc
     def inspect: () -> String

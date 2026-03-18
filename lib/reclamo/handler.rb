@@ -18,35 +18,31 @@ module Reclamo
     def initialize
       @targets = {}
       @descriptions = {}
+      @returns = {}
     end
 
-    def expose(target, namespace: nil, only: nil, except: nil, descriptions: nil)
+    def expose(target, namespace: nil, only: nil, except: nil, descriptions: nil, returns: nil)
       validate_expose_args!(target, only, except)
       prefix = namespace.to_s.then { |ns| ns.empty? ? "" : "#{ns}." }
       methods = filter_methods(callable_methods(target), only: only, except: except)
       Kernel.warn "Reclamo: expose registered 0 methods from #{target.inspect}" if methods.empty?
-      methods.each do |method_name|
-        full_name = "#{prefix}#{method_name}"
-        validate_method_name!(full_name)
-        @targets[full_name] = [target, method_name]
-        store_description(full_name, method_name, descriptions)
-      end
+      methods.each { |m| register_exposed(prefix, m, target, descriptions, returns) }
     end
 
-    def expose_method(name, callable = nil, description: nil, &block)
+    def expose_method(name, callable = nil, description: nil, returns: nil, &block)
       callable = resolve_callable(callable, block)
       name = name.to_s
       validate_method_name!(name)
       @targets[name] = callable
       @descriptions[name] = description.to_s if description
+      @returns[name] = returns if returns
     end
 
     def call(method_name, params)
       entry = @targets[method_name]
       raise MethodNotFound, method_name unless entry
 
-      callable = entry.is_a?(Array) ? entry[0].method(entry[1].to_sym) : entry
-      invoke_callable(callable, params)
+      invoke_callable(resolve_entry(entry), params)
     end
 
     def method?(method_name) = @targets.key?(method_name)
@@ -56,21 +52,24 @@ module Reclamo
     def empty? = @targets.empty?
 
     def freeze
-      @targets.freeze
-      @descriptions.freeze
+      [@targets, @descriptions, @returns].each(&:freeze)
       super
     end
 
     private
 
     def method_info(name)
-      entry = @targets[name]
-      callable = entry.is_a?(Array) ? entry[0].method(entry[1].to_sym) : entry
+      callable = resolve_entry(@targets[name])
       info = { "name" => name }
       info["description"] = @descriptions[name] if @descriptions.key?(name)
       params = callable.parameters.filter_map { |type, pname| param_descriptor(type, pname) }
       info["params"] = params unless params.empty?
+      info["returns"] = @returns[name] if @returns.key?(name)
       info
+    end
+
+    def resolve_entry(entry)
+      entry.is_a?(Array) ? entry[0].method(entry[1].to_sym) : entry
     end
 
     def param_descriptor(type, pname)
@@ -83,11 +82,21 @@ module Reclamo
       desc
     end
 
-    def store_description(full_name, method_name, descriptions)
-      return unless descriptions
+    def register_exposed(prefix, method_name, target, descriptions, returns)
+      full_name = "#{prefix}#{method_name}"
+      validate_method_name!(full_name)
+      @targets[full_name] = [target, method_name]
+      store_metadata(full_name, method_name, @descriptions, descriptions, &:to_s)
+      store_metadata(full_name, method_name, @returns, returns)
+    end
 
-      desc = descriptions[method_name.to_sym] || descriptions[method_name.to_s]
-      @descriptions[full_name] = desc.to_s if desc
+    def store_metadata(full_name, method_name, store, source, &transform)
+      return unless source
+
+      value = source[method_name.to_sym] || source[method_name.to_s]
+      return unless value
+
+      store[full_name] = transform ? transform.call(value) : value
     end
 
     def callable_methods(target)
