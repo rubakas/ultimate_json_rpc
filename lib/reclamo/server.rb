@@ -57,12 +57,21 @@ module Reclamo
       return nil if request.notification?
 
       Response.success(result, request.id)
-    rescue MethodNotFound
-      Response.error(METHOD_NOT_FOUND, request.id)
-    rescue ArgumentError => e
-      Response.error(INVALID_PARAMS, request.id, data: e.message)
     rescue StandardError => e
-      Response.error(INTERNAL_ERROR, request.id, data: e.message)
+      error_response_for(request, e)
+    end
+
+    def error_response_for(request, err)
+      return nil if request.notification?
+
+      case err
+      when MethodNotFound
+        Response.error(METHOD_NOT_FOUND, request.id)
+      when ArgumentError
+        Response.error(INVALID_PARAMS, request.id, data: err.message)
+      else
+        Response.error(INTERNAL_ERROR, request.id, data: err.message)
+      end
     end
   end
 end

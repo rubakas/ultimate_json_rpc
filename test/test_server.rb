@@ -29,7 +29,7 @@ class Greeter
   end
 end
 
-class TestServerBasic < Minitest::Test
+class TestServerCalls < Minitest::Test
   def setup
     @server = Reclamo::Server.new
     @server.expose(Calculator)
@@ -46,7 +46,8 @@ class TestServerBasic < Minitest::Test
   end
 
   def test_namespaced_method_call
-    request = { "jsonrpc" => "2.0", "method" => "greeter.greet", "params" => { "name" => "World" }, "id" => 1 }
+    request = { "jsonrpc" => "2.0", "method" => "greeter.greet",
+                "params" => { "name" => "World" }, "id" => 1 }
     response = JSON.parse(@server.handle(JSON.generate(request)))
 
     assert_equal "Hi, World!", response["result"]
@@ -60,10 +61,62 @@ class TestServerBasic < Minitest::Test
   end
 
   def test_method_call_with_keyword_params
-    request = { "jsonrpc" => "2.0", "method" => "greeter.greet", "params" => { "name" => "Alice" }, "id" => 1 }
+    request = { "jsonrpc" => "2.0", "method" => "greeter.greet",
+                "params" => { "name" => "Alice" }, "id" => 1 }
     response = JSON.parse(@server.handle(JSON.generate(request)))
 
     assert_equal "Hi, Alice!", response["result"]
+  end
+
+  def test_string_id
+    request = { "jsonrpc" => "2.0", "method" => "add", "params" => [1, 2], "id" => "abc" }
+    response = JSON.parse(@server.handle(JSON.generate(request)))
+
+    assert_equal "abc", response["id"]
+    assert_equal 3, response["result"]
+  end
+
+  def test_null_id
+    request = { "jsonrpc" => "2.0", "method" => "add", "params" => [1, 2], "id" => nil }
+    response = JSON.parse(@server.handle(JSON.generate(request)))
+
+    assert_nil response["id"]
+    assert_equal 3, response["result"]
+  end
+
+  def test_result_can_be_nil
+    server = Reclamo::Server.new
+    target = Object.new
+    def target.noop; end
+    server.expose(target)
+
+    request = { "jsonrpc" => "2.0", "method" => "noop", "id" => 1 }
+    response = JSON.parse(server.handle(JSON.generate(request)))
+
+    assert_nil response["result"]
+    assert_equal 1, response["id"]
+  end
+
+  def test_methods_list
+    methods = @server.methods_list
+
+    assert_includes methods, "add"
+    assert_includes methods, "divide"
+    assert_includes methods, "greeter.greet"
+    assert_includes methods, "greeter.hello"
+  end
+
+  def test_expose_returns_self
+    server = Reclamo::Server.new
+
+    assert_equal server, server.expose(Calculator)
+  end
+end
+
+class TestServerErrors < Minitest::Test
+  def setup
+    @server = Reclamo::Server.new
+    @server.expose(Calculator)
   end
 
   def test_method_not_found
@@ -95,12 +148,6 @@ class TestServerBasic < Minitest::Test
     assert_equal(-32_600, response["error"]["code"])
   end
 
-  def test_notification_returns_nil
-    request = { "jsonrpc" => "2.0", "method" => "add", "params" => [1, 2] }
-
-    assert_nil @server.handle(JSON.generate(request))
-  end
-
   def test_internal_error
     request = { "jsonrpc" => "2.0", "method" => "divide", "params" => [1, 0], "id" => 1 }
     response = JSON.parse(@server.handle(JSON.generate(request)))
@@ -116,19 +163,35 @@ class TestServerBasic < Minitest::Test
     assert_equal(-32_600, response["error"]["code"])
   end
 
-  def test_methods_list
-    methods = @server.methods_list
+  def test_invalid_request_not_a_hash
+    response = JSON.parse(@server.handle(JSON.generate("just a string")))
 
-    assert_includes methods, "add"
-    assert_includes methods, "divide"
-    assert_includes methods, "greeter.greet"
-    assert_includes methods, "greeter.hello"
+    assert_equal(-32_600, response["error"]["code"])
+  end
+end
+
+class TestServerNotifications < Minitest::Test
+  def setup
+    @server = Reclamo::Server.new
+    @server.expose(Calculator)
   end
 
-  def test_expose_returns_self
-    server = Reclamo::Server.new
+  def test_notification_returns_nil
+    request = { "jsonrpc" => "2.0", "method" => "add", "params" => [1, 2] }
 
-    assert_equal server, server.expose(Calculator)
+    assert_nil @server.handle(JSON.generate(request))
+  end
+
+  def test_notification_error_returns_nil
+    request = { "jsonrpc" => "2.0", "method" => "divide", "params" => [1, 0] }
+
+    assert_nil @server.handle(JSON.generate(request))
+  end
+
+  def test_notification_method_not_found_returns_nil
+    request = { "jsonrpc" => "2.0", "method" => "nonexistent" }
+
+    assert_nil @server.handle(JSON.generate(request))
   end
 end
 
@@ -173,5 +236,35 @@ class TestServerBatch < Minitest::Test
     ]
 
     assert_nil @server.handle(JSON.generate(requests))
+  end
+
+  def test_batch_with_invalid_items
+    requests = [
+      1,
+      { "jsonrpc" => "2.0", "method" => "add", "params" => [1, 2], "id" => 1 }
+    ]
+    responses = JSON.parse(@server.handle(JSON.generate(requests)))
+
+    assert_equal 2, responses.size
+    assert_equal(-32_600, responses[0]["error"]["code"])
+    assert_equal 3, responses[1]["result"]
+  end
+end
+
+class TestHandler < Minitest::Test
+  def test_method_query
+    handler = Reclamo::Handler.new
+    handler.expose(Calculator)
+
+    assert handler.method?("add")
+    refute handler.method?("nonexistent")
+  end
+
+  def test_does_not_expose_inherited_object_methods
+    handler = Reclamo::Handler.new
+    handler.expose(Greeter.new("Hi"))
+
+    refute handler.method?("class")
+    refute handler.method?("object_id")
   end
 end
