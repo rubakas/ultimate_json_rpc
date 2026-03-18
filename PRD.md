@@ -3,8 +3,8 @@
 > Product Requirements Document for Reclamo, a network-agnostic Ruby gem
 > that exposes Ruby objects through JSON-RPC 2.0.
 >
-> Current version: 0.2.0 | Ruby >= 3.2 | 26 items — 12 done, 14 pending
-> (3 P0 ✓, 8 P1 — 7 done, 10 P2 — 2 done, 5 P3)
+> Current version: 0.2.0 | Ruby >= 3.2 | 26 items — 13 done, 13 pending
+> (3 P0 ✓, 8 P1 — 7 done, 10 P2 — 3 done, 5 P3)
 
 ---
 
@@ -14,7 +14,7 @@
 
 **v0.2.0** — `InvalidParams` error class, callable objects in `expose_method`, `empty?`, descriptive error messages, immutable request params, `expose_errors` flag, dangerous method denylist, security hardening.
 
-**Unreleased** — Method-level middleware (`only:/except:` on `use`), Rack adapter, stdio adapter, OpenRPC 1.3.2 schema, instrumentation hooks, request timeout, return type annotations, method deprecation markers, richer test helpers, parameter validation with JSON Schema types, concurrent batch execution, error catalog.
+**Unreleased** — Method-level middleware (`only:/except:` on `use`), Rack adapter, stdio adapter, OpenRPC 1.3.2 schema, instrumentation hooks, request timeout, return type annotations, method deprecation markers, richer test helpers, parameter validation with JSON Schema types, concurrent batch execution, error catalog, custom JSON serializer.
 
 ---
 
@@ -101,7 +101,7 @@ Discovery & metadata:
 
 Server configuration:
 
-- [ ] **Custom JSON serializer**
+- [x] **Custom JSON serializer**
   Allow swapping the JSON encoder/decoder (e.g., `Oj`, `yajl-ruby`) via `Reclamo::Server.new(json: Oj)`. The gem currently hard-codes `JSON.parse` / `JSON.generate`.
   *Depends on: nothing.*
 

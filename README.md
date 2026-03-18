@@ -133,6 +133,18 @@ server.on(:error)    { |request, error, duration| log_error(error, method: reque
 
 Hook errors are rescued and logged via `Kernel.warn`, never breaking dispatch.
 
+### Custom JSON serializer
+
+Swap the JSON encoder/decoder (defaults to stdlib `JSON`):
+
+```ruby
+require "oj"
+Oj.mimic_JSON
+server = Reclamo::Server.new(json: Oj)
+```
+
+Any object responding to `parse(string)` and `generate(object)` works.
+
 ### Concurrent batches
 
 Opt-in parallel processing for batch requests:
@@ -255,6 +267,7 @@ server.handle(request)  # still works
 - **stdio adapter** — `Reclamo::Stdio.new(server).run` for CLI/MCP-style integrations
 - **Test helpers** — `rpc_call`, `assert_rpc_success`, `assert_rpc_error` for cleaner tests
 - **Concurrent batches** — `concurrent_batches: true` processes batch items in parallel
+- **Custom JSON** — `json: Oj` to swap the JSON encoder/decoder
 - **Batch size limit** — `max_batch_size: 100` (default) prevents oversized batch requests
 - **Freezable** — `server.freeze` locks configuration after setup
 

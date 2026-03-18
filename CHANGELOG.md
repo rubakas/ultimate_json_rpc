@@ -21,6 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Parameter validation: `params_schema:` on `expose_method` and `expose` for type and enum validation before dispatch, returns `-32602 Invalid params` on mismatch, schemas appear in `rpc.discover` param descriptors
 - Concurrent batch execution: `Server.new(concurrent_batches: true)` processes batch items in parallel using threads
 - Error catalog: `server.register_error(code, name, description)` registers application error codes that appear in `rpc.discover` under `components.errors`
+- Custom JSON serializer: `Server.new(json: Oj)` to swap JSON encoder/decoder, any object responding to `parse` and `generate`
 
 ### Changed
 - `rpc.discover` output restructured: service metadata moved to `info` object (`name` → `info.title`), method `returns` → `result` in OpenRPC contentDescriptor format

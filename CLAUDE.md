@@ -57,6 +57,7 @@ bin/console            # Interactive console with gem loaded
 - `test/test_errors.rb` — server errors, application errors, server errors, request/param validation, expose_errors option
 - `test/test_batch.rb` — batch requests, batch size limits
 - `test/test_concurrent_batch.rb` — concurrent batch execution: threading, order, timeout, middleware, hooks
+- `test/test_custom_json.rb` — custom JSON serializer: parse, generate, errors, batch, discover
 - `test/test_discover.rb` — rpc.discover, descriptions, service info
 - `test/test_middleware.rb` — middleware chain, edge cases, request immutability
 - `test/test_method_level_middleware.rb` — scoped middleware: only/except filtering, glob patterns, chain ordering

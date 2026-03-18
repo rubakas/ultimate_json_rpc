@@ -10,8 +10,10 @@ module Reclamo
     private
 
     def handle_batch(requests)
-      return JSON.generate(Response.error(INVALID_REQUEST, nil)) if requests.empty?
-      return batch_too_large_error if @max_batch_size && requests.size > @max_batch_size
+      return @json.generate(Response.error(INVALID_REQUEST, nil)) if requests.empty?
+      if batch_too_large?(requests)
+        return @json.generate(Response.error(INVALID_REQUEST, nil, message: "Batch too large"))
+      end
 
       json_parts = process_batch_items(requests)
       json_parts.empty? ? nil : "[#{json_parts.join(",")}]"
@@ -25,9 +27,7 @@ module Reclamo
       end
     end
 
-    def batch_too_large_error
-      JSON.generate(Response.error(INVALID_REQUEST, nil, message: "Batch too large"))
-    end
+    def batch_too_large?(requests) = @max_batch_size && requests.size > @max_batch_size
   end
   private_constant :BatchProcessor
 
@@ -57,7 +57,7 @@ module Reclamo
     private_constant :HOOK_EVENTS
 
     def initialize(name: nil, version: nil, description: nil, max_batch_size: 100, expose_errors: false,
-                   timeout: nil, concurrent_batches: false)
+                   timeout: nil, concurrent_batches: false, json: JSON)
       @name = name
       @version = version
       @description = description
@@ -65,6 +65,7 @@ module Reclamo
       @expose_errors = expose_errors
       @timeout = timeout
       @concurrent_batches = concurrent_batches
+      @json = json
       @handler = Handler.new
       @middleware = []
       @hooks = HOOK_EVENTS.to_h { |e| [e, []] }
@@ -110,9 +111,9 @@ module Reclamo
     end
 
     def handle(json_string)
-      handle_parsed(JSON.parse(json_string))
-    rescue JSON::ParserError, TypeError, EncodingError
-      JSON.generate(Response.error(PARSE_ERROR, nil))
+      handle_parsed(@json.parse(json_string))
+    rescue StandardError
+      @json.generate(Response.error(PARSE_ERROR, nil))
     end
 
     alias call handle
@@ -121,7 +122,7 @@ module Reclamo
       case data
       when Array then handle_batch(data)
       when Hash then serialize_single(data)
-      else JSON.generate(Response.error(INVALID_REQUEST, nil))
+      else @json.generate(Response.error(INVALID_REQUEST, nil))
       end
     end
 
@@ -152,15 +153,15 @@ module Reclamo
       response = execute_request(request)
       return nil unless response
 
-      JSON.generate(response)
-    rescue JSON::JSONError
-      JSON.generate(Response.error(INTERNAL_ERROR, response.is_a?(Hash) ? response["id"] : nil))
+      @json.generate(response)
+    rescue StandardError
+      @json.generate(Response.error(INTERNAL_ERROR, response.is_a?(Hash) ? response["id"] : nil))
     end
 
     def parse_request(data)
       Request.new(data)
     rescue InvalidRequest
-      JSON.generate(Response.error(INVALID_REQUEST, extract_id(data)))
+      @json.generate(Response.error(INVALID_REQUEST, extract_id(data)))
     end
 
     def extract_id(data)
