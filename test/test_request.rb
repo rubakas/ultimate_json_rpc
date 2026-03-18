@@ -215,3 +215,43 @@ class TestRequestFreezing < Minitest::Test
     assert_predicate request.params[0], :frozen?
   end
 end
+
+class TestRequestNestingLimit < Minitest::Test
+  def test_nesting_at_max_succeeds
+    nested = "leaf"
+    32.times { nested = { "n" => nested } }
+    data = { "jsonrpc" => "2.0", "method" => "foo", "params" => nested, "id" => 1 }
+
+    request = Reclamo::Request.new(data)
+    assert request
+  end
+
+  def test_nesting_beyond_max_raises
+    nested = "leaf"
+    33.times { nested = { "n" => nested } }
+    data = { "jsonrpc" => "2.0", "method" => "foo", "params" => nested, "id" => 1 }
+
+    assert_raises(Reclamo::InvalidRequest) { Reclamo::Request.new(data) }
+  end
+end
+
+class TestRequestContext < Minitest::Test
+  def test_default_context_is_empty_hash
+    request = Reclamo::Request.new({ "jsonrpc" => "2.0", "method" => "foo", "id" => 1 })
+
+    assert_equal({}, request.context)
+  end
+
+  def test_context_is_mutable
+    request = Reclamo::Request.new({ "jsonrpc" => "2.0", "method" => "foo", "id" => 1 })
+    request.context[:user] = "alice"
+
+    assert_equal "alice", request.context[:user]
+  end
+
+  def test_context_is_not_frozen
+    request = Reclamo::Request.new({ "jsonrpc" => "2.0", "method" => "foo", "id" => 1 })
+
+    refute_predicate request.context, :frozen?
+  end
+end

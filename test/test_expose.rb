@@ -167,9 +167,10 @@ class TestServerMethodFiltering < Minitest::Test
 
   def test_expose_only_with_no_matches
     server = Reclamo::Server.new
-    server.expose(Calculator, only: [:nonexistent])
+    _, err = capture_io { server.expose(Calculator, only: [:nonexistent]) }
 
     assert_equal 0, server.size
+    assert_match(/registered 0 methods/, err)
   end
 
   def test_expose_except_with_single_symbol

@@ -85,10 +85,11 @@ class TestHandler < Minitest::Test
 
   def test_expose_target_with_no_methods
     handler = Reclamo::Handler.new
-    handler.expose(Object.new)
+    _, err = capture_io { handler.expose(Object.new) }
 
     assert_equal 0, handler.size
     assert_empty handler.methods_list
+    assert_match(/registered 0 methods/, err)
   end
 
   def test_expose_nil_raises
@@ -242,5 +243,36 @@ class TestHandlerParamDescriptors < Minitest::Test
     assert_equal true, info["params"][0]["variadic"]
     assert_equal "args", info["params"][0]["name"]
     refute info["params"][0].key?("keyword")
+  end
+end
+
+class TestHandlerDangerousMethods < Minitest::Test
+  %w[eval instance_eval class_eval module_eval send public_send __send__ system exec spawn
+     define_method remove_method binding method_missing respond_to_missing?].each do |name|
+    safe_name = name.tr("?", "_q")
+    define_method("test_expose_rejects_#{safe_name}") do
+      handler = Reclamo::Handler.new
+      err = assert_raises(ArgumentError) { handler.expose_method(name) { nil } }
+      assert_match(/dangerous/, err.message)
+    end
+  end
+
+  def test_expose_rejects_namespaced_dangerous_method
+    handler = Reclamo::Handler.new
+    err = assert_raises(ArgumentError) { handler.expose_method("ns.eval") { nil } }
+    assert_match(/dangerous/, err.message)
+  end
+
+  def test_expose_rejects_dangerous_from_target
+    target = Object.new
+    target.define_singleton_method(:eval) { "nope" }
+    handler = Reclamo::Handler.new
+    assert_raises(ArgumentError) { handler.expose(target) }
+  end
+
+  def test_expose_allows_safe_name_evaluate
+    handler = Reclamo::Handler.new
+    handler.expose_method("evaluate") { "ok" }
+    assert handler.method?("evaluate")
   end
 end

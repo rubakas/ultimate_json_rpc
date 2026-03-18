@@ -40,11 +40,15 @@ module Reclamo
   RESERVED_ERROR_MIN: Integer
   RESERVED_ERROR_MAX: Integer
   ERROR_MESSAGES: Hash[Integer, String]
+  GENERIC_ERROR_DATA: String
 
   class Request
+    MAX_NESTING: Integer
+
     attr_reader method_name: String
     attr_reader params: Array[untyped] | Hash[String, untyped] | nil
     attr_reader id: String | Numeric | nil
+    attr_reader context: Hash[Symbol, untyped]
 
     def initialize: (Hash[String, untyped]) -> void
     def notification?: () -> bool
@@ -78,13 +82,15 @@ module Reclamo
     attr_reader name: String?
     attr_reader version: String?
     attr_reader description: String?
+    attr_reader max_batch_size: Integer?
 
-    def initialize: (?name: String?, ?version: String?, ?description: String?) -> void
+    def initialize: (?name: String?, ?version: String?, ?description: String?, ?max_batch_size: Integer?, ?expose_errors: bool) -> void
     def expose: (Module | Object, ?namespace: String | Symbol | nil, ?only: Array[Symbol | String] | Symbol | String | nil, ?except: Array[Symbol | String] | Symbol | String | nil, ?descriptions: Hash[Symbol | String, String]?) -> self
     def expose_method: (String | Symbol, ?callable?, ?description: String?) ?{ (*untyped) -> untyped } -> self
     def use: () { (Request, Proc) -> untyped } -> self
     def to_proc: () -> Proc
     def inspect: () -> String
+    def expose_errors?: () -> bool
     def method?: (String) -> bool
     def handle: (String?) -> String?
     alias call handle
@@ -94,5 +100,11 @@ module Reclamo
     def size: () -> Integer
     def empty?: () -> bool
     def freeze: () -> self
+  end
+
+  module TestHelpers
+    def rpc_call: (Server, String, ?params: untyped, ?id: String | Integer) -> Hash[String, untyped]
+    def rpc_notify: (Server, String, ?params: untyped) -> nil
+    def rpc_batch: (Server, *Hash[String, untyped]) -> Array[Hash[String, untyped]]?
   end
 end

@@ -425,6 +425,17 @@ class TestServerEdgeCases < Minitest::Test
     assert_includes server.methods_list, "\u00e9cho"
   end
 
+  def test_handler_json_error_goes_through_error_details
+    server = Reclamo::Server.new(expose_errors: true)
+    server.expose_method("bad_json") { raise JSON::GeneratorError, "handler JSON error" }
+
+    request = { "jsonrpc" => "2.0", "method" => "bad_json", "id" => 1 }
+    response = JSON.parse(server.handle(JSON.generate(request)))
+
+    assert_equal(-32_603, response["error"]["code"])
+    assert_equal "handler JSON error", response["error"]["data"]
+  end
+
   def test_class_does_not_expose_new
     klass = Class.new do
       def self.work

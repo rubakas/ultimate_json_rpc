@@ -1,17 +1,18 @@
 # frozen_string_literal: true
 
 module Reclamo
-  # @api private
-  PARSE_FAILED = Object.new.freeze
-  private_constant :PARSE_FAILED
+  GENERIC_ERROR_DATA = "Internal server error"
+  private_constant :GENERIC_ERROR_DATA
 
   class Server
-    attr_reader :name, :version, :description
+    attr_reader :name, :version, :description, :max_batch_size
 
-    def initialize(name: nil, version: nil, description: nil)
+    def initialize(name: nil, version: nil, description: nil, max_batch_size: 100, expose_errors: false)
       @name = name
       @version = version
       @description = description
+      @max_batch_size = max_batch_size
+      @expose_errors = expose_errors
       @handler = Handler.new
       @middleware = []
     end
@@ -34,15 +35,14 @@ module Reclamo
     end
 
     def handle(json_string)
-      data = parse_json(json_string)
-      handle_parsed(data)
+      handle_parsed(JSON.parse(json_string))
+    rescue JSON::ParserError, TypeError, EncodingError
+      JSON.generate(Response.error(PARSE_ERROR, nil))
     end
 
     alias call handle
 
     def handle_parsed(data)
-      return JSON.generate(Response.error(PARSE_ERROR, nil)) if data.equal?(PARSE_FAILED)
-
       case data
       when Array then handle_batch(data)
       when Hash then serialize_single(data)
@@ -52,6 +52,7 @@ module Reclamo
 
     def to_proc = method(:call).to_proc
     def inspect = "#<#{self.class}#{" name=#{@name.inspect}" if @name} methods=#{size} middleware=#{@middleware.size}>"
+    def expose_errors? = @expose_errors
 
     def freeze
       [@handler, @middleware].each(&:freeze)
@@ -66,14 +67,12 @@ module Reclamo
 
     private
 
-    def parse_json(json_string)
-      JSON.parse(json_string)
-    rescue JSON::ParserError, TypeError, EncodingError
-      PARSE_FAILED
-    end
-
     def handle_batch(requests)
       return JSON.generate(Response.error(INVALID_REQUEST, nil)) if requests.empty?
+
+      if @max_batch_size && requests.size > @max_batch_size
+        return JSON.generate(Response.error(INVALID_REQUEST, nil, message: "Batch too large"))
+      end
 
       json_parts = requests.filter_map { |req| serialize_single(req) }
       return nil if json_parts.empty?
@@ -88,10 +87,12 @@ module Reclamo
       response = execute_request(request)
       return nil unless response
 
-      JSON.generate(response)
-    rescue JSON::JSONError
-      id = response.is_a?(Hash) ? response["id"] : nil
-      JSON.generate(Response.error(INTERNAL_ERROR, id))
+      begin
+        JSON.generate(response)
+      rescue JSON::JSONError
+        id = response.is_a?(Hash) ? response["id"] : nil
+        JSON.generate(Response.error(INTERNAL_ERROR, id))
+      end
     end
 
     def parse_request(data)
@@ -103,8 +104,7 @@ module Reclamo
     def extract_id(data)
       return nil unless data.is_a?(Hash)
 
-      id = data["id"]
-      id.nil? || id.is_a?(String) || id.is_a?(Numeric) ? id : nil
+      data["id"].then { |id| id.nil? || id.is_a?(String) || id.is_a?(Numeric) ? id : nil }
     end
 
     def execute_request(request)
@@ -120,30 +120,26 @@ module Reclamo
     end
 
     def build_chain(request)
-      core = -> { invoke_handler(request) }
-      @middleware.reverse_each do |mw|
-        prev = core
-        core = -> { mw.call(request, prev) }
+      @middleware.reverse.reduce(-> { invoke_handler(request) }) do |core, mw|
+        -> { mw.call(request, core) }
       end
-      core
     end
 
     def invoke_handler(request)
       return @handler.call(request.method_name, request.params) unless request.method_name == "rpc.discover"
 
-      { "methods" => @handler.methods_info }.tap do |result|
-        result["name"] = @name if @name
-        result["version"] = @version if @version
-        result["description"] = @description if @description
-      end
+      result = { "methods" => @handler.methods_info }
+      { "name" => @name, "version" => @version, "description" => @description }.each { |k, v| result[k] = v if v }
+      result
     end
 
     def error_details(err)
       case err
       when MethodNotFound then [METHOD_NOT_FOUND, nil, err.method_name]
       when ApplicationError, ServerError then [err.code, err.message, err.rpc_data]
-      when InvalidParams, ArgumentError then [INVALID_PARAMS, nil, err.message]
-      else [INTERNAL_ERROR, nil, err.message]
+      when InvalidParams then [INVALID_PARAMS, nil, err.message]
+      when ArgumentError then [INVALID_PARAMS, nil, @expose_errors ? err.message : GENERIC_ERROR_DATA]
+      else [INTERNAL_ERROR, nil, @expose_errors ? err.message : GENERIC_ERROR_DATA]
       end
     end
   end

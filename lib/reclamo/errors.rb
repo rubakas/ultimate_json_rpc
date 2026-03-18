@@ -42,8 +42,9 @@ module Reclamo
       raise ArgumentError, "error code must be an Integer, got #{code.class}" unless code.is_a?(Integer)
 
       if code.between?(RESERVED_ERROR_MIN, RESERVED_ERROR_MAX)
+        hint = code.between?(SERVER_ERROR_MIN, SERVER_ERROR_MAX) ? "; use ServerError for server error codes" : ""
         raise ArgumentError,
-              "error code #{code} is in the reserved range (#{RESERVED_ERROR_MIN}..#{RESERVED_ERROR_MAX})"
+              "error code #{code} is in the reserved range (#{RESERVED_ERROR_MIN}..#{RESERVED_ERROR_MAX})#{hint}"
       end
 
       @code = code

@@ -5,6 +5,15 @@ module Reclamo
   VARIADIC_DEFAULTS = { rest: "args", keyrest: "kwargs" }.freeze
   private_constant :VARIADIC_DEFAULTS
 
+  DANGEROUS_METHODS = %w[
+    eval instance_eval class_eval module_eval
+    send public_send __send__
+    system exec spawn
+    define_method remove_method
+    binding method_missing respond_to_missing?
+  ].freeze
+  private_constant :DANGEROUS_METHODS
+
   class Handler
     def initialize
       @targets = {}
@@ -15,10 +24,10 @@ module Reclamo
       validate_expose_args!(target, only, except)
       prefix = namespace.to_s.then { |ns| ns.empty? ? "" : "#{ns}." }
       methods = filter_methods(callable_methods(target), only: only, except: except)
+      Kernel.warn "Reclamo: expose registered 0 methods from #{target.inspect}" if methods.empty?
       methods.each do |method_name|
         full_name = "#{prefix}#{method_name}"
         validate_method_name!(full_name)
-        check_duplicate!(full_name)
         @targets[full_name] = [target, method_name]
         store_description(full_name, method_name, descriptions)
       end
@@ -28,7 +37,6 @@ module Reclamo
       callable = resolve_callable(callable, block)
       name = name.to_s
       validate_method_name!(name)
-      check_duplicate!(name)
       @targets[name] = callable
       @descriptions[name] = description.to_s if description
     end
@@ -113,9 +121,9 @@ module Reclamo
     def validate_method_name!(name)
       raise ArgumentError, "method name must not be empty" if name.empty?
       raise ArgumentError, "method names starting with 'rpc.' are reserved" if name.start_with?("rpc.")
-    end
 
-    def check_duplicate!(name)
+      leaf = name.include?(".") ? name.split(".").last : name
+      raise ArgumentError, "method name '#{leaf}' is dangerous" if DANGEROUS_METHODS.include?(leaf)
       raise ArgumentError, "method '#{name}' is already registered" if @targets.key?(name)
     end
 

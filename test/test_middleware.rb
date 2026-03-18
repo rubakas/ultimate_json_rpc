@@ -148,7 +148,7 @@ class TestServerMiddlewareEdgeCases < Minitest::Test
   end
 
   def test_middleware_unexpected_error_returns_internal_error
-    server = Reclamo::Server.new
+    server = Reclamo::Server.new(expose_errors: true)
     server.expose(Calculator)
     server.use { |_request, _next_call| raise "middleware broke" }
 
@@ -233,5 +233,15 @@ class TestServerMiddlewareEdgeCases < Minitest::Test
     request = { "jsonrpc" => "2.0", "method" => "add", "params" => [1, 2] }
 
     assert_nil server.handle(JSON.generate(request))
+  end
+
+  def test_middleware_can_write_and_read_request_context
+    server = Reclamo::Server.new
+    server.expose(Calculator)
+    captured_user = nil
+    server.use { |req, n| req.context[:user] = "alice" and n.call }
+    server.use { |req, n| captured_user = req.context[:user] and n.call }
+    server.handle(JSON.generate({ "jsonrpc" => "2.0", "method" => "add", "params" => [1, 2], "id" => 1 }))
+    assert_equal "alice", captured_user
   end
 end

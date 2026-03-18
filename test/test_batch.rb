@@ -128,3 +128,51 @@ class TestServerBatch < Minitest::Test
     JSON.parse(server.handle(JSON.generate(requests)))
   end
 end
+
+class TestServerBatchSizeLimit < Minitest::Test
+  def test_batch_within_limit_succeeds
+    server = Reclamo::Server.new(max_batch_size: 2)
+    server.expose(Calculator)
+
+    requests = [
+      { "jsonrpc" => "2.0", "method" => "add", "params" => [1, 2], "id" => 1 },
+      { "jsonrpc" => "2.0", "method" => "add", "params" => [3, 4], "id" => 2 }
+    ]
+    responses = JSON.parse(server.handle(JSON.generate(requests)))
+
+    assert_equal 2, responses.size
+  end
+
+  def test_batch_exceeding_limit_returns_error
+    server = Reclamo::Server.new(max_batch_size: 2)
+    server.expose(Calculator)
+
+    requests = [
+      { "jsonrpc" => "2.0", "method" => "add", "params" => [1, 2], "id" => 1 },
+      { "jsonrpc" => "2.0", "method" => "add", "params" => [3, 4], "id" => 2 },
+      { "jsonrpc" => "2.0", "method" => "add", "params" => [5, 6], "id" => 3 }
+    ]
+    response = JSON.parse(server.handle(JSON.generate(requests)))
+
+    assert_equal(-32_600, response["error"]["code"])
+    assert_equal "Batch too large", response["error"]["message"]
+  end
+
+  def test_default_max_batch_size
+    server = Reclamo::Server.new
+
+    assert_equal 100, server.max_batch_size
+  end
+
+  def test_nil_disables_batch_limit
+    server = Reclamo::Server.new(max_batch_size: nil)
+    server.expose(Calculator)
+
+    requests = 150.times.map do |i|
+      { "jsonrpc" => "2.0", "method" => "add", "params" => [i, 1], "id" => i }
+    end
+    responses = JSON.parse(server.handle(JSON.generate(requests)))
+
+    assert_equal 150, responses.size
+  end
+end

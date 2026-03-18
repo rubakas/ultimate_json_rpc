@@ -2,13 +2,16 @@
 
 module Reclamo
   class Request
-    attr_reader :method_name, :params, :id
+    MAX_NESTING = 32
+
+    attr_reader :method_name, :params, :id, :context
 
     def initialize(data)
       validate!(data)
       @method_name = data["method"].freeze
       @params = deep_freeze(data["params"])
       @id = data["id"].freeze
+      @context = {}
     end
 
     def notification?
@@ -44,10 +47,12 @@ module Reclamo
       raise InvalidRequest, "id must be a String, Number, or Null"
     end
 
-    def deep_freeze(obj)
+    def deep_freeze(obj, depth = 0)
+      raise InvalidRequest, "params nesting too deep (max #{MAX_NESTING})" if depth > MAX_NESTING
+
       case obj
-      when Hash then obj.each_value { |v| deep_freeze(v) }
-      when Array then obj.each { |v| deep_freeze(v) }
+      when Hash then obj.each_value { |v| deep_freeze(v, depth + 1) }
+      when Array then obj.each { |v| deep_freeze(v, depth + 1) }
       end
       obj.freeze
     end

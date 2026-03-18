@@ -83,7 +83,14 @@ server.use do |request, next_call|
 end
 ```
 
-Middleware runs in registration order (first registered = outermost wrapper).
+Middleware runs in registration order (first registered = outermost wrapper). Middleware can pass data to handlers via `request.context`:
+
+```ruby
+server.use do |request, next_call|
+  request.context[:user] = authenticate(request)
+  next_call.call
+end
+```
 
 ### Error handling
 
@@ -95,6 +102,20 @@ raise Reclamo::ServerError.new(-32_001, "Server shutting down")
 ```
 
 Ruby's `ArgumentError` automatically maps to JSON-RPC Invalid params (`-32602`). All other exceptions become Internal error (`-32603`).
+
+### Error visibility
+
+By default, internal error details (exception messages) are hidden from clients:
+
+```ruby
+server = Reclamo::Server.new                    # expose_errors: false (default)
+# Internal errors return generic "Internal server error" in the data field
+
+server = Reclamo::Server.new(expose_errors: true)
+# Internal errors include the actual exception message in the data field
+```
+
+`ApplicationError`, `ServerError`, `InvalidParams`, and `MethodNotFound` always expose their details regardless of this setting, since those are intentionally raised by your code.
 
 ### Freezing
 
@@ -121,7 +142,79 @@ server.handle(request)  # still works
 - **Error handling** — standard JSON-RPC error codes, `ApplicationError`, and `ServerError`
 - **Chainable API** — all setup methods return `self`
 - **Callable** — `to_proc` enables `requests.map(&server)`
+- **Batch size limit** — `max_batch_size: 100` (default) prevents oversized batch requests
 - **Freezable** — `server.freeze` locks configuration after setup
+
+### Transport examples
+
+Reclamo is transport-agnostic. Here are common setups:
+
+#### Rack (HTTP)
+
+```ruby
+# config.ru
+require "reclamo"
+
+server = Reclamo::Server.new(name: "My API")
+server.expose(Calculator)
+
+app = ->(env) {
+  body = env["rack.input"].read
+  response = server.handle(body)
+  [
+    response ? 200 : 204,
+    { "content-type" => "application/json" },
+    [response || ""]
+  ]
+}
+
+run app
+```
+
+#### stdio
+
+```ruby
+require "reclamo"
+
+server = Reclamo::Server.new
+server.expose(Calculator)
+
+$stdin.each_line do |line|
+  response = server.handle(line)
+  $stdout.puts(response) if response
+  $stdout.flush
+end
+```
+
+### Pre-parsed input
+
+If you've already parsed the JSON (e.g. from a WebSocket frame), use `handle_parsed` to skip the parse step:
+
+```ruby
+data = JSON.parse(raw_json)
+response = server.handle_parsed(data)
+```
+
+### Test helpers
+
+Reclamo ships with optional test helpers for cleaner assertions:
+
+```ruby
+require "reclamo/test_helpers"
+
+class MyTest < Minitest::Test
+  include Reclamo::TestHelpers
+
+  def test_addition
+    response = rpc_call(server, "add", params: [2, 3])
+    assert_equal 5, response["result"]
+  end
+
+  def test_notification
+    assert_nil rpc_notify(server, "add", params: [1, 2])
+  end
+end
+```
 
 ## Development
 

@@ -5,7 +5,7 @@ require "json"
 
 class TestServerErrors < Minitest::Test
   def setup
-    @server = Reclamo::Server.new
+    @server = Reclamo::Server.new(expose_errors: true)
     @server.expose(Calculator)
   end
 
@@ -97,6 +97,15 @@ class TestServerErrors < Minitest::Test
 
     assert_equal(-32_600, response["error"]["code"])
   end
+
+  def test_over_nested_params_returns_invalid_request
+    nested = "leaf"
+    33.times { nested = { "n" => nested } }
+    request = { "jsonrpc" => "2.0", "method" => "add", "params" => nested, "id" => 1 }
+    response = JSON.parse(@server.handle(JSON.generate(request)))
+
+    assert_equal(-32_600, response["error"]["code"])
+  end
 end
 
 class TestServerApplicationError < Minitest::Test
@@ -163,6 +172,11 @@ class TestServerApplicationError < Minitest::Test
     assert_raises(ArgumentError) { Reclamo::ApplicationError.new(-32_600, "Invalid") }
     assert_raises(ArgumentError) { Reclamo::ApplicationError.new(-32_000, "Server error") }
     assert_raises(ArgumentError) { Reclamo::ApplicationError.new(-32_768, "Edge of range") }
+  end
+
+  def test_application_error_server_range_mentions_server_error
+    err = assert_raises(ArgumentError) { Reclamo::ApplicationError.new(-32_050, "In range") }
+    assert_match(/ServerError/, err.message)
   end
 
   def test_application_error_allows_non_reserved_codes
@@ -254,7 +268,7 @@ class TestServerError < Minitest::Test
   end
 end
 
-class TestRequestValidation < Minitest::Test
+class TestRequestIdValidation < Minitest::Test
   def test_empty_method_name_is_invalid
     server = Reclamo::Server.new
     request = { "jsonrpc" => "2.0", "method" => "", "id" => 1 }
@@ -421,5 +435,87 @@ class TestServerParamErrors < Minitest::Test
 
     assert response.key?("error")
     refute response.key?("result")
+  end
+end
+
+class TestExposeErrorsOption < Minitest::Test
+  def test_default_hides_internal_error_messages
+    server = Reclamo::Server.new
+    server.expose(Calculator)
+
+    request = { "jsonrpc" => "2.0", "method" => "divide", "params" => [1, 0], "id" => 1 }
+    response = JSON.parse(server.handle(JSON.generate(request)))
+
+    assert_equal(-32_603, response["error"]["code"])
+    assert_equal "Internal server error", response["error"]["data"]
+  end
+
+  def test_expose_errors_shows_internal_error_messages
+    server = Reclamo::Server.new(expose_errors: true)
+    server.expose(Calculator)
+
+    request = { "jsonrpc" => "2.0", "method" => "divide", "params" => [1, 0], "id" => 1 }
+    response = JSON.parse(server.handle(JSON.generate(request)))
+
+    assert_equal(-32_603, response["error"]["code"])
+    assert_equal "division by zero", response["error"]["data"]
+  end
+
+  def test_application_error_always_exposed
+    server = Reclamo::Server.new
+    server.expose_method("fail") { raise Reclamo::ApplicationError.new(42, "Custom", "detail") }
+
+    request = { "jsonrpc" => "2.0", "method" => "fail", "id" => 1 }
+    response = JSON.parse(server.handle(JSON.generate(request)))
+
+    assert_equal 42, response["error"]["code"]
+    assert_equal "detail", response["error"]["data"]
+  end
+
+  def test_server_error_always_exposed
+    server = Reclamo::Server.new
+    server.expose_method("fail") { raise Reclamo::ServerError.new(-32_001, "Shutting down", "retry") }
+
+    request = { "jsonrpc" => "2.0", "method" => "fail", "id" => 1 }
+    response = JSON.parse(server.handle(JSON.generate(request)))
+
+    assert_equal(-32_001, response["error"]["code"])
+    assert_equal "retry", response["error"]["data"]
+  end
+
+  def test_invalid_params_always_exposed
+    server = Reclamo::Server.new
+    server.expose_method("validate") do |age:|
+      raise Reclamo::InvalidParams, "bad" unless age.positive?
+
+      age
+    end
+
+    request = { "jsonrpc" => "2.0", "method" => "validate", "params" => { "age" => -1 }, "id" => 1 }
+    response = JSON.parse(server.handle(JSON.generate(request)))
+
+    assert_equal(-32_602, response["error"]["code"])
+    assert_equal "bad", response["error"]["data"]
+  end
+
+  def test_method_not_found_always_exposed
+    server = Reclamo::Server.new
+
+    request = { "jsonrpc" => "2.0", "method" => "missing", "id" => 1 }
+    response = JSON.parse(server.handle(JSON.generate(request)))
+
+    assert_equal(-32_601, response["error"]["code"])
+    assert_equal "missing", response["error"]["data"]
+  end
+
+  def test_argument_error_hidden_by_default
+    server = Reclamo::Server.new
+    server.expose(Calculator)
+
+    request = { "jsonrpc" => "2.0", "method" => "add", "params" => [1, 2, 3], "id" => 1 }
+    response = JSON.parse(server.handle(JSON.generate(request)))
+
+    assert_equal(-32_602, response["error"]["code"])
+    assert_equal "Internal server error", response["error"]["data"]
   end
 end
