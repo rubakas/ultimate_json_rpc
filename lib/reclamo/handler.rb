@@ -19,23 +19,25 @@ module Reclamo
       @targets = {}
       @descriptions = {}
       @returns = {}
+      @deprecated = {}
     end
 
-    def expose(target, namespace: nil, only: nil, except: nil, descriptions: nil, returns: nil)
+    def expose(target, namespace: nil, only: nil, except: nil, descriptions: nil, returns: nil, deprecated: nil)
       validate_expose_args!(target, only, except)
       prefix = namespace.to_s.then { |ns| ns.empty? ? "" : "#{ns}." }
       methods = filter_methods(callable_methods(target), only: only, except: except)
       Kernel.warn "Reclamo: expose registered 0 methods from #{target.inspect}" if methods.empty?
-      methods.each { |m| register_exposed(prefix, m, target, descriptions, returns) }
+      methods.each { |m| register_exposed(prefix, m, target, descriptions, returns, deprecated) }
     end
 
-    def expose_method(name, callable = nil, description: nil, returns: nil, &block)
+    def expose_method(name, callable = nil, description: nil, returns: nil, deprecated: nil, &block)
       callable = resolve_callable(callable, block)
       name = name.to_s
       validate_method_name!(name)
       @targets[name] = callable
       @descriptions[name] = description.to_s if description
       @returns[name] = returns if returns
+      @deprecated[name] = deprecated == true ? true : deprecated.to_s if deprecated
     end
 
     def call(method_name, params)
@@ -52,7 +54,7 @@ module Reclamo
     def empty? = @targets.empty?
 
     def freeze
-      [@targets, @descriptions, @returns].each(&:freeze)
+      [@targets, @descriptions, @returns, @deprecated].each(&:freeze)
       super
     end
 
@@ -61,11 +63,20 @@ module Reclamo
     def method_info(name)
       callable = resolve_entry(@targets[name])
       info = { "name" => name }
+      add_method_metadata(info, name, callable)
+      info
+    end
+
+    def add_method_metadata(info, name, callable)
       info["description"] = @descriptions[name] if @descriptions.key?(name)
+      add_params(info, callable)
+      info["result"] = build_result(@returns[name]) if @returns.key?(name)
+      info["deprecated"] = @deprecated[name] if @deprecated.key?(name)
+    end
+
+    def add_params(info, callable)
       params = callable.parameters.filter_map { |type, pname| param_descriptor(type, pname) }
       info["params"] = params unless params.empty?
-      info["result"] = build_result(@returns[name]) if @returns.key?(name)
-      info
     end
 
     def build_result(returns)
@@ -86,12 +97,13 @@ module Reclamo
       desc
     end
 
-    def register_exposed(prefix, method_name, target, descriptions, returns)
+    def register_exposed(prefix, method_name, target, descriptions, returns, deprecated)
       full_name = "#{prefix}#{method_name}"
       validate_method_name!(full_name)
       @targets[full_name] = [target, method_name]
       store_metadata(full_name, method_name, @descriptions, descriptions, &:to_s)
       store_metadata(full_name, method_name, @returns, returns)
+      store_metadata(full_name, method_name, @deprecated, deprecated)
     end
 
     def store_metadata(full_name, method_name, store, source, &transform)

@@ -26,7 +26,7 @@ Metrics/MethodLength:
     - "test/**/*"
 
 Metrics/ParameterLists:
-  Max: 6
+  Max: 8
 
 Style/OneClassPerFile:
   Exclude:

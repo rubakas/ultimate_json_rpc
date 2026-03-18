@@ -62,6 +62,7 @@ bin/console            # Interactive console with gem loaded
 - `test/test_stdio.rb` — stdio adapter: line processing, notifications, signals, empty lines
 - `test/test_hooks.rb` — instrumentation hooks: on_request, on_response, on_error, edge cases
 - `test/test_timeout.rb` — request timeout: slow handlers, error codes, notifications, hook integration
+- `test/test_deprecation.rb` — method deprecation markers: boolean, string, expose hash, namespace, freeze
 - `test/test_expose.rb` — expose_method, method filtering, callable objects
 - `test/test_spec_conformance.rb` — JSON-RPC 2.0 spec conformance + integration tests
 - `test/test_test_helpers.rb` — TestHelpers module tests

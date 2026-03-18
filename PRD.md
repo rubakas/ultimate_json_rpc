@@ -88,7 +88,7 @@ Adoption & integration:
 
 Discovery & metadata:
 
-- [ ] **Method deprecation markers**
+- [x] **Method deprecation markers**
   Mark methods as deprecated in discovery metadata (`deprecated: true` or `deprecated: "Use add_v2 instead"`). Deprecated methods still work but appear flagged in `rpc.discover` / OpenRPC output.
   *Depends on: nothing (enhances `rpc.discover`).*
 

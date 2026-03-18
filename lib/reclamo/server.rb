@@ -24,14 +24,14 @@ module Reclamo
       @hooks = HOOK_EVENTS.to_h { |e| [e, []] }
     end
 
-    def expose(target, namespace: nil, only: nil, except: nil, descriptions: nil, returns: nil)
+    def expose(target, namespace: nil, only: nil, except: nil, descriptions: nil, returns: nil, deprecated: nil)
       @handler.expose(target, namespace: namespace, only: only, except: except,
-                              descriptions: descriptions, returns: returns)
+                              descriptions: descriptions, returns: returns, deprecated: deprecated)
       self
     end
 
-    def expose_method(name, callable = nil, description: nil, returns: nil, &)
-      @handler.expose_method(name, callable, description: description, returns: returns, &)
+    def expose_method(name, callable = nil, description: nil, returns: nil, deprecated: nil, &)
+      @handler.expose_method(name, callable, description: description, returns: returns, deprecated: deprecated, &)
       self
     end
 
