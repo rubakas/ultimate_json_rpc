@@ -105,6 +105,16 @@ class TestDocs < Minitest::Test
     assert_match(/\| 42 \| InsufficientFunds \| Account balance too low \|/, md)
   end
 
+  def test_pipe_in_error_description_is_escaped
+    server = Reclamo::Server.new
+    server.expose_method("ping") { "pong" }
+    server.register_error(42, "Pipe|Error", "Contains | chars")
+    md = Reclamo::Docs.new(server).to_markdown
+
+    assert_match(/Pipe\\|Error/, md)
+    assert_match(/Contains \\| chars/, md)
+  end
+
   def test_no_errors_section_when_empty
     server = Reclamo::Server.new
     server.expose(Calculator)
@@ -119,6 +129,18 @@ class TestDocs < Minitest::Test
 
     assert_match(/# API Reference/, md)
     refute_match(/## Methods/, md)
+  end
+
+  def test_custom_json_adapter
+    adapter = Module.new do
+      def self.parse(str) = JSON.parse(str)
+      def self.generate(obj) = JSON.generate(obj)
+    end
+    server = Reclamo::Server.new(json: adapter)
+    server.expose(Calculator)
+    md = Reclamo::Docs.new(server, json: adapter).to_markdown
+
+    assert_match(/### `add`/, md)
   end
 
   def test_full_document_structure

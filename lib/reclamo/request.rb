@@ -51,7 +51,11 @@ module Reclamo
       raise InvalidRequest, "params nesting too deep (max #{MAX_NESTING})" if depth > MAX_NESTING
 
       case obj
-      when Hash then obj.each_value { |v| deep_freeze(v, depth + 1) }
+      when Hash
+        obj.each do |k, v|
+          k.freeze
+          deep_freeze(v, depth + 1)
+        end
       when Array then obj.each { |v| deep_freeze(v, depth + 1) }
       end
       obj.freeze

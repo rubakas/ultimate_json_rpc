@@ -47,6 +47,13 @@ class TestMethodDeprecation < Minitest::Test
     assert_equal "Legacy", method_info["deprecated"]
   end
 
+  def test_deprecated_false_omits_key
+    server = Reclamo::Server.new
+    server.expose_method("m", deprecated: false) { "ok" }
+
+    refute discover_methods(server).find { |m| m["name"] == "m" }.key?("deprecated")
+  end
+
   def test_omits_deprecated_when_not_set
     server = Reclamo::Server.new
     server.expose_method("ping") { "pong" }

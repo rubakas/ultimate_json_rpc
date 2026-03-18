@@ -161,7 +161,11 @@ module Reclamo
     end
 
     def build_result(returns)
-      returns.is_a?(Hash) ? { "name" => "result" }.merge(returns) : { "name" => "result", "schema" => returns }
+      case returns
+      when Hash then { "name" => "result" }.merge(returns)
+      when String then { "name" => "result", "schema" => { "type" => returns } }
+      else { "name" => "result", "schema" => returns }
+      end
     end
 
     def resolve_entry(entry)
@@ -225,8 +229,10 @@ module Reclamo
       raise ArgumentError, "method name must not be empty" if name.empty?
       raise ArgumentError, "method names starting with 'rpc.' are reserved" if name.start_with?("rpc.")
 
-      leaf = name.include?(".") ? name.split(".").last : name
-      raise ArgumentError, "method name '#{leaf}' is dangerous" if DANGEROUS_METHODS.include?(leaf)
+      segments = name.include?(".") ? name.split(".") : [name]
+      segments.each do |segment|
+        raise ArgumentError, "method name '#{segment}' is dangerous" if DANGEROUS_METHODS.include?(segment)
+      end
       raise ArgumentError, "method '#{name}' is already registered" if @targets.key?(name)
     end
 

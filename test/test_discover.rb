@@ -277,7 +277,7 @@ class TestServerDiscoverReturns < Minitest::Test
     result = discover_methods(server).find { |m| m["name"] == "greet" }["result"]
 
     assert_equal "result", result["name"]
-    assert_equal "string", result["schema"]
+    assert_equal({ "type" => "string" }, result["schema"])
   end
 end
 

@@ -2,8 +2,9 @@
 
 module Reclamo
   class Docs
-    def initialize(server)
+    def initialize(server, json: JSON)
       @server = server
+      @json = json
     end
 
     def to_markdown
@@ -19,7 +20,7 @@ module Reclamo
     def discover
       @discover ||= begin
         request = { "jsonrpc" => "2.0", "method" => "rpc.discover", "id" => 1 }
-        JSON.parse(@server.handle(JSON.generate(request)))["result"]
+        @json.parse(@server.handle(@json.generate(request)))["result"]
       end
     end
 
@@ -66,8 +67,8 @@ module Reclamo
       lines << "|------|----------|------|"
       params.each do |p|
         required = p["required"] ? "Yes" : "No"
-        type = p.dig("schema", "type") || "-"
-        lines << "| `#{p["name"]}` | #{required} | #{type} |"
+        type = escape_cell(p.dig("schema", "type") || "-")
+        lines << "| `#{escape_cell(p["name"])}` | #{required} | #{type} |"
       end
       lines << ""
       lines.join("\n")
@@ -80,6 +81,10 @@ module Reclamo
       "**Returns:** `#{type}`\n"
     end
 
+    def escape_cell(text)
+      text.to_s.gsub("|", "\\|")
+    end
+
     def errors_section
       errors = discover.dig("components", "errors")
       return nil unless errors&.any?
@@ -88,7 +93,7 @@ module Reclamo
       lines << "| Code | Name | Description |"
       lines << "|------|------|-------------|"
       errors.each do |e|
-        lines << "| #{e["code"]} | #{e["message"]} | #{e["data"] || "-"} |"
+        lines << "| #{e["code"]} | #{escape_cell(e["message"])} | #{escape_cell(e["data"] || "-")} |"
       end
       lines << ""
       lines.join("\n")

@@ -41,6 +41,9 @@ module Reclamo
     end
 
     def trap_signals
+      # Signal handlers set @running directly (no mutex). This is safe on MRI
+      # where boolean assignment is atomic. The process_lines loop checks
+      # @running between lines via each_line.
       %w[INT TERM].each do |signal|
         Signal.trap(signal) { @running = false }
       rescue ArgumentError

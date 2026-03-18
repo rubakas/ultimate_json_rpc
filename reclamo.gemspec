@@ -12,6 +12,7 @@ Gem::Specification.new do |spec|
   spec.description = "Network-agnostic JSON-RPC server that exposes Ruby modules, classes, " \
                      "instances, and namespaces as callable RPC endpoints."
   spec.homepage = "https://github.com/rubakas/reclamo"
+  spec.license = "MIT"
   spec.required_ruby_version = ">= 3.2.0"
 
   spec.metadata["allowed_push_host"] = "https://rubygems.org"

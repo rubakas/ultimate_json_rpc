@@ -239,8 +239,8 @@ class TestServerMiddlewareEdgeCases < Minitest::Test
     server = Reclamo::Server.new
     server.expose(Calculator)
     captured_user = nil
-    server.use { |req, n| req.context[:user] = "alice" and n.call }
-    server.use { |req, n| captured_user = req.context[:user] and n.call }
+    server.use { |req, n| req.context[:user] = "alice"; n.call } # rubocop:disable Style/Semicolon
+    server.use { |req, n| captured_user = req.context[:user]; n.call } # rubocop:disable Style/Semicolon
     server.handle(JSON.generate({ "jsonrpc" => "2.0", "method" => "add", "params" => [1, 2], "id" => 1 }))
     assert_equal "alice", captured_user
   end

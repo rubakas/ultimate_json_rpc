@@ -164,6 +164,17 @@ class TestHooksEdgeCases < Minitest::Test
     assert_includes error.message, "unknown event"
   end
 
+  def test_first_hook_error_does_not_break_second_hook
+    server = Reclamo::Server.new
+    server.expose(Calculator)
+    log = []
+    server.on(:request) { |_req| raise "first broke" }
+    server.on(:request) { |_req| log << "second" }
+
+    assert_output(nil, /first broke/) { call(server, "add", [1, 2]) }
+    assert_equal %w[second], log
+  end
+
   def test_hook_error_does_not_break_dispatch
     server = Reclamo::Server.new
     server.expose(Calculator)

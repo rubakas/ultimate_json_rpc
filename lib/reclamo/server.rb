@@ -38,8 +38,11 @@ module Reclamo
     def spawn_workers(queue, results, pool_size)
       pool_size.times.map do
         Thread.new do
-          while (req, i = queue.pop(true) rescue nil) # rubocop:disable Style/RescueModifier
+          loop do
+            req, i = queue.pop(true)
             results[i] = safe_serialize(req)
+          rescue ThreadError
+            break
           end
         end
       end.each(&:join)
@@ -75,6 +78,11 @@ module Reclamo
     def register_error(code, message, description = nil)
       raise ArgumentError, "error code must be an Integer" unless code.is_a?(Integer)
 
+      if code.between?(RESERVED_ERROR_MIN, RESERVED_ERROR_MAX)
+        raise ArgumentError,
+              "error code #{code} is in the reserved JSON-RPC range (#{RESERVED_ERROR_MIN}..#{RESERVED_ERROR_MAX})"
+      end
+
       @error_catalog ||= []
       raise ArgumentError, "error code #{code} is already registered" if @error_catalog.any? { |e| e["code"] == code }
 
@@ -102,7 +110,7 @@ module Reclamo
     include OpenRPCBuilder
     include ServerExtensions
 
-    attr_reader :name, :version, :description, :max_batch_size
+    attr_reader :name, :version, :description, :max_batch_size, :timeout
 
     HOOK_EVENTS = %i[request response error].freeze
     private_constant :HOOK_EVENTS
@@ -221,11 +229,13 @@ module Reclamo
     def timed_dispatch(request)
       start = Process.clock_gettime(Process::CLOCK_MONOTONIC)
       result = with_timeout { build_chain(request).call }
-      emit(:response, request, result, elapsed(start))
-      [result, nil, elapsed(start)]
+      duration = elapsed(start)
+      emit(:response, request, result, duration)
+      [result, nil, duration]
     rescue StandardError => e
-      emit(:error, request, e, elapsed(start))
-      [nil, e, elapsed(start)]
+      duration = elapsed(start)
+      emit(:error, request, e, duration)
+      [nil, e, duration]
     end
 
     def handle_dispatch_success(request, result)
@@ -240,9 +250,11 @@ module Reclamo
     end
 
     def emit(event, *args)
-      @hooks[event].each { |hook| hook.call(*args) }
-    rescue StandardError => e
-      Kernel.warn "Reclamo: #{event} hook error: #{e.message}"
+      @hooks[event].each do |hook|
+        hook.call(*args)
+      rescue StandardError => e
+        Kernel.warn "Reclamo: #{event} hook error: #{e.message}"
+      end
     end
 
     def elapsed(start) = Process.clock_gettime(Process::CLOCK_MONOTONIC) - start

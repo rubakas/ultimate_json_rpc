@@ -271,6 +271,14 @@ class TestHandlerDangerousMethods < Minitest::Test
     assert_raises(ArgumentError) { handler.expose(target) }
   end
 
+  def test_expose_rejects_dangerous_namespace
+    handler = Reclamo::Handler.new
+    target = Object.new
+    target.define_singleton_method(:safe) { "ok" }
+    err = assert_raises(ArgumentError) { handler.expose(target, namespace: "eval") }
+    assert_match(/dangerous/, err.message)
+  end
+
   def test_expose_allows_safe_name_evaluate
     handler = Reclamo::Handler.new
     handler.expose_method("evaluate") { "ok" }

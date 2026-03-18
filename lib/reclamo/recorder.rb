@@ -2,6 +2,9 @@
 
 module Reclamo
   class Recorder
+    UNSET = Object.new.freeze
+    private_constant :UNSET
+
     def initialize(server, output: nil, json: JSON)
       @exchanges = []
       @output = output
@@ -34,10 +37,10 @@ module Reclamo
       end
     end
 
-    def record(request, duration, result: nil, error: nil)
+    def record(request, duration, result: UNSET, error: nil)
       entry = { "method" => request.method_name, "params" => request.params,
                 "duration" => duration.round(6) }
-      entry["result"] = result if result
+      entry["result"] = result unless result.equal?(UNSET)
       entry["error"] = error if error
       @mutex.synchronize do
         @exchanges << entry

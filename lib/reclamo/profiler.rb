@@ -12,20 +12,23 @@ module Reclamo
     end
 
     def [](method_name)
-      @mutex.synchronize do
+      entry_copy = @mutex.synchronize do
         entry = @data[method_name]
         return nil unless entry
 
-        build_stats(entry)
+        snapshot_entry(entry)
       end
+      build_stats(entry_copy)
     end
 
-    def methods
+    def tracked_methods
       @mutex.synchronize { @data.keys.sort }
     end
+    alias methods tracked_methods
 
     def stats
-      @mutex.synchronize { @data.to_h { |name, entry| [name, build_stats(entry)] } }
+      entries = @mutex.synchronize { @data.to_h { |name, entry| [name, snapshot_entry(entry)] } }
+      entries.transform_values { |entry| build_stats(entry) }
     end
 
     def reset
@@ -49,6 +52,11 @@ module Reclamo
         entry[:durations] << duration
         entry[:durations].shift if entry[:durations].size > @max_samples
       end
+    end
+
+    def snapshot_entry(entry)
+      { count: entry[:count], total: entry[:total], min: entry[:min], max: entry[:max],
+        durations: entry[:durations].dup }
     end
 
     def build_stats(entry)

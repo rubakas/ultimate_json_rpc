@@ -93,6 +93,18 @@ class TestErrorCatalog < Minitest::Test
     assert_raises(FrozenError) { server.register_error(42, "Late") }
   end
 
+  def test_reserved_json_rpc_code_raises
+    server = Reclamo::Server.new
+    err = assert_raises(ArgumentError) { server.register_error(-32_700, "Parse error") }
+    assert_match(/reserved/, err.message)
+  end
+
+  def test_reserved_boundary_code_raises
+    server = Reclamo::Server.new
+    assert_raises(ArgumentError) { server.register_error(-32_000, "Boundary") }
+    assert_raises(ArgumentError) { server.register_error(-32_768, "Boundary") }
+  end
+
   def test_negative_error_codes
     server = Reclamo::Server.new
     server.expose_method("ping") { "pong" }

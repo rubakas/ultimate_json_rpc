@@ -214,6 +214,12 @@ class TestRequestFreezing < Minitest::Test
 
     assert_predicate request.params[0], :frozen?
   end
+
+  def test_hash_param_keys_are_frozen
+    data = { "jsonrpc" => "2.0", "method" => "foo", "params" => { "key" => "val" }, "id" => 1 }
+    request = Reclamo::Request.new(data)
+    request.params.each_key { |k| assert_predicate k, :frozen? }
+  end
 end
 
 class TestRequestNestingLimit < Minitest::Test
