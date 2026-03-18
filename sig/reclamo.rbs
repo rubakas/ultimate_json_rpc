@@ -66,7 +66,7 @@ module Reclamo
     def expose_method: (String | Symbol) { (*untyped) -> untyped } -> self
     def use: () { (Request, Proc) -> untyped } -> self
     def method?: (String) -> bool
-    def handle: (String) -> String?
+    def handle: (String?) -> String?
     def handle_parsed: (untyped) -> String?
     def methods_list: () -> Array[String]
     def methods_info: () -> Array[Hash[String, untyped]]

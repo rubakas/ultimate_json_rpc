@@ -294,6 +294,18 @@ class TestServerBatch < Minitest::Test
     assert_nil @server.handle(JSON.generate(requests))
   end
 
+  def test_batch_with_discover
+    requests = [
+      { "jsonrpc" => "2.0", "method" => "rpc.discover", "id" => 1 },
+      { "jsonrpc" => "2.0", "method" => "add", "params" => [1, 2], "id" => 2 }
+    ]
+    responses = JSON.parse(@server.handle(JSON.generate(requests)))
+
+    assert_equal 2, responses.size
+    assert responses[0]["result"].key?("methods")
+    assert_equal 3, responses[1]["result"]
+  end
+
   def test_batch_with_invalid_items
     requests = [
       1,
@@ -580,6 +592,16 @@ class TestServerError < Minitest::Test
 
     assert_equal(-32_001, response["error"]["code"])
     assert_equal "Server shutting down", response["error"]["message"]
+  end
+
+  def test_server_error_notification_returns_nil
+    server = Reclamo::Server.new
+    server.expose_method("shutdown") do
+      raise Reclamo::ServerError.new(-32_001, "Shutting down")
+    end
+
+    request = { "jsonrpc" => "2.0", "method" => "shutdown" }
+    assert_nil server.handle(JSON.generate(request))
   end
 end
 
@@ -973,6 +995,20 @@ class TestServerParamErrors < Minitest::Test
 
     assert_equal(-32_601, response["error"]["code"])
   end
+
+  def test_empty_array_params
+    request = { "jsonrpc" => "2.0", "method" => "greeter.hello", "params" => [], "id" => 1 }
+    response = JSON.parse(@server.handle(JSON.generate(request)))
+
+    assert_equal "hello", response["result"]
+  end
+
+  def test_empty_hash_params
+    request = { "jsonrpc" => "2.0", "method" => "greeter.hello", "params" => {}, "id" => 1 }
+    response = JSON.parse(@server.handle(JSON.generate(request)))
+
+    assert_equal "hello", response["result"]
+  end
 end
 
 class TestServerEdgeCases < Minitest::Test
@@ -1227,6 +1263,14 @@ class TestSpecParams < Minitest::Test
     request = '{"jsonrpc": "2.0", "method": "foobar"}'
 
     assert_nil @server.handle(request)
+  end
+
+  def test_spec_get_data
+    request = '{"jsonrpc": "2.0", "method": "get_data", "id": "1"}'
+    response = JSON.parse(@server.handle(request))
+
+    assert_equal ["hello", 5], response["result"]
+    assert_equal "1", response["id"]
   end
 end
 
