@@ -23,6 +23,7 @@ module Reclamo
     def expose_method(name, &block)
       raise ArgumentError, "block required" unless block
 
+      name = name.to_s
       validate_method_name!(name)
       check_duplicate!(name)
       @targets[name] = block
@@ -76,6 +77,7 @@ module Reclamo
     end
 
     def validate_method_name!(name)
+      raise ArgumentError, "method name must not be empty" if name.empty?
       raise ArgumentError, "method names starting with 'rpc.' are reserved" if name.start_with?("rpc.")
     end
 

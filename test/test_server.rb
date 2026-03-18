@@ -351,6 +351,25 @@ class TestServerExposeMethod < Minitest::Test
 
     assert_raises(ArgumentError) { handler.expose_method("foo") }
   end
+
+  def test_expose_method_with_symbol_name
+    server = Reclamo::Server.new
+    server.expose_method(:double) { |n| n * 2 }
+
+    request = { "jsonrpc" => "2.0", "method" => "double", "params" => [5], "id" => 1 }
+    response = JSON.parse(server.handle(JSON.generate(request)))
+
+    assert_equal 10, response["result"]
+    assert_includes server.methods_list, "double"
+  end
+
+  def test_expose_method_rejects_empty_name
+    server = Reclamo::Server.new
+
+    assert_raises(ArgumentError) do
+      server.expose_method("") { "hidden" }
+    end
+  end
 end
 
 class TestServerDiscover < Minitest::Test
