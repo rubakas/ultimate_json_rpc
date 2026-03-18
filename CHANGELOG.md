@@ -30,6 +30,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Per-method profiling: `require "reclamo/profiler"` provides `Reclamo::Profiler.new(server)` collecting count, min/max/avg, and p50/p95/p99 per method
 - Mock server: `require "reclamo/mock_server"` provides `Reclamo::MockServer` with `stub`/`stub_any` for consumer-driven contract testing
 - TCP server adapter: `require "reclamo/tcp"` provides `Reclamo::TCP.new(server, port: 4000)` for newline-delimited JSON-RPC over TCP with multi-client threading
+- API documentation generation: `require "reclamo/docs"` provides `Reclamo::Docs.new(server).to_markdown` generating Markdown from OpenRPC schema
 
 ### Changed
 - `rpc.discover` output restructured: service metadata moved to `info` object (`name` → `info.title`), method `returns` → `result` in OpenRPC contentDescriptor format

@@ -3,8 +3,8 @@
 > Product Requirements Document for Reclamo, a network-agnostic Ruby gem
 > that exposes Ruby objects through JSON-RPC 2.0.
 >
-> Current version: 0.2.0 | Ruby >= 3.2 | 26 items — 21 done, 5 pending
-> (3 P0 ✓, 8 P1 — 7 done, 10 P2 — 8 done, 5 P3 — 3 done)
+> Current version: 0.2.0 | Ruby >= 3.2 | 26 items — 22 done, 4 pending
+> (3 P0 ✓, 8 P1 — 7 done, 10 P2 — 8 done, 5 P3 — 4 done)
 
 ---
 
@@ -157,7 +157,7 @@ Testing:
   Measure and expose per-method dispatch duration. Opt-in profiling hook that collects timing data with aggregation (min/max/avg/p99) for long-running services. Zero overhead when disabled.
   *Depends on: instrumentation hooks (P1).*
 
-- [ ] **API documentation generation**
+- [x] **API documentation generation**
   Generate human-readable HTML or Markdown docs from the OpenRPC schema.
   *Depends on: OpenRPC schema generation (P0).*
 

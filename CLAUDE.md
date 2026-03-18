@@ -41,6 +41,7 @@ bin/console            # Interactive console with gem loaded
 - `lib/reclamo/server.rb` — public API: expose, handle/call, middleware, rpc.discover, service metadata, max_batch_size, expose_errors, timeout, concurrent_batches, instrumentation hooks, freeze
 - `lib/reclamo/rack.rb` — optional Rack adapter (Reclamo::Rack), NOT auto-required
 - `lib/reclamo/stdio.rb` — optional stdio adapter (Reclamo::Stdio), NOT auto-required
+- `lib/reclamo/docs.rb` — optional Markdown doc generator (Reclamo::Docs), NOT auto-required
 - `lib/reclamo/logging.rb` — optional structured logging (Reclamo::Logging), NOT auto-required
 - `lib/reclamo/mcp.rb` — optional MCP adapter (Reclamo::MCP), NOT auto-required
 - `lib/reclamo/mock_server.rb` — optional mock server (Reclamo::MockServer), NOT auto-required
@@ -74,6 +75,7 @@ bin/console            # Interactive console with gem loaded
 - `test/test_hooks.rb` — instrumentation hooks: on_request, on_response, on_error, edge cases
 - `test/test_timeout.rb` — request timeout: slow handlers, error codes, notifications, hook integration
 - `test/test_deprecation.rb` — method deprecation markers: boolean, string, expose hash, namespace, freeze
+- `test/test_docs.rb` — API doc generation: title, methods, params, returns, deprecation, errors
 - `test/test_logging.rb` — structured logging: levels, duration, method names, errors, chaining
 - `test/test_mcp.rb` — MCP adapter: initialize, tools/list, tools/call, schemas, namespaces, errors
 - `test/test_mock_server.rb` — mock server: stub, stub_any, batch, notifications, parse errors
