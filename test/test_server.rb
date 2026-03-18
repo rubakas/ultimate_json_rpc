@@ -468,38 +468,11 @@ class TestServerDiscover < Minitest::Test
     assert_nil server.handle(JSON.generate({ "jsonrpc" => "2.0", "method" => "rpc.discover" }))
   end
 
-  def test_rpc_discover_includes_expose_method_description
+  def test_rpc_discover_not_in_methods_list
     server = Reclamo::Server.new
-    server.expose_method("ping", description: "Health check") { "pong" }
-    ping_method = discover(server).find { |m| m["name"] == "ping" }
+    server.expose(Calculator)
 
-    assert_equal "Health check", ping_method["description"]
-  end
-
-  def test_rpc_discover_includes_expose_descriptions
-    server = Reclamo::Server.new
-    server.expose(Calculator, descriptions: { add: "Add two numbers", divide: "Divide two numbers" })
-    add_method = discover(server).find { |m| m["name"] == "add" }
-    div_method = discover(server).find { |m| m["name"] == "divide" }
-
-    assert_equal "Add two numbers", add_method["description"]
-    assert_equal "Divide two numbers", div_method["description"]
-  end
-
-  def test_rpc_discover_omits_description_when_not_provided
-    server = Reclamo::Server.new
-    server.expose_method("ping") { "pong" }
-    ping_method = discover(server).find { |m| m["name"] == "ping" }
-
-    refute ping_method.key?("description")
-  end
-
-  def test_rpc_discover_descriptions_with_string_keys
-    server = Reclamo::Server.new
-    server.expose(Calculator, descriptions: { "add" => "Sum values" })
-    add_method = discover(server).find { |m| m["name"] == "add" }
-
-    assert_equal "Sum values", add_method["description"]
+    refute_includes server.methods_list, "rpc.discover"
   end
 
   private
@@ -513,6 +486,84 @@ class TestServerDiscover < Minitest::Test
   def discover(server)
     request = { "jsonrpc" => "2.0", "method" => "rpc.discover", "id" => 1 }
     JSON.parse(server.handle(JSON.generate(request)))["result"]["methods"]
+  end
+end
+
+module DiscoverHelper
+  private
+
+  def discover_result(server)
+    request = { "jsonrpc" => "2.0", "method" => "rpc.discover", "id" => 1 }
+    JSON.parse(server.handle(JSON.generate(request)))["result"]
+  end
+
+  def discover_methods(server)
+    discover_result(server)["methods"]
+  end
+end
+
+class TestServerDiscoverDescriptions < Minitest::Test
+  include DiscoverHelper
+
+  def test_expose_method_description
+    server = Reclamo::Server.new
+    server.expose_method("ping", description: "Health check") { "pong" }
+
+    assert_equal "Health check", discover_methods(server).find { |m| m["name"] == "ping" }["description"]
+  end
+
+  def test_expose_descriptions
+    server = Reclamo::Server.new
+    server.expose(Calculator, descriptions: { add: "Add two numbers", divide: "Divide two numbers" })
+    methods = discover_methods(server)
+
+    assert_equal "Add two numbers", methods.find { |m| m["name"] == "add" }["description"]
+    assert_equal "Divide two numbers", methods.find { |m| m["name"] == "divide" }["description"]
+  end
+
+  def test_omits_description_when_not_provided
+    server = Reclamo::Server.new
+    server.expose_method("ping") { "pong" }
+
+    refute discover_methods(server).find { |m| m["name"] == "ping" }.key?("description")
+  end
+
+  def test_descriptions_with_string_keys
+    server = Reclamo::Server.new
+    server.expose(Calculator, descriptions: { "add" => "Sum values" })
+
+    assert_equal "Sum values", discover_methods(server).find { |m| m["name"] == "add" }["description"]
+  end
+
+  def test_descriptions_with_namespace
+    server = Reclamo::Server.new
+    server.expose(Calculator, namespace: "math", descriptions: { add: "Sum", divide: "Quotient" })
+    methods = discover_methods(server)
+
+    assert_equal "Sum", methods.find { |m| m["name"] == "math.add" }["description"]
+    assert_equal "Quotient", methods.find { |m| m["name"] == "math.divide" }["description"]
+  end
+end
+
+class TestServerDiscoverServiceInfo < Minitest::Test
+  include DiscoverHelper
+
+  def test_includes_name_and_version
+    server = Reclamo::Server.new(name: "Calculator API", version: "1.0.0")
+    server.expose(Calculator)
+    result = discover_result(server)
+
+    assert_equal "Calculator API", result["name"]
+    assert_equal "1.0.0", result["version"]
+  end
+
+  def test_omits_name_and_version_when_not_set
+    server = Reclamo::Server.new
+    server.expose(Calculator)
+    result = discover_result(server)
+
+    refute result.key?("name")
+    refute result.key?("version")
   end
 end
 
@@ -1095,7 +1146,9 @@ class TestServerEdgeCases < Minitest::Test
     assert server.method?("add")
     assert server.method?("ping")
   end
+end
 
+class TestServerCallable < Minitest::Test
   def test_call_is_alias_for_handle
     server = Reclamo::Server.new
     server.expose(Calculator)
@@ -1113,6 +1166,33 @@ class TestServerEdgeCases < Minitest::Test
     response = JSON.parse(callable.call(request))
 
     assert_equal 5, response["result"]
+  end
+
+  def test_to_proc_enables_map
+    server = Reclamo::Server.new
+    server.expose(Calculator)
+
+    requests = [
+      JSON.generate({ "jsonrpc" => "2.0", "method" => "add", "params" => [1, 2], "id" => 1 }),
+      JSON.generate({ "jsonrpc" => "2.0", "method" => "add", "params" => [3, 4], "id" => 2 })
+    ]
+    results = requests.map(&server).map { |r| JSON.parse(r)["result"] }
+
+    assert_equal [3, 7], results
+  end
+
+  def test_to_proc_with_notifications
+    server = Reclamo::Server.new
+    server.expose(Calculator)
+
+    requests = [
+      JSON.generate({ "jsonrpc" => "2.0", "method" => "add", "params" => [1, 2] }),
+      JSON.generate({ "jsonrpc" => "2.0", "method" => "add", "params" => [3, 4], "id" => 1 })
+    ]
+    results = requests.map(&server)
+
+    assert_nil results[0]
+    assert_equal 7, JSON.parse(results[1])["result"]
   end
 
   def test_encoding_error_returns_parse_error
@@ -1137,19 +1217,6 @@ class TestServerEdgeCases < Minitest::Test
     assert_equal "nonexistent", response["error"]["data"]
   end
 
-  def test_to_proc_enables_map
-    server = Reclamo::Server.new
-    server.expose(Calculator)
-
-    requests = [
-      JSON.generate({ "jsonrpc" => "2.0", "method" => "add", "params" => [1, 2], "id" => 1 }),
-      JSON.generate({ "jsonrpc" => "2.0", "method" => "add", "params" => [3, 4], "id" => 2 })
-    ]
-    results = requests.map(&server).map { |r| JSON.parse(r)["result"] }
-
-    assert_equal [3, 7], results
-  end
-
   def test_inspect
     server = Reclamo::Server.new
     server.expose(Calculator)
@@ -1162,6 +1229,13 @@ class TestServerEdgeCases < Minitest::Test
     server = Reclamo::Server.new
 
     assert_equal "#<Reclamo::Server methods=0 middleware=0>", server.inspect
+  end
+
+  def test_inspect_with_name
+    server = Reclamo::Server.new(name: "My API")
+    server.expose(Calculator)
+
+    assert_equal "#<Reclamo::Server name=\"My API\" methods=2 middleware=0>", server.inspect
   end
 end
 

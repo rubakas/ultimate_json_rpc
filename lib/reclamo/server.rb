@@ -6,7 +6,9 @@ module Reclamo
   private_constant :PARSE_FAILED
 
   class Server
-    def initialize
+    def initialize(name: nil, version: nil)
+      @name = name
+      @version = version
       @handler = Handler.new
       @middleware = []
     end
@@ -46,7 +48,7 @@ module Reclamo
     end
 
     def to_proc = method(:call).to_proc
-    def inspect = "#<#{self.class} methods=#{size} middleware=#{@middleware.size}>"
+    def inspect = "#<#{self.class}#{" name=#{@name.inspect}" if @name} methods=#{size} middleware=#{@middleware.size}>"
 
     def methods_list = @handler.methods_list
     def methods_info = @handler.methods_info
@@ -71,20 +73,16 @@ module Reclamo
     end
 
     def serialize_single(data)
-      response = process_request(data)
+      request = Request.new(data)
+      response = execute_request(request)
       return nil unless response
 
       JSON.generate(response)
+    rescue InvalidRequest
+      JSON.generate(Response.error(INVALID_REQUEST, extract_id(data)))
     rescue JSON::JSONError
       id = response.is_a?(Hash) ? response["id"] : nil
       JSON.generate(Response.error(INTERNAL_ERROR, id))
-    end
-
-    def process_request(data)
-      request = Request.new(data)
-      execute_request(request)
-    rescue InvalidRequest
-      Response.error(INVALID_REQUEST, extract_id(data))
     end
 
     def extract_id(data)
@@ -100,7 +98,10 @@ module Reclamo
 
       Response.success(result, request.id)
     rescue StandardError => e
-      error_response_for(request, e)
+      return nil if request.notification?
+
+      code, message, data = error_details(e)
+      Response.error(code, request.id, data: data, message: message)
     end
 
     def build_chain(request)
@@ -113,16 +114,12 @@ module Reclamo
     end
 
     def invoke_handler(request)
-      return { "methods" => @handler.methods_info } if request.method_name == "rpc.discover"
+      return @handler.call(request.method_name, request.params) unless request.method_name == "rpc.discover"
 
-      @handler.call(request.method_name, request.params)
-    end
-
-    def error_response_for(request, err)
-      return nil if request.notification?
-
-      code, message, data = error_details(err)
-      Response.error(code, request.id, data: data, message: message)
+      { "methods" => @handler.methods_info }.tap do |result|
+        result["name"] = @name if @name
+        result["version"] = @version if @version
+      end
     end
 
     def error_details(err)
