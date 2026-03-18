@@ -15,6 +15,7 @@ module Reclamo
       methods.each do |method_name|
         full_name = "#{prefix}#{method_name}"
         validate_method_name!(full_name)
+        check_duplicate!(full_name)
         @targets[full_name] = [target, method_name]
       end
     end
@@ -23,6 +24,7 @@ module Reclamo
       raise ArgumentError, "block required" unless block
 
       validate_method_name!(name)
+      check_duplicate!(name)
       @targets[name] = block
     end
 
@@ -71,6 +73,10 @@ module Reclamo
 
     def validate_method_name!(name)
       raise ArgumentError, "method names starting with 'rpc.' are reserved" if name.start_with?("rpc.")
+    end
+
+    def check_duplicate!(name)
+      raise ArgumentError, "method '#{name}' is already registered" if @targets.key?(name)
     end
 
     def invoke(target, method_name, params)

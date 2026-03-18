@@ -556,6 +556,18 @@ class TestServerHandleParsed < Minitest::Test
 
     assert_equal(-32_600, response["error"]["code"])
   end
+
+  def test_handle_parsed_non_hash_non_array
+    response = JSON.parse(@server.handle_parsed("a string"))
+
+    assert_equal(-32_600, response["error"]["code"])
+  end
+
+  def test_handle_parsed_nil
+    response = JSON.parse(@server.handle_parsed(nil))
+
+    assert_equal(-32_600, response["error"]["code"])
+  end
 end
 
 class TestIntegration < Minitest::Test
@@ -635,5 +647,35 @@ class TestHandler < Minitest::Test
 
     refute handler.method?("class")
     refute handler.method?("object_id")
+  end
+
+  def test_duplicate_expose_raises
+    handler = Reclamo::Handler.new
+    handler.expose(Calculator)
+
+    assert_raises(ArgumentError) { handler.expose(Calculator) }
+  end
+
+  def test_duplicate_expose_method_raises
+    handler = Reclamo::Handler.new
+    handler.expose_method("foo") { "bar" }
+
+    assert_raises(ArgumentError) { handler.expose_method("foo") { "baz" } }
+  end
+
+  def test_duplicate_across_expose_and_expose_method
+    handler = Reclamo::Handler.new
+    handler.expose(Calculator)
+
+    assert_raises(ArgumentError) { handler.expose_method("add") { 1 } }
+  end
+
+  def test_same_method_name_different_namespace_ok
+    handler = Reclamo::Handler.new
+    handler.expose(Calculator, namespace: "a")
+    handler.expose(Calculator, namespace: "b")
+
+    assert handler.method?("a.add")
+    assert handler.method?("b.add")
   end
 end

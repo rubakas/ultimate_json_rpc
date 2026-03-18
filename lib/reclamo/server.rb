@@ -32,7 +32,11 @@ module Reclamo
     end
 
     def handle_parsed(data)
-      data.is_a?(Array) ? handle_batch(data) : handle_single(data)
+      case data
+      when Array then handle_batch(data)
+      when Hash then handle_single(data)
+      else JSON.generate(Response.error(INVALID_REQUEST, nil))
+      end
     end
 
     def methods_list
