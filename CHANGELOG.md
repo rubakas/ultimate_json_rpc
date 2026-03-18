@@ -1,0 +1,30 @@
+# Changelog
+
+All notable changes to this project will be documented in this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [Unreleased]
+
+### Added
+- `InvalidParams` error class for explicit -32602 errors from user code
+- `expose_method` now accepts callable objects (Method, Proc, lambda) as first argument
+
+### Changed
+- `MethodNotFound` now has a descriptive Ruby exception message ("Method not found: name")
+- `ApplicationError` validates that error code is an Integer
+- Request params and id are frozen after construction for immutability
+
+## [0.1.0] - 2025-05-01
+
+### Added
+- Initial release
+- JSON-RPC 2.0 server with `expose`, `expose_method`, and middleware support
+- `rpc.discover` built-in introspection
+- Batch request handling
+- `Server#freeze` for thread-safe immutability
+- `Server#call` alias and `#to_proc` for Rack-like usage
+- `only:`/`except:` method filtering
+- Method descriptions via `descriptions:` option
+- Service metadata via `name:` and `version:` options
