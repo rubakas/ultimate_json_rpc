@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Method-level middleware: `server.use(only: ["admin.*"])` and `server.use(except: ["ping"])` to scope middleware to specific methods or namespaces, with glob pattern support
+
 ## [0.2.0] - 2026-03-18
 
 ### Added

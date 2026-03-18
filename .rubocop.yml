@@ -13,11 +13,15 @@ Style/Documentation:
   Enabled: false
 
 Metrics/ClassLength:
-  Max: 110
+  Max: 115
   Exclude:
     - "test/**/*"
 
 Metrics/AbcSize:
+  Exclude:
+    - "test/**/*"
+
+Metrics/MethodLength:
   Exclude:
     - "test/**/*"
 

@@ -83,7 +83,27 @@ server.use do |request, next_call|
 end
 ```
 
-Middleware runs in registration order (first registered = outermost wrapper). Middleware can pass data to handlers via `request.context`:
+Middleware runs in registration order (first registered = outermost wrapper).
+
+#### Scoped middleware
+
+Target specific methods or namespaces with `only:` / `except:`, supporting glob patterns:
+
+```ruby
+# Only run for admin namespace methods
+server.use(only: ["admin.*"]) do |request, next_call|
+  raise Reclamo::ApplicationError.new(403, "Forbidden") unless admin?(request)
+  next_call.call
+end
+
+# Run for everything except health checks
+server.use(except: ["ping", "health"]) do |request, next_call|
+  log(request)
+  next_call.call
+end
+```
+
+Middleware can pass data to handlers via `request.context`:
 
 ```ruby
 server.use do |request, next_call|
@@ -139,6 +159,7 @@ server.handle(request)  # still works
 - **Positional and keyword params** — arrays map to positional args, objects map to keyword args
 - **Service discovery** — built-in `rpc.discover` method with param info
 - **Middleware** — `server.use { |request, next_call| ... }` for cross-cutting concerns
+- **Scoped middleware** — `only:` / `except:` with glob patterns to target specific methods or namespaces
 - **Error handling** — standard JSON-RPC error codes, `ApplicationError`, and `ServerError`
 - **Chainable API** — all setup methods return `self`
 - **Callable** — `to_proc` enables `requests.map(&server)`

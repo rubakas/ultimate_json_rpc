@@ -27,10 +27,11 @@ module Reclamo
       self
     end
 
-    def use(&block)
+    def use(only: nil, except: nil, &block)
       raise ArgumentError, "block required" unless block
+      raise ArgumentError, "cannot use both :only and :except" if only && except
 
-      @middleware << block
+      @middleware << [block, middleware_matcher(only, except)]
       self
     end
 
@@ -69,16 +70,15 @@ module Reclamo
 
     def handle_batch(requests)
       return JSON.generate(Response.error(INVALID_REQUEST, nil)) if requests.empty?
-
-      if @max_batch_size && requests.size > @max_batch_size
+      if over_batch_limit?(requests)
         return JSON.generate(Response.error(INVALID_REQUEST, nil, message: "Batch too large"))
       end
 
       json_parts = requests.filter_map { |req| serialize_single(req) }
-      return nil if json_parts.empty?
-
-      "[#{json_parts.join(",")}]"
+      json_parts.empty? ? nil : "[#{json_parts.join(",")}]"
     end
+
+    def over_batch_limit?(requests) = @max_batch_size && requests.size > @max_batch_size
 
     def serialize_single(data)
       request = parse_request(data)
@@ -87,12 +87,9 @@ module Reclamo
       response = execute_request(request)
       return nil unless response
 
-      begin
-        JSON.generate(response)
-      rescue JSON::JSONError
-        id = response.is_a?(Hash) ? response["id"] : nil
-        JSON.generate(Response.error(INTERNAL_ERROR, id))
-      end
+      JSON.generate(response)
+    rescue JSON::JSONError
+      JSON.generate(Response.error(INTERNAL_ERROR, response.is_a?(Hash) ? response["id"] : nil))
     end
 
     def parse_request(data)
@@ -109,9 +106,7 @@ module Reclamo
 
     def execute_request(request)
       result = build_chain(request).call
-      return nil if request.notification?
-
-      Response.success(result, request.id)
+      request.notification? ? nil : Response.success(result, request.id)
     rescue StandardError => e
       return nil if request.notification?
 
@@ -120,17 +115,26 @@ module Reclamo
     end
 
     def build_chain(request)
-      @middleware.reverse.reduce(-> { invoke_handler(request) }) do |core, mw|
+      applicable = @middleware.select { |_, matcher| matcher.call(request.method_name) }
+      applicable.reverse.reduce(-> { invoke_handler(request) }) do |core, (mw, _)|
         -> { mw.call(request, core) }
       end
+    end
+
+    def middleware_matcher(only, except)
+      return ->(_) { true } unless only || except
+
+      patterns = Array(only || except).map(&:to_s)
+      check = only ? :any? : :none?
+      ->(name) { patterns.public_send(check) { |p| p.include?("*") ? File.fnmatch(p, name) : p == name } }
     end
 
     def invoke_handler(request)
       return @handler.call(request.method_name, request.params) unless request.method_name == "rpc.discover"
 
-      result = { "methods" => @handler.methods_info }
-      { "name" => @name, "version" => @version, "description" => @description }.each { |k, v| result[k] = v if v }
-      result
+      { "methods" => @handler.methods_info }.tap do |result|
+        { "name" => @name, "version" => @version, "description" => @description }.each { |k, v| result[k] = v if v }
+      end
     end
 
     def error_details(err)

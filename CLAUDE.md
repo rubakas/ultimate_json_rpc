@@ -55,6 +55,7 @@ bin/console            # Interactive console with gem loaded
 - `test/test_batch.rb` — batch requests, batch size limits
 - `test/test_discover.rb` — rpc.discover, descriptions, service info
 - `test/test_middleware.rb` — middleware chain, edge cases, request immutability
+- `test/test_method_level_middleware.rb` — scoped middleware: only/except filtering, glob patterns, chain ordering
 - `test/test_expose.rb` — expose_method, method filtering, callable objects
 - `test/test_spec_conformance.rb` — JSON-RPC 2.0 spec conformance + integration tests
 - `test/test_test_helpers.rb` — TestHelpers module tests

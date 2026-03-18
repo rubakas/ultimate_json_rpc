@@ -32,7 +32,7 @@ Items within each tier are ordered by dependency (no-dependency items first, the
   Extend `rpc.discover` to return a full [OpenRPC](https://open-rpc.org/) document. The current response already includes method names, params, and descriptions — OpenRPC formalizes this into a machine-readable spec enabling automatic client generation, interactive docs, and cross-language tooling.
   *Depends on: nothing (builds on existing `rpc.discover`).*
 
-- [ ] **Method-level middleware**
+- [x] **Method-level middleware**
   Allow middleware to target specific methods or namespaces: `server.use(only: ["admin.*"]) { |req, nxt| ... }` or `server.use(except: ["ping"]) { ... }`, mirroring the `only:/except:` pattern from `expose`. Enables scoped auth, rate limiting, and logging without global middleware overhead.
   *Depends on: nothing (extends existing middleware chain).*
 
