@@ -184,6 +184,18 @@ class TestServerHandleParsed < Minitest::Test
 
     assert_equal(-32_600, response["error"]["code"])
   end
+
+  def test_handle_parsed_boolean
+    response = JSON.parse(@server.handle_parsed(true))
+
+    assert_equal(-32_600, response["error"]["code"])
+  end
+
+  def test_handle_parsed_number
+    response = JSON.parse(@server.handle_parsed(42))
+
+    assert_equal(-32_600, response["error"]["code"])
+  end
 end
 
 class TestServerCallable < Minitest::Test
@@ -456,5 +468,43 @@ class TestServerFreeze < Minitest::Test
     server.freeze
 
     assert server.frozen?
+  end
+
+  def test_frozen_server_with_middleware_handles_requests
+    server = Reclamo::Server.new
+    server.expose(Calculator)
+    server.use { |_req, next_call| next_call.call }
+    server.freeze
+
+    request = { "jsonrpc" => "2.0", "method" => "add", "params" => [2, 3], "id" => 1 }
+    response = JSON.parse(server.handle(JSON.generate(request)))
+
+    assert_equal 5, response["result"]
+  end
+
+  def test_frozen_server_handles_batches
+    server = Reclamo::Server.new
+    server.expose(Calculator)
+    server.freeze
+
+    requests = [
+      { "jsonrpc" => "2.0", "method" => "add", "params" => [1, 2], "id" => 1 },
+      { "jsonrpc" => "2.0", "method" => "add", "params" => [3, 4], "id" => 2 }
+    ]
+    responses = JSON.parse(server.handle(JSON.generate(requests)))
+
+    assert_equal 2, responses.size
+    assert_equal 3, responses[0]["result"]
+  end
+
+  def test_frozen_server_handles_errors
+    server = Reclamo::Server.new
+    server.expose(Calculator)
+    server.freeze
+
+    request = { "jsonrpc" => "2.0", "method" => "nonexistent", "id" => 1 }
+    response = JSON.parse(server.handle(JSON.generate(request)))
+
+    assert_equal(-32_601, response["error"]["code"])
   end
 end

@@ -35,10 +35,10 @@ bin/console            # Interactive console with gem loaded
 - `lib/reclamo.rb` — main entry point, requires all components
 - `lib/reclamo/version.rb` — version constant
 - `lib/reclamo/errors.rb` — error codes, ERROR_MESSAGES, all error classes (InvalidRequest, InvalidParams, MethodNotFound, ApplicationError, ServerError)
-- `lib/reclamo/request.rb` — JSON-RPC request parsing, validation, immutable attributes
+- `lib/reclamo/request.rb` — JSON-RPC request parsing, validation, deep-frozen immutable attributes
 - `lib/reclamo/response.rb` — JSON-RPC response building
 - `lib/reclamo/handler.rb` — method registry, dispatch, introspection, callable support, freeze
-- `lib/reclamo/server.rb` — public API: expose, handle/call, middleware, rpc.discover, service metadata, freeze
+- `lib/reclamo/server.rb` — public API: expose, handle/call, middleware, rpc.discover, service metadata (name, version, description), freeze
 - `sig/reclamo.rbs` — RBS type signatures
 
 ### Tests

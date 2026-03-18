@@ -55,7 +55,11 @@ module Reclamo
     def self.error: (Integer, untyped, ?data: untyped, ?message: String?) -> Hash[String, untyped]
   end
 
-  type callable = Proc | Method | UnboundMethod
+  interface _Callable
+    def call: (*untyped) -> untyped
+  end
+
+  type callable = Proc | Method | _Callable
 
   class Handler
     def initialize: () -> void
@@ -73,8 +77,9 @@ module Reclamo
   class Server
     attr_reader name: String?
     attr_reader version: String?
+    attr_reader description: String?
 
-    def initialize: (?name: String?, ?version: String?) -> void
+    def initialize: (?name: String?, ?version: String?, ?description: String?) -> void
     def expose: (Module | Object, ?namespace: String | Symbol | nil, ?only: Array[Symbol | String]?, ?except: Array[Symbol | String]?, ?descriptions: Hash[Symbol | String, String]?) -> self
     def expose_method: (String | Symbol, ?callable?, ?description: String?) ?{ (*untyped) -> untyped } -> self
     def use: () { (Request, Proc) -> untyped } -> self

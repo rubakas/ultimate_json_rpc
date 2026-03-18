@@ -6,11 +6,12 @@ module Reclamo
   private_constant :PARSE_FAILED
 
   class Server
-    attr_reader :name, :version
+    attr_reader :name, :version, :description
 
-    def initialize(name: nil, version: nil)
+    def initialize(name: nil, version: nil, description: nil)
       @name = name
       @version = version
+      @description = description
       @handler = Handler.new
       @middleware = []
     end
@@ -53,8 +54,7 @@ module Reclamo
     def inspect = "#<#{self.class}#{" name=#{@name.inspect}" if @name} methods=#{size} middleware=#{@middleware.size}>"
 
     def freeze
-      @handler.freeze
-      @middleware.freeze
+      [@handler, @middleware].each(&:freeze)
       super
     end
 
@@ -134,6 +134,7 @@ module Reclamo
       { "methods" => @handler.methods_info }.tap do |result|
         result["name"] = @name if @name
         result["version"] = @version if @version
+        result["description"] = @description if @description
       end
     end
 

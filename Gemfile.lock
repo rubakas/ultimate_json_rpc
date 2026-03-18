@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    reclamo (0.1.0)
+    reclamo (0.2.0)
 
 GEM
   remote: https://rubygems.org/
@@ -107,7 +107,7 @@ CHECKSUMS
   rainbow (3.1.1)
   rake (13.3.1)
   rdoc (7.2.0)
-  reclamo (0.1.0)
+  reclamo (0.2.0)
   regexp_parser (2.11.3)
   reline (0.6.3)
   rubocop (1.85.1)

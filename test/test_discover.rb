@@ -180,4 +180,42 @@ class TestServerDiscoverServiceInfo < Minitest::Test
     assert_nil server.name
     assert_nil server.version
   end
+
+  def test_includes_description
+    server = Reclamo::Server.new(name: "API", description: "A test API server")
+    server.expose(Calculator)
+    result = discover_result(server)
+
+    assert_equal "A test API server", result["description"]
+  end
+
+  def test_omits_description_when_not_set
+    server = Reclamo::Server.new(name: "API")
+    server.expose(Calculator)
+    result = discover_result(server)
+
+    refute result.key?("description")
+  end
+
+  def test_description_reader
+    server = Reclamo::Server.new(description: "My service")
+
+    assert_equal "My service", server.description
+  end
+
+  def test_description_defaults_to_nil
+    server = Reclamo::Server.new
+
+    assert_nil server.description
+  end
+
+  def test_frozen_server_discover_works
+    server = Reclamo::Server.new(name: "Frozen API", version: "1.0")
+    server.expose(Calculator)
+    server.freeze
+    result = discover_result(server)
+
+    assert_equal "Frozen API", result["name"]
+    assert_includes result["methods"].map { |m| m["name"] }, "add"
+  end
 end
