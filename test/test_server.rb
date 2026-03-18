@@ -374,6 +374,52 @@ class TestRequestValidation < Minitest::Test
 
     assert_equal(-32_600, response["error"]["code"])
   end
+
+  def test_id_as_array_is_invalid
+    server = Reclamo::Server.new
+    server.expose(Calculator)
+    request = { "jsonrpc" => "2.0", "method" => "add", "params" => [1, 2], "id" => [1] }
+    response = JSON.parse(server.handle(JSON.generate(request)))
+
+    assert_equal(-32_600, response["error"]["code"])
+  end
+
+  def test_id_as_object_is_invalid
+    server = Reclamo::Server.new
+    server.expose(Calculator)
+    request = { "jsonrpc" => "2.0", "method" => "add", "params" => [1, 2], "id" => { "x" => 1 } }
+    response = JSON.parse(server.handle(JSON.generate(request)))
+
+    assert_equal(-32_600, response["error"]["code"])
+  end
+
+  def test_id_as_boolean_is_invalid
+    server = Reclamo::Server.new
+    server.expose(Calculator)
+    request = { "jsonrpc" => "2.0", "method" => "add", "params" => [1, 2], "id" => true }
+    response = JSON.parse(server.handle(JSON.generate(request)))
+
+    assert_equal(-32_600, response["error"]["code"])
+  end
+
+  def test_id_as_integer_is_valid
+    server = Reclamo::Server.new
+    server.expose(Calculator)
+    request = { "jsonrpc" => "2.0", "method" => "add", "params" => [1, 2], "id" => 42 }
+    response = JSON.parse(server.handle(JSON.generate(request)))
+
+    assert_equal 3, response["result"]
+    assert_equal 42, response["id"]
+  end
+
+  def test_id_as_float_is_valid
+    server = Reclamo::Server.new
+    server.expose(Calculator)
+    request = { "jsonrpc" => "2.0", "method" => "add", "params" => [1, 2], "id" => 1.0 }
+    response = JSON.parse(server.handle(JSON.generate(request)))
+
+    assert_equal 3, response["result"]
+  end
 end
 
 class TestServerMethodFiltering < Minitest::Test
@@ -743,5 +789,207 @@ class TestHandler < Minitest::Test
 
     assert handler.method?("a.add")
     assert handler.method?("b.add")
+  end
+end
+
+# JSON-RPC 2.0 Specification Conformance Tests
+# Based on examples from https://www.jsonrpc.org/specification
+module SpecConformanceSetup
+  private
+
+  def build_spec_server
+    server = Reclamo::Server.new
+    server.expose_method("subtract") do |*args, **kwargs|
+      kwargs.any? ? kwargs[:minuend] - kwargs[:subtrahend] : args[0] - args[1]
+    end
+    server.expose_method("update") { |*args| args }
+    server.expose_method("foobar") { "foobar" }
+    server.expose_method("sum") { |*args| args.sum }
+    server.expose_method("notify_hello") { |_val| nil }
+    server.expose_method("get_data") { ["hello", 5] }
+    server
+  end
+end
+
+class TestSpecParams < Minitest::Test
+  include SpecConformanceSetup
+
+  def setup
+    @server = build_spec_server
+  end
+
+  def test_spec_positional_params_subtract
+    request = '{"jsonrpc": "2.0", "method": "subtract", "params": [42, 23], "id": 1}'
+    response = JSON.parse(@server.handle(request))
+
+    assert_equal "2.0", response["jsonrpc"]
+    assert_equal 19, response["result"]
+    assert_equal 1, response["id"]
+  end
+
+  def test_spec_positional_params_reversed
+    request = '{"jsonrpc": "2.0", "method": "subtract", "params": [23, 42], "id": 2}'
+    response = JSON.parse(@server.handle(request))
+
+    assert_equal(-19, response["result"])
+    assert_equal 2, response["id"]
+  end
+
+  def test_spec_named_params_subtract
+    request = '{"jsonrpc": "2.0", "method": "subtract", "params": {"subtrahend": 23, "minuend": 42}, "id": 3}'
+    response = JSON.parse(@server.handle(request))
+
+    assert_equal 19, response["result"]
+    assert_equal 3, response["id"]
+  end
+
+  def test_spec_named_params_reordered
+    request = '{"jsonrpc": "2.0", "method": "subtract", "params": {"minuend": 42, "subtrahend": 23}, "id": 4}'
+    response = JSON.parse(@server.handle(request))
+
+    assert_equal 19, response["result"]
+    assert_equal 4, response["id"]
+  end
+
+  def test_spec_notification
+    request = '{"jsonrpc": "2.0", "method": "update", "params": [1,2,3,4,5]}'
+
+    assert_nil @server.handle(request)
+  end
+
+  def test_spec_notification_no_params
+    request = '{"jsonrpc": "2.0", "method": "foobar"}'
+
+    assert_nil @server.handle(request)
+  end
+end
+
+class TestSpecErrors < Minitest::Test
+  include SpecConformanceSetup
+
+  def setup
+    @server = build_spec_server
+  end
+
+  def test_spec_method_not_found
+    request = '{"jsonrpc": "2.0", "method": "nonexistent", "id": "1"}'
+    response = JSON.parse(@server.handle(request))
+
+    assert_equal "2.0", response["jsonrpc"]
+    assert_equal(-32_601, response["error"]["code"])
+    assert_equal "Method not found", response["error"]["message"]
+    assert_equal "1", response["id"]
+  end
+
+  def test_spec_parse_error
+    request = '{"jsonrpc": "2.0", "method": "foobar, "params": "bar", "baz]'
+    response = JSON.parse(@server.handle(request))
+
+    assert_equal "2.0", response["jsonrpc"]
+    assert_equal(-32_700, response["error"]["code"])
+    assert_equal "Parse error", response["error"]["message"]
+    assert_nil response["id"]
+  end
+
+  def test_spec_invalid_request
+    request = '{"jsonrpc": "2.0", "method": 1, "params": "bar"}'
+    response = JSON.parse(@server.handle(request))
+
+    assert_equal "2.0", response["jsonrpc"]
+    assert_equal(-32_600, response["error"]["code"])
+    assert_equal "Invalid Request", response["error"]["message"]
+    assert_nil response["id"]
+  end
+end
+
+class TestSpecBatch < Minitest::Test
+  include SpecConformanceSetup
+
+  def setup
+    @server = build_spec_server
+  end
+
+  def test_spec_batch_invalid_json
+    request = '[{"jsonrpc": "2.0", "method": "sum", "params": [1,2,4], "id": "1"},' \
+              '{"jsonrpc": "2.0", "method"'
+    response = JSON.parse(@server.handle(request))
+
+    assert_equal(-32_700, response["error"]["code"])
+  end
+
+  def test_spec_empty_batch
+    response = JSON.parse(@server.handle("[]"))
+
+    assert_equal(-32_600, response["error"]["code"])
+  end
+
+  def test_spec_invalid_batch_single_element
+    responses = JSON.parse(@server.handle("[1]"))
+
+    assert_equal 1, responses.size
+    assert_equal(-32_600, responses[0]["error"]["code"])
+  end
+
+  def test_spec_invalid_batch_multiple_elements
+    responses = JSON.parse(@server.handle("[1,2,3]"))
+
+    assert_equal 3, responses.size
+    responses.each { |resp| assert_equal(-32_600, resp["error"]["code"]) }
+  end
+
+  def test_spec_batch_mixed_count
+    responses = parse_batch_mixed
+
+    assert_equal 5, responses.size
+  end
+
+  def test_spec_batch_mixed_sum
+    responses = parse_batch_mixed
+
+    assert_equal 7, responses.find { |r| r["id"] == "1" }["result"]
+  end
+
+  def test_spec_batch_mixed_subtract
+    responses = parse_batch_mixed
+
+    assert_equal 19, responses.find { |r| r["id"] == "2" }["result"]
+  end
+
+  def test_spec_batch_mixed_invalid_element
+    responses = parse_batch_mixed
+    invalid = responses.find { |r| r["error"] && r["id"].nil? }
+
+    assert_equal(-32_600, invalid["error"]["code"])
+  end
+
+  def test_spec_batch_mixed_not_found
+    responses = parse_batch_mixed
+
+    assert_equal(-32_601, responses.find { |r| r["id"] == "5" }["error"]["code"])
+  end
+
+  def test_spec_batch_mixed_foobar
+    responses = parse_batch_mixed
+
+    assert_equal "foobar", responses.find { |r| r["id"] == "9" }["result"]
+  end
+
+  def test_spec_batch_all_notifications
+    request = '[{"jsonrpc":"2.0","method":"notify_hello","params":[7]},' \
+              '{"jsonrpc":"2.0","method":"notify_hello","params":[7]}]'
+
+    assert_nil @server.handle(request)
+  end
+
+  private
+
+  def parse_batch_mixed
+    json = '[{"jsonrpc":"2.0","method":"sum","params":[1,2,4],"id":"1"},' \
+           '{"jsonrpc":"2.0","method":"notify_hello","params":[7]},' \
+           '{"jsonrpc":"2.0","method":"subtract","params":[42,23],"id":"2"},' \
+           '{"foo":"boo"},' \
+           '{"jsonrpc":"2.0","method":"nonexistent","params":[5],"id":"5"},' \
+           '{"jsonrpc":"2.0","method":"foobar","id":"9"}]'
+    JSON.parse(@server.handle(json))
   end
 end
