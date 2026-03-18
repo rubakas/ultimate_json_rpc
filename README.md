@@ -133,6 +133,16 @@ server.on(:error)    { |request, error, duration| log_error(error, method: reque
 
 Hook errors are rescued and logged via `Kernel.warn`, never breaking dispatch.
 
+### Concurrent batches
+
+Opt-in parallel processing for batch requests:
+
+```ruby
+server = Reclamo::Server.new(concurrent_batches: true)
+# Batch items are processed in parallel using threads
+# Respects max_batch_size and request timeout
+```
+
 ### Request timeout
 
 Set a per-server timeout (in seconds) to prevent slow handlers from blocking:
@@ -232,6 +242,7 @@ server.handle(request)  # still works
 - **Rack adapter** — `Reclamo::Rack.new(server)` for instant HTTP deployment
 - **stdio adapter** — `Reclamo::Stdio.new(server).run` for CLI/MCP-style integrations
 - **Test helpers** — `rpc_call`, `assert_rpc_success`, `assert_rpc_error` for cleaner tests
+- **Concurrent batches** — `concurrent_batches: true` processes batch items in parallel
 - **Batch size limit** — `max_batch_size: 100` (default) prevents oversized batch requests
 - **Freezable** — `server.freeze` locks configuration after setup
 

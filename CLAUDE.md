@@ -38,7 +38,7 @@ bin/console            # Interactive console with gem loaded
 - `lib/reclamo/request.rb` — JSON-RPC request parsing, validation, deep-frozen immutable attributes, mutable context
 - `lib/reclamo/response.rb` — JSON-RPC response building
 - `lib/reclamo/handler.rb` — method registry, dispatch, introspection, callable support, dangerous method denylist, param validation, freeze
-- `lib/reclamo/server.rb` — public API: expose, handle/call, middleware, rpc.discover, service metadata, max_batch_size, expose_errors, timeout, instrumentation hooks, freeze
+- `lib/reclamo/server.rb` — public API: expose, handle/call, middleware, rpc.discover, service metadata, max_batch_size, expose_errors, timeout, concurrent_batches, instrumentation hooks, freeze
 - `lib/reclamo/rack.rb` — optional Rack adapter (Reclamo::Rack), NOT auto-required
 - `lib/reclamo/stdio.rb` — optional stdio adapter (Reclamo::Stdio), NOT auto-required
 - `lib/reclamo/test_helpers.rb` — optional test helpers (rpc_call, rpc_notify, rpc_batch), NOT auto-required
@@ -55,6 +55,7 @@ bin/console            # Interactive console with gem loaded
 - `test/test_handler.rb` — handler unit tests, freeze, param descriptors, dangerous methods
 - `test/test_errors.rb` — server errors, application errors, server errors, request/param validation, expose_errors option
 - `test/test_batch.rb` — batch requests, batch size limits
+- `test/test_concurrent_batch.rb` — concurrent batch execution: threading, order, timeout, middleware, hooks
 - `test/test_discover.rb` — rpc.discover, descriptions, service info
 - `test/test_middleware.rb` — middleware chain, edge cases, request immutability
 - `test/test_method_level_middleware.rb` — scoped middleware: only/except filtering, glob patterns, chain ordering

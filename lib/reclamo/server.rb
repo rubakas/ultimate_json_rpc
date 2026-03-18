@@ -6,19 +6,48 @@ module Reclamo
   GENERIC_ERROR_DATA = "Internal server error"
   private_constant :GENERIC_ERROR_DATA
 
+  module BatchProcessor
+    private
+
+    def handle_batch(requests)
+      return JSON.generate(Response.error(INVALID_REQUEST, nil)) if requests.empty?
+      return batch_too_large_error if @max_batch_size && requests.size > @max_batch_size
+
+      json_parts = process_batch_items(requests)
+      json_parts.empty? ? nil : "[#{json_parts.join(",")}]"
+    end
+
+    def process_batch_items(requests)
+      if @concurrent_batches
+        requests.map { |req| Thread.new { serialize_single(req) } }.map(&:value).compact
+      else
+        requests.filter_map { |req| serialize_single(req) }
+      end
+    end
+
+    def batch_too_large_error
+      JSON.generate(Response.error(INVALID_REQUEST, nil, message: "Batch too large"))
+    end
+  end
+  private_constant :BatchProcessor
+
   class Server
+    include BatchProcessor
+
     attr_reader :name, :version, :description, :max_batch_size
 
     HOOK_EVENTS = %i[request response error].freeze
     private_constant :HOOK_EVENTS
 
-    def initialize(name: nil, version: nil, description: nil, max_batch_size: 100, expose_errors: false, timeout: nil)
+    def initialize(name: nil, version: nil, description: nil, max_batch_size: 100, expose_errors: false,
+                   timeout: nil, concurrent_batches: false)
       @name = name
       @version = version
       @description = description
       @max_batch_size = max_batch_size
       @expose_errors = expose_errors
       @timeout = timeout
+      @concurrent_batches = concurrent_batches
       @handler = Handler.new
       @middleware = []
       @hooks = HOOK_EVENTS.to_h { |e| [e, []] }
@@ -70,6 +99,7 @@ module Reclamo
     def to_proc = method(:call).to_proc
     def inspect = "#<#{self.class}#{" name=#{@name.inspect}" if @name} methods=#{size} middleware=#{@middleware.size}>"
     def expose_errors? = @expose_errors
+    def concurrent_batches? = @concurrent_batches
 
     def freeze
       @hooks.each_value(&:freeze)
@@ -84,18 +114,6 @@ module Reclamo
     def empty? = @handler.empty?
 
     private
-
-    def handle_batch(requests)
-      return JSON.generate(Response.error(INVALID_REQUEST, nil)) if requests.empty?
-      if over_batch_limit?(requests)
-        return JSON.generate(Response.error(INVALID_REQUEST, nil, message: "Batch too large"))
-      end
-
-      json_parts = requests.filter_map { |req| serialize_single(req) }
-      json_parts.empty? ? nil : "[#{json_parts.join(",")}]"
-    end
-
-    def over_batch_limit?(requests) = @max_batch_size && requests.size > @max_batch_size
 
     def serialize_single(data)
       request = parse_request(data)

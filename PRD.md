@@ -3,8 +3,8 @@
 > Product Requirements Document for Reclamo, a network-agnostic Ruby gem
 > that exposes Ruby objects through JSON-RPC 2.0.
 >
-> Current version: 0.2.0 | Ruby >= 3.2 | 26 items — 10 done, 16 pending
-> (3 P0 ✓, 8 P1 — 6 done, 10 P2 — 1 done, 5 P3)
+> Current version: 0.2.0 | Ruby >= 3.2 | 26 items — 11 done, 15 pending
+> (3 P0 ✓, 8 P1 — 7 done, 10 P2 — 1 done, 5 P3)
 
 ---
 
@@ -14,7 +14,7 @@
 
 **v0.2.0** — `InvalidParams` error class, callable objects in `expose_method`, `empty?`, descriptive error messages, immutable request params, `expose_errors` flag, dangerous method denylist, security hardening.
 
-**Unreleased** — Method-level middleware (`only:/except:` on `use`), Rack adapter, stdio adapter, OpenRPC 1.3.2 schema, instrumentation hooks, request timeout, return type annotations, method deprecation markers, richer test helpers, parameter validation with JSON Schema types.
+**Unreleased** — Method-level middleware (`only:/except:` on `use`), Rack adapter, stdio adapter, OpenRPC 1.3.2 schema, instrumentation hooks, request timeout, return type annotations, method deprecation markers, richer test helpers, parameter validation with JSON Schema types, concurrent batch execution.
 
 ---
 
@@ -67,7 +67,7 @@ Reliability & performance:
   Configurable per-server (and optionally per-method) timeout so a single slow handler can't block the server. Dedicated error code in the server-error range (-32000..-32099).
   *Depends on: nothing.*
 
-- [ ] **Concurrent batch execution**
+- [x] **Concurrent batch execution**
   Process batch items concurrently via thread pool (opt-in: `concurrent_batches: true`). Current sequential execution is a bottleneck for I/O-bound handlers. Should respect `max_batch_size` and pair well with request timeout.
   *Depends on: nothing (benefits from request timeout to cap runaway items).*
 
