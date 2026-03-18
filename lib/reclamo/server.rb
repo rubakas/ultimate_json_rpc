@@ -73,22 +73,23 @@ module Reclamo
       request = Request.new(data)
       execute_request(request)
     rescue InvalidRequest
-      id = data.is_a?(Hash) ? data["id"] : nil
-      Response.error(INVALID_REQUEST, id)
+      Response.error(INVALID_REQUEST, extract_id(data))
+    end
+
+    def extract_id(data)
+      return nil unless data.is_a?(Hash)
+
+      id = data["id"]
+      id.nil? || id.is_a?(String) || id.is_a?(Numeric) ? id : nil
     end
 
     def execute_request(request)
-      result = dispatch(request)
+      result = build_chain(request).call
       return nil if request.notification?
 
       Response.success(result, request.id)
     rescue StandardError => e
       error_response_for(request, e)
-    end
-
-    def dispatch(request)
-      chain = build_chain(request)
-      chain.call
     end
 
     def build_chain(request)

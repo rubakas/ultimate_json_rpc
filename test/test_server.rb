@@ -364,6 +364,30 @@ class TestServerApplicationError < Minitest::Test
 
     assert_nil @server.handle(JSON.generate(request))
   end
+
+  def test_application_error_with_false_data
+    server = Reclamo::Server.new
+    server.expose_method("fail_false") do
+      raise Reclamo::ApplicationError.new(42, "Boolean error", false)
+    end
+
+    request = { "jsonrpc" => "2.0", "method" => "fail_false", "id" => 1 }
+    response = JSON.parse(server.handle(JSON.generate(request)))
+
+    assert_equal false, response["error"]["data"]
+  end
+
+  def test_application_error_with_zero_data
+    server = Reclamo::Server.new
+    server.expose_method("fail_zero") do
+      raise Reclamo::ApplicationError.new(42, "Zero error", 0)
+    end
+
+    request = { "jsonrpc" => "2.0", "method" => "fail_zero", "id" => 1 }
+    response = JSON.parse(server.handle(JSON.generate(request)))
+
+    assert_equal 0, response["error"]["data"]
+  end
 end
 
 class TestRequestValidation < Minitest::Test
@@ -382,6 +406,7 @@ class TestRequestValidation < Minitest::Test
     response = JSON.parse(server.handle(JSON.generate(request)))
 
     assert_equal(-32_600, response["error"]["code"])
+    assert_nil response["id"]
   end
 
   def test_id_as_object_is_invalid
@@ -419,6 +444,24 @@ class TestRequestValidation < Minitest::Test
     response = JSON.parse(server.handle(JSON.generate(request)))
 
     assert_equal 3, response["result"]
+  end
+
+  def test_invalid_request_preserves_valid_id
+    server = Reclamo::Server.new
+    request = { "jsonrpc" => "1.0", "method" => "add", "id" => 99 }
+    response = JSON.parse(server.handle(JSON.generate(request)))
+
+    assert_equal(-32_600, response["error"]["code"])
+    assert_equal 99, response["id"]
+  end
+
+  def test_invalid_request_nullifies_bad_id_type
+    server = Reclamo::Server.new
+    request = { "jsonrpc" => "2.0", "method" => "", "id" => [1, 2, 3] }
+    response = JSON.parse(server.handle(JSON.generate(request)))
+
+    assert_equal(-32_600, response["error"]["code"])
+    assert_nil response["id"]
   end
 end
 

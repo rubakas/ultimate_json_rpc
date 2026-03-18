@@ -15,7 +15,7 @@ module Reclamo
         "code" => code,
         "message" => message || ERROR_MESSAGES.fetch(code, "Unknown error")
       }
-      err["data"] = data if data
+      err["data"] = data unless data.nil?
       {
         "jsonrpc" => "2.0",
         "error" => err,
