@@ -52,6 +52,12 @@ module Reclamo
     def to_proc = method(:call).to_proc
     def inspect = "#<#{self.class}#{" name=#{@name.inspect}" if @name} methods=#{size} middleware=#{@middleware.size}>"
 
+    def freeze
+      @handler.freeze
+      @middleware.freeze
+      super
+    end
+
     def methods_list = @handler.methods_list
     def methods_info = @handler.methods_info
     def method?(method_name) = @handler.method?(method_name)

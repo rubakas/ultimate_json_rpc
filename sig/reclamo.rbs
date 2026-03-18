@@ -61,6 +61,7 @@ module Reclamo
     def methods_list: () -> Array[String]
     def methods_info: () -> Array[Hash[String, untyped]]
     def size: () -> Integer
+    def freeze: () -> self
   end
 
   class Server
@@ -80,5 +81,6 @@ module Reclamo
     def methods_list: () -> Array[String]
     def methods_info: () -> Array[Hash[String, untyped]]
     def size: () -> Integer
+    def freeze: () -> self
   end
 end

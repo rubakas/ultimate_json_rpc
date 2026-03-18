@@ -52,6 +52,12 @@ module Reclamo
     def methods_info = @targets.keys.sort.map { |name| method_info(name) }
     def size = @targets.size
 
+    def freeze
+      @targets.freeze
+      @descriptions.freeze
+      super
+    end
+
     private
 
     def method_info(name)

@@ -972,6 +972,32 @@ class TestServerMiddleware < Minitest::Test
   end
 end
 
+class TestServerMiddlewareEdgeCases < Minitest::Test
+  def test_middleware_runs_for_rpc_discover
+    server = Reclamo::Server.new
+    server.expose(Calculator)
+    called = false
+    server.use { |_req, n| (called = true) && n.call }
+
+    request = { "jsonrpc" => "2.0", "method" => "rpc.discover", "id" => 1 }
+    response = JSON.parse(server.handle(JSON.generate(request)))
+    assert called
+    assert response["result"].key?("methods")
+  end
+
+  def test_middleware_unexpected_error_returns_internal_error
+    server = Reclamo::Server.new
+    server.expose(Calculator)
+    server.use { |_request, _next_call| raise "middleware broke" }
+
+    request = { "jsonrpc" => "2.0", "method" => "add", "params" => [1, 2], "id" => 1 }
+    response = JSON.parse(server.handle(JSON.generate(request)))
+
+    assert_equal(-32_603, response["error"]["code"])
+    assert_equal "middleware broke", response["error"]["data"]
+  end
+end
+
 class TestServerHandleParsed < Minitest::Test
   def setup
     @server = Reclamo::Server.new
@@ -1418,6 +1444,48 @@ class TestHandlerEdgeCases < Minitest::Test
     handler.expose(Calculator)
 
     assert_raises(ArgumentError) { handler.call("add", "not valid") }
+  end
+end
+
+class TestServerFreeze < Minitest::Test
+  def test_frozen_server_handles_requests
+    server = Reclamo::Server.new
+    server.expose(Calculator)
+    server.freeze
+
+    request = { "jsonrpc" => "2.0", "method" => "add", "params" => [2, 3], "id" => 1 }
+    response = JSON.parse(server.handle(JSON.generate(request)))
+
+    assert_equal 5, response["result"]
+  end
+
+  def test_frozen_server_rejects_expose
+    server = Reclamo::Server.new
+    server.freeze
+
+    assert_raises(FrozenError) { server.expose(Calculator) }
+  end
+
+  def test_frozen_server_rejects_expose_method
+    server = Reclamo::Server.new
+    server.freeze
+
+    assert_raises(FrozenError) { server.expose_method("ping") { "pong" } }
+  end
+
+  def test_frozen_server_rejects_use
+    server = Reclamo::Server.new
+    server.freeze
+
+    assert_raises(FrozenError) { server.use { |_req, n| n.call } }
+  end
+
+  def test_frozen_server_is_frozen
+    server = Reclamo::Server.new
+    server.expose(Calculator)
+    server.freeze
+
+    assert server.frozen?
   end
 end
 
