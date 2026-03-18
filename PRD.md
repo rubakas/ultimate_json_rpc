@@ -22,7 +22,7 @@
 - **P2** — Medium: valuable but not blocking other work
 - **P3** — Low: nice-to-have, can wait
 
-Items within each tier are ordered by dependency (earlier items unblock later ones).
+Items within each tier are ordered by dependency (no-dependency items first, then items whose dependencies are in earlier tiers).
 
 ---
 
@@ -45,8 +45,12 @@ Items within each tier are ordered by dependency (earlier items unblock later on
 ## P1 — High Priority
 
 - [ ] **Parameter validation (JSON Schema)**
-  Allow methods to declare parameter schemas that are validated before dispatch. Return `InvalidParams` (-32602) with a descriptive message on mismatch. Schemas should also feed into `rpc.discover` / OpenRPC output. Could be declared via `expose_method("add", params_schema: { ... })` or inferred from Ruby method signatures with optional type annotations.
-  *Depends on: nothing (benefits from OpenRPC for schema reuse, but works standalone).*
+  Allow methods to declare parameter schemas validated before dispatch. Return `InvalidParams` (-32602) with descriptive messages on mismatch. Schemas feed into `rpc.discover` / OpenRPC output. Declared via `expose_method("add", params_schema: { ... })` or inferred from Ruby signatures with optional type hints.
+  *Depends on: nothing (enhances OpenRPC when both are present, but works standalone).*
+
+- [ ] **Return type annotations**
+  Let methods declare their return type for discovery metadata: `expose_method("add", returns: { type: "number" })`. Purely informational — no runtime enforcement. Feeds into OpenRPC output and enables richer client generation.
+  *Depends on: nothing (enhances OpenRPC when both are present).*
 
 - [ ] **Structured logging / instrumentation hooks**
   Lifecycle callbacks (`on_request`, `on_response`, `on_error`) emitting structured data (method name, duration, error code, request id). Dedicated hooks are cleaner than middleware for observability — they can't accidentally swallow errors or alter the response.
@@ -76,17 +80,19 @@ Items within each tier are ordered by dependency (earlier items unblock later on
 
 ## P2 — Medium Priority
 
-- [ ] **MCP (Model Context Protocol) compatibility**
-  Translation layer mapping MCP tool definitions to Reclamo methods and vice versa. As LLM tool-use grows, being MCP-compatible makes Reclamo servers directly usable as AI agent tools. JSON-RPC is already MCP's wire protocol — the gap is mainly schema mapping and the stdio transport convention.
-  *Depends on: stdio adapter (P1), OpenRPC schema generation (P0).*
+Independent items (no dependencies on this PRD):
 
 - [ ] **Method deprecation markers**
-  Allow marking methods as deprecated in discovery metadata (`deprecated: true` or `deprecated: "Use add_v2 instead"`). Deprecated methods still work but appear flagged in `rpc.discover` / OpenRPC output, giving consumers a migration path.
+  Mark methods as deprecated in discovery metadata (`deprecated: true` or `deprecated: "Use add_v2 instead"`). Deprecated methods still work but appear flagged in `rpc.discover` / OpenRPC output.
   *Depends on: nothing (enhances `rpc.discover`).*
 
-- [ ] **Method-level access control / authorization**
-  Declarative way to require roles or permissions per method: `server.authorize("admin.*") { |req| req.context[:role] == :admin }`. Cleaner than hand-rolling auth in middleware for every project.
-  *Depends on: method-level middleware (P0) for the filtering mechanism.*
+- [ ] **Custom JSON serializer**
+  Allow swapping the JSON encoder/decoder (e.g., `Oj`, `yajl-ruby`) via `Reclamo::Server.new(json: Oj)`. The gem currently hard-codes `JSON.parse` / `JSON.generate`.
+  *Depends on: nothing.*
+
+- [ ] **Error catalog**
+  A registry for application-specific error codes and their meanings: `server.register_error(42, "InsufficientFunds", "Account balance too low")`. Registered errors appear in `rpc.discover` output so consumers know which error codes to expect.
+  *Depends on: nothing (enhances `rpc.discover`).*
 
 - [ ] **Versioned API support**
   Run multiple API versions side by side via version prefix (`v1.add`, `v2.add`) or negotiation. Important for long-lived services evolving without breaking consumers.
@@ -96,17 +102,23 @@ Items within each tier are ordered by dependency (earlier items unblock later on
   Reference adapter or documented pattern for running Reclamo over WebSockets (e.g., `faye-websocket`, `AnyCable`). WebSocket is the second most common JSON-RPC transport after HTTP.
   *Depends on: nothing (gem is already transport-agnostic).*
 
+Items with dependencies:
+
+- [ ] **MCP (Model Context Protocol) compatibility**
+  Translation layer mapping MCP tool definitions to Reclamo methods and vice versa. JSON-RPC is already MCP's wire protocol — the gap is mainly schema mapping and the stdio transport convention.
+  *Depends on: stdio adapter (P1), OpenRPC schema generation (P0).*
+
+- [ ] **Method-level access control / authorization**
+  Declarative way to require roles or permissions per method: `server.authorize("admin.*") { |req| req.context[:role] == :admin }`.
+  *Depends on: method-level middleware (P0).*
+
 - [ ] **Built-in rate-limiting middleware**
   Optional `Reclamo::Middleware::RateLimit` with token-bucket or sliding-window algorithm, keyed by caller identity from `request.context`.
   *Depends on: method-level middleware (P0) for per-method limits.*
 
-- [ ] **Custom JSON serializer**
-  Allow swapping the JSON encoder/decoder (e.g., `Oj`, `yajl-ruby`) via `Reclamo::Server.new(json: Oj)`. The gem currently hard-codes `JSON.parse` / `JSON.generate`.
-  *Depends on: nothing.*
-
 - [ ] **Request/response recording for replay testing**
   Optional recorder capturing JSON-RPC exchanges to a file for backward-compatibility and regression testing.
-  *Depends on: instrumentation hooks (P1) for capture points.*
+  *Depends on: instrumentation hooks (P1).*
 
 ---
 
@@ -129,12 +141,14 @@ Items within each tier are ordered by dependency (earlier items unblock later on
 ## Dependency Graph
 
 ```
-OpenRPC (P0) ─────► Mock server (P3)
-    │          ├──► API docs (P3)
-    │          └──► MCP compatibility (P2)
-    │                     ▲
-    │                     │
-stdio adapter (P1) ──────┘
+                    ┌──► Mock server (P3)
+OpenRPC (P0) ──────┼──► API docs (P3)
+       ▲            └──► MCP compat (P2)
+       :                      ▲
+  [enhances]                  │
+       :                      │
+Param valid (P1)    stdio adapter (P1)
+Return types (P1)
 
 Method-level MW (P0) ──► Access control (P2)
                     └──► Rate limiting MW (P2)
@@ -142,9 +156,9 @@ Method-level MW (P0) ──► Access control (P2)
 Rack adapter (P0) ─────► Rails integration (P1)
 
 Instrumentation (P1) ──► Replay recording (P2)
-
-Param validation (P1) ··► OpenRPC (P0)  [enhances, not blocks]
 ```
+
+*Solid arrows (──►) = hard dependency. Dotted (:) = enhances but doesn't block.*
 
 ---
 
