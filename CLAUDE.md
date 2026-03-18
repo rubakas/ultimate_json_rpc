@@ -50,6 +50,7 @@ bin/console            # Interactive console with gem loaded
 - `lib/reclamo/recorder.rb` — optional exchange recorder (Reclamo::Recorder), NOT auto-required
 - `lib/reclamo/tcp.rb` — optional TCP adapter (Reclamo::TCP), NOT auto-required
 - `lib/reclamo/test_helpers.rb` — optional test helpers (rpc_call, rpc_notify, rpc_batch), NOT auto-required
+- `lib/reclamo/websocket.rb` — optional WebSocket adapter (Reclamo::WebSocket), NOT auto-required
 - `sig/reclamo.rbs` — RBS type signatures
 
 ### Tests
@@ -87,3 +88,4 @@ bin/console            # Interactive console with gem loaded
 - `test/test_param_validation.rb` — parameter validation: type checking, enum, positional/keyword, expose, discover, edge cases
 - `test/test_spec_conformance.rb` — JSON-RPC 2.0 spec conformance + integration tests
 - `test/test_test_helpers.rb` — TestHelpers module tests
+- `test/test_websocket.rb` — WebSocket adapter: on_message, call with mock socket, notifications

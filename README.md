@@ -362,6 +362,22 @@ Reclamo::MCP.new(server).run
 
 `Reclamo::MCP` handles the MCP lifecycle (`initialize`, `tools/list`, `tools/call`), maps methods to tool definitions with input schemas, and runs over stdio for integration with Claude, Cursor, and other AI tools.
 
+#### WebSocket
+
+Use the WebSocket adapter with any Rack-compatible library (e.g., `faye-websocket`):
+
+```ruby
+require "reclamo/websocket"
+
+ws_handler = Reclamo::WebSocket.new(server)
+
+# In your Rack app:
+ws = Faye::WebSocket.new(env)
+ws_handler.call(env, ws)
+```
+
+See `examples/websocket_server.ru` for a complete runnable example.
+
 #### TCP
 
 Use the built-in TCP adapter for internal microservices:
