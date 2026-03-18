@@ -3,8 +3,8 @@
 > Product Requirements Document for Reclamo, a network-agnostic Ruby gem
 > that exposes Ruby objects through JSON-RPC 2.0.
 >
-> Current version: 0.2.0 | Ruby >= 3.2 | 26 items — 14 done, 12 pending
-> (3 P0 ✓, 8 P1 — 7 done, 10 P2 — 4 done, 5 P3)
+> Current version: 0.2.0 | Ruby >= 3.2 | 26 items — 15 done, 11 pending
+> (3 P0 ✓, 8 P1 — 7 done, 10 P2 — 5 done, 5 P3)
 
 ---
 
@@ -131,7 +131,7 @@ Security & middleware:
 
 Observability:
 
-- [ ] **Structured logging interface**
+- [x] **Structured logging interface**
   Logger-agnostic structured logging built on instrumentation hooks. Log method name, params (redactable), duration, and outcome (success/error). Support log-level filtering and pluggable backends (Rails.logger, $stdout, Semantic Logger) without taking an opinion on the logging library.
   *Depends on: instrumentation hooks (P1).*
 

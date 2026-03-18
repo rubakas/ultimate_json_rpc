@@ -193,6 +193,19 @@ server.expose(Calculator, deprecated: { add: "Use add_v2" })
 
 Deprecated methods still work normally but appear flagged in `rpc.discover` output.
 
+### Structured logging
+
+Logger-agnostic observability via `log_to`:
+
+```ruby
+require "reclamo/logging"
+
+server.log_to(Logger.new($stdout))           # logs at INFO by default
+server.log_to(Rails.logger, level: :debug)   # custom level
+```
+
+Successful responses log at the specified level; errors always log at ERROR.
+
 ### Authorization
 
 Declarative access control with glob patterns:
