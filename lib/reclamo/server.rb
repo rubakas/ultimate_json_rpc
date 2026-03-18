@@ -1,6 +1,10 @@
 # frozen_string_literal: true
 
 module Reclamo
+  # @api private
+  PARSE_FAILED = Object.new.freeze
+  private_constant :PARSE_FAILED
+
   class Server
     def initialize
       @handler = Handler.new
@@ -25,13 +29,13 @@ module Reclamo
     end
 
     def handle(json_string)
-      data = JSON.parse(json_string)
+      data = parse_json(json_string)
       handle_parsed(data)
-    rescue JSON::ParserError, TypeError
-      JSON.generate(Response.error(PARSE_ERROR, nil))
     end
 
     def handle_parsed(data)
+      return JSON.generate(Response.error(PARSE_ERROR, nil)) if data.equal?(PARSE_FAILED)
+
       case data
       when Array then handle_batch(data)
       when Hash then handle_single(data)
@@ -49,6 +53,12 @@ module Reclamo
 
     private
 
+    def parse_json(json_string)
+      JSON.parse(json_string)
+    rescue JSON::ParserError, TypeError
+      PARSE_FAILED
+    end
+
     def handle_batch(requests)
       return JSON.generate(Response.error(INVALID_REQUEST, nil)) if requests.empty?
 
@@ -56,11 +66,16 @@ module Reclamo
       return nil if responses.empty?
 
       JSON.generate(responses)
+    rescue JSON::JSONError
+      JSON.generate(Response.error(INTERNAL_ERROR, nil))
     end
 
     def handle_single(data)
       result = process_request(data)
       result ? JSON.generate(result) : nil
+    rescue JSON::JSONError
+      id = result.is_a?(Hash) ? result["id"] : nil
+      JSON.generate(Response.error(INTERNAL_ERROR, id))
     end
 
     def process_request(data)
@@ -96,12 +111,9 @@ module Reclamo
     end
 
     def invoke_handler(request)
-      case request.method_name
-      when "rpc.discover"
-        { "methods" => @handler.methods_list }
-      else
-        @handler.call(request.method_name, request.params)
-      end
+      return { "methods" => @handler.methods_list } if request.method_name == "rpc.discover"
+
+      @handler.call(request.method_name, request.params)
     end
 
     def error_response_for(request, err)

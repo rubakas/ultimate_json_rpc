@@ -186,6 +186,19 @@ class TestServerErrors < Minitest::Test
     assert_equal "division by zero", response["error"]["data"]
   end
 
+  def test_non_serializable_result_returns_internal_error
+    server = Reclamo::Server.new
+    circ = {}
+    circ["self"] = circ
+    server.expose_method("bad") { circ }
+
+    request = { "jsonrpc" => "2.0", "method" => "bad", "id" => 1 }
+    response = JSON.parse(server.handle(JSON.generate(request)))
+
+    assert_equal(-32_603, response["error"]["code"])
+    assert_equal 1, response["id"]
+  end
+
   def test_invalid_params_type
     request = { "jsonrpc" => "2.0", "method" => "add", "params" => "invalid", "id" => 1 }
     response = JSON.parse(@server.handle(JSON.generate(request)))
