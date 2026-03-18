@@ -12,8 +12,7 @@ module Reclamo
     end
 
     def expose(target, namespace: nil, only: nil, except: nil, descriptions: nil)
-      raise ArgumentError, "cannot use both :only and :except" if only && except
-
+      validate_expose_args!(target, only, except)
       prefix = namespace.to_s.then { |ns| ns.empty? ? "" : "#{ns}." }
       methods = filter_methods(callable_methods(target), only: only, except: except)
       methods.each do |method_name|
@@ -104,6 +103,11 @@ module Reclamo
       else
         methods
       end
+    end
+
+    def validate_expose_args!(target, only, except)
+      raise ArgumentError, "target must not be nil" if target.nil?
+      raise ArgumentError, "cannot use both :only and :except" if only && except
     end
 
     def validate_method_name!(name)

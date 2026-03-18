@@ -212,4 +212,26 @@ class TestServerMiddlewareEdgeCases < Minitest::Test
     assert_equal 403, response["error"]["code"]
     assert_equal "Forbidden", response["error"]["message"]
   end
+
+  def test_middleware_short_circuit_returns_custom_result
+    server = Reclamo::Server.new
+    server.expose(Calculator)
+    server.use { |_request, _next_call| "intercepted" }
+
+    request = { "jsonrpc" => "2.0", "method" => "add", "params" => [1, 2], "id" => 1 }
+    response = JSON.parse(server.handle(JSON.generate(request)))
+
+    assert_equal "intercepted", response["result"]
+    refute response.key?("error")
+  end
+
+  def test_middleware_short_circuit_notification_returns_nil
+    server = Reclamo::Server.new
+    server.expose(Calculator)
+    server.use { |_request, _next_call| "intercepted" }
+
+    request = { "jsonrpc" => "2.0", "method" => "add", "params" => [1, 2] }
+
+    assert_nil server.handle(JSON.generate(request))
+  end
 end

@@ -76,6 +76,23 @@ class TestServerDiscover < Minitest::Test
     assert_equal 1, double_method["params"].size
   end
 
+  def test_rpc_discover_on_empty_server
+    server = Reclamo::Server.new
+    methods = discover(server)
+
+    assert_empty methods
+  end
+
+  def test_rpc_discover_response_has_no_error_key
+    server = Reclamo::Server.new
+    server.expose(Calculator)
+    request = { "jsonrpc" => "2.0", "method" => "rpc.discover", "id" => 1 }
+    response = JSON.parse(server.handle(JSON.generate(request)))
+
+    assert response.key?("result")
+    refute response.key?("error")
+  end
+
   private
 
   def discover_methods_for(target)

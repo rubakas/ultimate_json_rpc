@@ -91,6 +91,12 @@ class TestHandler < Minitest::Test
     assert_empty handler.methods_list
   end
 
+  def test_expose_nil_raises
+    handler = Reclamo::Handler.new
+
+    assert_raises(ArgumentError) { handler.expose(nil) }
+  end
+
   def test_methods_list_is_sorted
     handler = Reclamo::Handler.new
     handler.expose_method("zebra") { nil }

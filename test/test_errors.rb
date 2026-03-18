@@ -398,4 +398,28 @@ class TestServerParamErrors < Minitest::Test
 
     assert_equal "hello", response["result"]
   end
+
+  def test_extra_keyword_args_returns_invalid_params
+    request = { "jsonrpc" => "2.0", "method" => "greeter.greet",
+                "params" => { "name" => "World", "extra" => "ignored" }, "id" => 1 }
+    response = JSON.parse(@server.handle(JSON.generate(request)))
+
+    assert_equal(-32_602, response["error"]["code"])
+  end
+
+  def test_success_response_has_no_error_key
+    request = { "jsonrpc" => "2.0", "method" => "add", "params" => [1, 2], "id" => 1 }
+    response = JSON.parse(@server.handle(JSON.generate(request)))
+
+    assert response.key?("result")
+    refute response.key?("error")
+  end
+
+  def test_error_response_has_no_result_key
+    request = { "jsonrpc" => "2.0", "method" => "nonexistent", "id" => 1 }
+    response = JSON.parse(@server.handle(JSON.generate(request)))
+
+    assert response.key?("error")
+    refute response.key?("result")
+  end
 end
