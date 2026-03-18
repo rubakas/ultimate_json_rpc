@@ -88,6 +88,7 @@ module Reclamo
     def expose: (Module | Object, ?namespace: String | Symbol | nil, ?only: Array[Symbol | String] | Symbol | String | nil, ?except: Array[Symbol | String] | Symbol | String | nil, ?descriptions: Hash[Symbol | String, String]?, ?returns: Hash[Symbol | String, untyped]?) -> self
     def expose_method: (String | Symbol, ?callable?, ?description: String?, ?returns: untyped) ?{ (*untyped) -> untyped } -> self
     def use: (?only: Array[String | Symbol] | String | Symbol | nil, ?except: Array[String | Symbol] | String | Symbol | nil) { (Request, Proc) -> untyped } -> self
+    def on: (Symbol) { (*untyped) -> void } -> self
     def to_proc: () -> Proc
     def inspect: () -> String
     def expose_errors?: () -> bool

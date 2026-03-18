@@ -56,7 +56,7 @@ Schema & discovery:
 
 Reliability & performance:
 
-- [ ] **Structured logging / instrumentation hooks**
+- [x] **Structured logging / instrumentation hooks**
   Lifecycle callbacks (`on_request`, `on_response`, `on_error`) emitting structured data (method name, duration, error code, request id). Dedicated hooks are cleaner than middleware for observability — they can't accidentally swallow errors or alter the response.
   *Depends on: nothing.*
 

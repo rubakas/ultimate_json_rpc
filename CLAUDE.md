@@ -60,6 +60,7 @@ bin/console            # Interactive console with gem loaded
 - `test/test_method_level_middleware.rb` — scoped middleware: only/except filtering, glob patterns, chain ordering
 - `test/test_rack.rb` — Rack adapter: HTTP methods, status codes, content types, edge cases
 - `test/test_stdio.rb` — stdio adapter: line processing, notifications, signals, empty lines
+- `test/test_hooks.rb` — instrumentation hooks: on_request, on_response, on_error, edge cases
 - `test/test_expose.rb` — expose_method, method filtering, callable objects
 - `test/test_spec_conformance.rb` — JSON-RPC 2.0 spec conformance + integration tests
 - `test/test_test_helpers.rb` — TestHelpers module tests

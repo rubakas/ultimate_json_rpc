@@ -121,6 +121,18 @@ server.use do |request, next_call|
 end
 ```
 
+### Instrumentation hooks
+
+Read-only lifecycle hooks for observability — they can't alter responses or swallow errors:
+
+```ruby
+server.on(:request)  { |request| puts "→ #{request.method_name}" }
+server.on(:response) { |request, result, duration| puts "← #{request.method_name} (#{duration}s)" }
+server.on(:error)    { |request, error, duration| log_error(error, method: request.method_name) }
+```
+
+Hook errors are rescued and logged via `Kernel.warn`, never breaking dispatch.
+
 ### Error handling
 
 Raise `ApplicationError` for custom error codes, or `ServerError` for implementation-defined errors:
@@ -170,6 +182,7 @@ server.handle(request)  # still works
 - **Service discovery** — built-in `rpc.discover` returns OpenRPC 1.3.2-compatible schema
 - **Middleware** — `server.use { |request, next_call| ... }` for cross-cutting concerns
 - **Scoped middleware** — `only:` / `except:` with glob patterns to target specific methods or namespaces
+- **Instrumentation hooks** — `on(:request)`, `on(:response)`, `on(:error)` for read-only observability
 - **Error handling** — standard JSON-RPC error codes, `ApplicationError`, and `ServerError`
 - **Chainable API** — all setup methods return `self`
 - **Callable** — `to_proc` enables `requests.map(&server)`

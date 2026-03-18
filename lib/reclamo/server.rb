@@ -7,6 +7,9 @@ module Reclamo
   class Server
     attr_reader :name, :version, :description, :max_batch_size
 
+    HOOK_EVENTS = %i[request response error].freeze
+    private_constant :HOOK_EVENTS
+
     def initialize(name: nil, version: nil, description: nil, max_batch_size: 100, expose_errors: false)
       @name = name
       @version = version
@@ -15,6 +18,7 @@ module Reclamo
       @expose_errors = expose_errors
       @handler = Handler.new
       @middleware = []
+      @hooks = HOOK_EVENTS.to_h { |e| [e, []] }
     end
 
     def expose(target, namespace: nil, only: nil, except: nil, descriptions: nil, returns: nil)
@@ -33,6 +37,14 @@ module Reclamo
       raise ArgumentError, "cannot use both :only and :except" if only && except
 
       @middleware << [block, middleware_matcher(only, except)]
+      self
+    end
+
+    def on(event, &block)
+      raise ArgumentError, "block required" unless block
+      raise ArgumentError, "unknown event: #{event}" unless HOOK_EVENTS.include?(event)
+
+      @hooks[event] << block
       self
     end
 
@@ -57,7 +69,8 @@ module Reclamo
     def expose_errors? = @expose_errors
 
     def freeze
-      [@handler, @middleware].each(&:freeze)
+      @hooks.each_value(&:freeze)
+      [@handler, @middleware, @hooks].each(&:freeze)
       super
     end
 
@@ -106,14 +119,26 @@ module Reclamo
     end
 
     def execute_request(request)
+      emit(:request, request)
+      start = Process.clock_gettime(Process::CLOCK_MONOTONIC)
       result = build_chain(request).call
+      emit(:response, request, result, elapsed(start))
       request.notification? ? nil : Response.success(result, request.id)
     rescue StandardError => e
+      emit(:error, request, e, elapsed(start))
       return nil if request.notification?
 
       code, message, data = error_details(e)
       Response.error(code, request.id, data: data, message: message)
     end
+
+    def emit(event, *args)
+      @hooks[event].each { |hook| hook.call(*args) }
+    rescue StandardError => e
+      Kernel.warn "Reclamo: #{event} hook error: #{e.message}"
+    end
+
+    def elapsed(start) = Process.clock_gettime(Process::CLOCK_MONOTONIC) - start
 
     def build_chain(request)
       applicable = @middleware.select { |_, matcher| matcher.call(request.method_name) }
