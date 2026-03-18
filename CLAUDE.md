@@ -47,8 +47,9 @@ bin/console            # Interactive console with gem loaded
 - `test/support/fixtures.rb` — shared test fixtures (Calculator, Greeter)
 - `test/test_reclamo.rb` — version, constants, error class hierarchy
 - `test/test_request.rb` — Request unit tests: validation, notification?, freezing, edge cases
+- `test/test_response.rb` — Response module unit tests: success/error structure, data handling
 - `test/test_server.rb` — core dispatch, notifications, handle_parsed, callable, edge cases, freeze
-- `test/test_handler.rb` — handler unit tests
+- `test/test_handler.rb` — handler unit tests, freeze, param descriptors
 - `test/test_errors.rb` — server errors, application errors, server errors, request/param validation
 - `test/test_batch.rb` — batch requests
 - `test/test_discover.rb` — rpc.discover, descriptions, service info
