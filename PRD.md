@@ -3,8 +3,8 @@
 > Product Requirements Document for Reclamo, a network-agnostic Ruby gem
 > that exposes Ruby objects through JSON-RPC 2.0.
 >
-> Current version: 0.2.0 | Ruby >= 3.2 | 26 items — 20 done, 6 pending
-> (3 P0 ✓, 8 P1 — 7 done, 10 P2 — 8 done, 5 P3 — 2 done)
+> Current version: 0.2.0 | Ruby >= 3.2 | 26 items — 21 done, 5 pending
+> (3 P0 ✓, 8 P1 — 7 done, 10 P2 — 8 done, 5 P3 — 3 done)
 
 ---
 
@@ -145,7 +145,7 @@ Testing:
 
 ## P3 — Low Priority / Future
 
-- [ ] **TCP server adapter**
+- [x] **TCP server adapter**
   Simple TCP listener (`Reclamo::TCP.new(server, port: 4000).start`) for internal microservices using newline-delimited JSON.
   *Depends on: nothing.*
 

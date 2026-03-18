@@ -362,6 +362,21 @@ Reclamo::MCP.new(server).run
 
 `Reclamo::MCP` handles the MCP lifecycle (`initialize`, `tools/list`, `tools/call`), maps methods to tool definitions with input schemas, and runs over stdio for integration with Claude, Cursor, and other AI tools.
 
+#### TCP
+
+Use the built-in TCP adapter for internal microservices:
+
+```ruby
+require "reclamo/tcp"
+
+server = Reclamo::Server.new
+server.expose(Calculator)
+
+Reclamo::TCP.new(server, port: 4000).run
+```
+
+`Reclamo::TCP` accepts newline-delimited JSON-RPC over TCP, handles multiple concurrent clients via threads, and supports `SIGINT`/`SIGTERM` for graceful shutdown.
+
 #### stdio
 
 Use the built-in stdio adapter:

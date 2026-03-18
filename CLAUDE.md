@@ -47,6 +47,7 @@ bin/console            # Interactive console with gem loaded
 - `lib/reclamo/profiler.rb` — optional per-method profiler (Reclamo::Profiler), NOT auto-required
 - `lib/reclamo/rate_limit.rb` — optional rate limiter (Reclamo::RateLimiter), NOT auto-required
 - `lib/reclamo/recorder.rb` — optional exchange recorder (Reclamo::Recorder), NOT auto-required
+- `lib/reclamo/tcp.rb` — optional TCP adapter (Reclamo::TCP), NOT auto-required
 - `lib/reclamo/test_helpers.rb` — optional test helpers (rpc_call, rpc_notify, rpc_batch), NOT auto-required
 - `sig/reclamo.rbs` — RBS type signatures
 
@@ -78,6 +79,7 @@ bin/console            # Interactive console with gem loaded
 - `test/test_mock_server.rb` — mock server: stub, stub_any, batch, notifications, parse errors
 - `test/test_profiler.rb` — per-method profiling: count, min/max/avg, percentiles, reset, thread safety
 - `test/test_rate_limit.rb` — rate limiting: sliding window, per-caller, scoping, thread safety
+- `test/test_tcp.rb` — TCP adapter: requests, multi-client, notifications, stop/running
 - `test/test_recorder.rb` — exchange recorder: capture, clear, JSONL output, thread safety, batch
 - `test/test_expose.rb` — expose_method, method filtering, callable objects
 - `test/test_param_validation.rb` — parameter validation: type checking, enum, positional/keyword, expose, discover, edge cases
