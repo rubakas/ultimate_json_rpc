@@ -319,6 +319,15 @@ class TestServerDiscover < Minitest::Test
 
     assert_includes response["result"]["methods"], "ping"
   end
+
+  def test_rpc_discover_as_notification
+    server = Reclamo::Server.new
+    server.expose(Calculator)
+
+    request = { "jsonrpc" => "2.0", "method" => "rpc.discover" }
+
+    assert_nil server.handle(JSON.generate(request))
+  end
 end
 
 class TestServerApplicationError < Minitest::Test
@@ -628,6 +637,58 @@ class TestIntegration < Minitest::Test
     req = { "jsonrpc" => "2.0", "method" => method, "id" => id }
     req["params"] = params if params
     JSON.parse(server.handle(JSON.generate(req)))["error"]
+  end
+end
+
+class TestServerEdgeCases < Minitest::Test
+  def test_expose_class_with_singleton_methods
+    klass = Class.new do
+      def self.class_method
+        "from class"
+      end
+    end
+    server = Reclamo::Server.new
+    server.expose(klass)
+
+    request = { "jsonrpc" => "2.0", "method" => "class_method", "id" => 1 }
+    response = JSON.parse(server.handle(JSON.generate(request)))
+
+    assert_equal "from class", response["result"]
+  end
+
+  def test_method_with_default_params
+    server = Reclamo::Server.new
+    server.expose_method("greet") { |name, greeting = "Hi"| "#{greeting}, #{name}!" }
+
+    with_default = { "jsonrpc" => "2.0", "method" => "greet", "params" => ["World"], "id" => 1 }
+    response = JSON.parse(server.handle(JSON.generate(with_default)))
+    assert_equal "Hi, World!", response["result"]
+
+    with_override = { "jsonrpc" => "2.0", "method" => "greet", "params" => %w[World Hey], "id" => 2 }
+    response = JSON.parse(server.handle(JSON.generate(with_override)))
+    assert_equal "Hey, World!", response["result"]
+  end
+
+  def test_method_returning_complex_structure
+    server = Reclamo::Server.new
+    server.expose_method("data") { { "users" => [{ "name" => "Alice" }], "count" => 1 } }
+
+    request = { "jsonrpc" => "2.0", "method" => "data", "id" => 1 }
+    response = JSON.parse(server.handle(JSON.generate(request)))
+
+    assert_equal({ "users" => [{ "name" => "Alice" }], "count" => 1 }, response["result"])
+  end
+
+  def test_chained_setup
+    server = Reclamo::Server.new
+    result = server
+             .expose(Calculator)
+             .expose_method("ping") { "pong" }
+             .use { |_req, next_call| next_call.call }
+
+    assert_equal server, result
+    assert server.method?("add")
+    assert server.method?("ping")
   end
 end
 
