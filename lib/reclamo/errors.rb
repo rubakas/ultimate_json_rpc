@@ -67,4 +67,12 @@ module Reclamo
       super(message)
     end
   end
+
+  REQUEST_TIMEOUT = -32_001
+
+  class RequestTimeout < ServerError
+    def initialize(_message = nil)
+      super(REQUEST_TIMEOUT, "Request timeout")
+    end
+  end
 end

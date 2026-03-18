@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require "timeout"
+
 module Reclamo
   GENERIC_ERROR_DATA = "Internal server error"
   private_constant :GENERIC_ERROR_DATA
@@ -10,12 +12,13 @@ module Reclamo
     HOOK_EVENTS = %i[request response error].freeze
     private_constant :HOOK_EVENTS
 
-    def initialize(name: nil, version: nil, description: nil, max_batch_size: 100, expose_errors: false)
+    def initialize(name: nil, version: nil, description: nil, max_batch_size: 100, expose_errors: false, timeout: nil)
       @name = name
       @version = version
       @description = description
       @max_batch_size = max_batch_size
       @expose_errors = expose_errors
+      @timeout = timeout
       @handler = Handler.new
       @middleware = []
       @hooks = HOOK_EVENTS.to_h { |e| [e, []] }
@@ -120,15 +123,28 @@ module Reclamo
 
     def execute_request(request)
       emit(:request, request)
+      result, error, duration = timed_dispatch(request)
+      error ? handle_dispatch_error(request, error, duration) : handle_dispatch_success(request, result)
+    end
+
+    def timed_dispatch(request)
       start = Process.clock_gettime(Process::CLOCK_MONOTONIC)
-      result = build_chain(request).call
+      result = with_timeout { build_chain(request).call }
       emit(:response, request, result, elapsed(start))
-      request.notification? ? nil : Response.success(result, request.id)
+      [result, nil, elapsed(start)]
     rescue StandardError => e
       emit(:error, request, e, elapsed(start))
+      [nil, e, elapsed(start)]
+    end
+
+    def handle_dispatch_success(request, result)
+      request.notification? ? nil : Response.success(result, request.id)
+    end
+
+    def handle_dispatch_error(request, error, _duration)
       return nil if request.notification?
 
-      code, message, data = error_details(e)
+      code, message, data = error_details(error)
       Response.error(code, request.id, data: data, message: message)
     end
 
@@ -153,6 +169,12 @@ module Reclamo
       patterns = Array(only || except).map(&:to_s)
       check = only ? :any? : :none?
       ->(name) { patterns.public_send(check) { |p| p.include?("*") ? File.fnmatch(p, name) : p == name } }
+    end
+
+    def with_timeout(&)
+      return yield unless @timeout
+
+      Timeout.timeout(@timeout, RequestTimeout, &)
     end
 
     def invoke_handler(request)

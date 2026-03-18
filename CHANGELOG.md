@@ -15,6 +15,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Return type annotations: `returns:` keyword on `expose_method` and `returns:` hash on `expose`, appears in `rpc.discover`
 - OpenRPC 1.3.2 schema: `rpc.discover` now returns a full OpenRPC document with `openrpc` version, `info` object, and `result` contentDescriptors
 - Instrumentation hooks: `server.on(:request)`, `on(:response)`, `on(:error)` for read-only lifecycle observability with duration timing
+- Request timeout: `Server.new(timeout: 5)` wraps dispatch in `Timeout.timeout`, returns `-32001 Request timeout` on expiry
+- `RequestTimeout` error class and `REQUEST_TIMEOUT` (-32001) constant
 
 ### Changed
 - `rpc.discover` output restructured: service metadata moved to `info` object (`name` → `info.title`), method `returns` → `result` in OpenRPC contentDescriptor format

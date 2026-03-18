@@ -60,7 +60,7 @@ Reliability & performance:
   Lifecycle callbacks (`on_request`, `on_response`, `on_error`) emitting structured data (method name, duration, error code, request id). Dedicated hooks are cleaner than middleware for observability — they can't accidentally swallow errors or alter the response.
   *Depends on: nothing.*
 
-- [ ] **Request timeout**
+- [x] **Request timeout**
   Configurable per-server (and optionally per-method) timeout so a single slow handler can't block the server. Dedicated error code in the server-error range (-32000..-32099).
   *Depends on: nothing.*
 

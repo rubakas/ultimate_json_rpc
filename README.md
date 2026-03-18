@@ -133,6 +133,15 @@ server.on(:error)    { |request, error, duration| log_error(error, method: reque
 
 Hook errors are rescued and logged via `Kernel.warn`, never breaking dispatch.
 
+### Request timeout
+
+Set a per-server timeout (in seconds) to prevent slow handlers from blocking:
+
+```ruby
+server = Reclamo::Server.new(timeout: 5)
+# Handlers exceeding 5 seconds receive a -32001 "Request timeout" error
+```
+
 ### Error handling
 
 Raise `ApplicationError` for custom error codes, or `ServerError` for implementation-defined errors:

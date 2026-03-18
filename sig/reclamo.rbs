@@ -30,6 +30,12 @@ module Reclamo
     def initialize: (Integer, String, ?untyped) -> void
   end
 
+  REQUEST_TIMEOUT: Integer
+
+  class RequestTimeout < ServerError
+    def initialize: (?String?) -> void
+  end
+
   PARSE_ERROR: Integer
   INVALID_REQUEST: Integer
   METHOD_NOT_FOUND: Integer
@@ -84,7 +90,7 @@ module Reclamo
     attr_reader description: String?
     attr_reader max_batch_size: Integer?
 
-    def initialize: (?name: String?, ?version: String?, ?description: String?, ?max_batch_size: Integer?, ?expose_errors: bool) -> void
+    def initialize: (?name: String?, ?version: String?, ?description: String?, ?max_batch_size: Integer?, ?expose_errors: bool, ?timeout: Numeric?) -> void
     def expose: (Module | Object, ?namespace: String | Symbol | nil, ?only: Array[Symbol | String] | Symbol | String | nil, ?except: Array[Symbol | String] | Symbol | String | nil, ?descriptions: Hash[Symbol | String, String]?, ?returns: Hash[Symbol | String, untyped]?) -> self
     def expose_method: (String | Symbol, ?callable?, ?description: String?, ?returns: untyped) ?{ (*untyped) -> untyped } -> self
     def use: (?only: Array[String | Symbol] | String | Symbol | nil, ?except: Array[String | Symbol] | String | Symbol | nil) { (Request, Proc) -> untyped } -> self
