@@ -28,6 +28,10 @@ module Reclamo
       data = parse_json(json_string)
       return JSON.generate(Response.error(PARSE_ERROR, nil)) unless data
 
+      handle_parsed(data)
+    end
+
+    def handle_parsed(data)
       data.is_a?(Array) ? handle_batch(data) : handle_single(data)
     end
 

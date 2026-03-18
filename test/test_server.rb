@@ -520,6 +520,100 @@ class TestServerMiddleware < Minitest::Test
   end
 end
 
+class TestServerHandleParsed < Minitest::Test
+  def setup
+    @server = Reclamo::Server.new
+    @server.expose(Calculator)
+  end
+
+  def test_handle_parsed_single_request
+    data = { "jsonrpc" => "2.0", "method" => "add", "params" => [2, 3], "id" => 1 }
+    response = JSON.parse(@server.handle_parsed(data))
+
+    assert_equal 5, response["result"]
+  end
+
+  def test_handle_parsed_batch
+    data = [
+      { "jsonrpc" => "2.0", "method" => "add", "params" => [1, 2], "id" => 1 },
+      { "jsonrpc" => "2.0", "method" => "add", "params" => [3, 4], "id" => 2 }
+    ]
+    responses = JSON.parse(@server.handle_parsed(data))
+
+    assert_equal 2, responses.size
+    assert_equal 3, responses[0]["result"]
+  end
+
+  def test_handle_parsed_notification
+    data = { "jsonrpc" => "2.0", "method" => "add", "params" => [1, 2] }
+
+    assert_nil @server.handle_parsed(data)
+  end
+
+  def test_handle_parsed_invalid_request
+    data = { "jsonrpc" => "1.0", "method" => "add", "id" => 1 }
+    response = JSON.parse(@server.handle_parsed(data))
+
+    assert_equal(-32_600, response["error"]["code"])
+  end
+end
+
+class TestIntegration < Minitest::Test
+  def setup
+    @server = Reclamo::Server.new
+    @server.expose(Calculator, namespace: "calc")
+    @server.expose(Greeter.new("Hey"), namespace: "greeter")
+    @server.expose_method("ping") { "pong" }
+  end
+
+  def test_discover_lists_all_methods
+    methods = call(@server, "rpc.discover", id: 1)
+
+    assert_includes methods["methods"], "calc.add"
+    assert_includes methods["methods"], "greeter.greet"
+    assert_includes methods["methods"], "ping"
+  end
+
+  def test_call_namespaced_module
+    assert_equal 42, call(@server, "calc.add", params: [40, 2], id: 1)
+  end
+
+  def test_call_namespaced_instance_with_kwargs
+    assert_equal "Hey, World!", call(@server, "greeter.greet", params: { "name" => "World" }, id: 1)
+  end
+
+  def test_call_custom_method
+    assert_equal "pong", call(@server, "ping", id: 1)
+  end
+
+  def test_middleware_auth_pattern
+    server = Reclamo::Server.new
+    server.expose(Calculator)
+    server.use do |request, next_call|
+      raise Reclamo::ApplicationError.new(401, "Unauthorized") if request.method_name == "divide"
+
+      next_call.call
+    end
+
+    assert_equal 5, call(server, "add", params: [2, 3], id: 1)
+    assert_equal 401, call_error(server, "divide", params: [10, 2], id: 2)["code"]
+  end
+
+  private
+
+  def call(server, method, id:, params: nil)
+    req = { "jsonrpc" => "2.0", "method" => method, "id" => id }
+    req["params"] = params if params
+    JSON.parse(server.handle(JSON.generate(req)))["result"]
+  end
+
+  def call_error(server, method, id:, params: nil)
+    req = { "jsonrpc" => "2.0", "method" => method, "id" => id }
+    req["params"] = params if params
+    JSON.parse(server.handle(JSON.generate(req)))["error"]
+  end
+end
+
 class TestHandler < Minitest::Test
   def test_method_query
     handler = Reclamo::Handler.new
