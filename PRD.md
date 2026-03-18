@@ -36,7 +36,7 @@ Items within each tier are ordered by dependency (no-dependency items first, the
   Allow middleware to target specific methods or namespaces: `server.use(only: ["admin.*"]) { |req, nxt| ... }` or `server.use(except: ["ping"]) { ... }`, mirroring the `only:/except:` pattern from `expose`. Enables scoped auth, rate limiting, and logging without global middleware overhead.
   *Depends on: nothing (extends existing middleware chain).*
 
-- [ ] **Built-in Rack adapter**
+- [x] **Built-in Rack adapter**
   Ship `Reclamo::Rack` — a thin Rack app handling Content-Type, HTTP status codes (200/204), and error responses for non-POST requests. Eliminates the boilerplate lambda currently shown in the README.
   *Depends on: nothing.*
 

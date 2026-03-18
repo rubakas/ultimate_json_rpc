@@ -39,6 +39,7 @@ bin/console            # Interactive console with gem loaded
 - `lib/reclamo/response.rb` — JSON-RPC response building
 - `lib/reclamo/handler.rb` — method registry, dispatch, introspection, callable support, dangerous method denylist, freeze
 - `lib/reclamo/server.rb` — public API: expose, handle/call, middleware, rpc.discover, service metadata, max_batch_size, expose_errors, freeze
+- `lib/reclamo/rack.rb` — optional Rack adapter (Reclamo::Rack), NOT auto-required
 - `lib/reclamo/test_helpers.rb` — optional test helpers (rpc_call, rpc_notify, rpc_batch), NOT auto-required
 - `sig/reclamo.rbs` — RBS type signatures
 
@@ -56,6 +57,7 @@ bin/console            # Interactive console with gem loaded
 - `test/test_discover.rb` — rpc.discover, descriptions, service info
 - `test/test_middleware.rb` — middleware chain, edge cases, request immutability
 - `test/test_method_level_middleware.rb` — scoped middleware: only/except filtering, glob patterns, chain ordering
+- `test/test_rack.rb` — Rack adapter: HTTP methods, status codes, content types, edge cases
 - `test/test_expose.rb` — expose_method, method filtering, callable objects
 - `test/test_spec_conformance.rb` — JSON-RPC 2.0 spec conformance + integration tests
 - `test/test_test_helpers.rb` — TestHelpers module tests

@@ -163,6 +163,7 @@ server.handle(request)  # still works
 - **Error handling** — standard JSON-RPC error codes, `ApplicationError`, and `ServerError`
 - **Chainable API** — all setup methods return `self`
 - **Callable** — `to_proc` enables `requests.map(&server)`
+- **Rack adapter** — `Reclamo::Rack.new(server)` for instant HTTP deployment
 - **Batch size limit** — `max_batch_size: 100` (default) prevents oversized batch requests
 - **Freezable** — `server.freeze` locks configuration after setup
 
@@ -172,25 +173,20 @@ Reclamo is transport-agnostic. Here are common setups:
 
 #### Rack (HTTP)
 
+Use the built-in Rack adapter:
+
 ```ruby
 # config.ru
 require "reclamo"
+require "reclamo/rack"
 
 server = Reclamo::Server.new(name: "My API")
 server.expose(Calculator)
 
-app = ->(env) {
-  body = env["rack.input"].read
-  response = server.handle(body)
-  [
-    response ? 200 : 204,
-    { "content-type" => "application/json" },
-    [response || ""]
-  ]
-}
-
-run app
+run Reclamo::Rack.new(server)
 ```
+
+`Reclamo::Rack` handles Content-Type, returns 200 for responses, 204 for notifications, and 405 for non-POST requests.
 
 #### stdio
 
