@@ -167,7 +167,7 @@ class TestServerMiddlewareEdgeCases < Minitest::Test
     request = { "jsonrpc" => "2.0", "method" => "add", "params" => [1, 2], "id" => 42 }
     response = JSON.parse(server.handle(JSON.generate(request)))
 
-    assert_equal(-32_603, response["error"]["code"])
+    assert_equal(-32_600, response["error"]["code"])
     assert_equal 42, response["id"]
   end
 

@@ -98,6 +98,16 @@ class TestMCPToolsList < Minitest::Test
     assert_includes greet_tool["inputSchema"]["required"], "name"
   end
 
+  def test_zero_param_tool_has_input_schema
+    server = Reclamo::Server.new
+    server.expose_method("ping") { "pong" }
+    mcp = Reclamo::MCP.new(server)
+    result = mcp_call(mcp, "tools/list")
+    ping_tool = result["tools"].find { |t| t["name"] == "ping" }
+
+    assert_equal({ "type" => "object" }, ping_tool["inputSchema"])
+  end
+
   def test_mcp_methods_not_in_tools_list
     mcp = build_mcp
     result = mcp_call(mcp, "tools/list")

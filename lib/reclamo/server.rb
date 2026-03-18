@@ -291,12 +291,14 @@ module Reclamo
     end
 
     def error_details(err)
+      data = @expose_errors ? err.message : GENERIC_ERROR_DATA
       case err
       when MethodNotFound then [METHOD_NOT_FOUND, nil, err.method_name]
       when ApplicationError, ServerError then [err.code, err.message, err.rpc_data]
       when InvalidParams then [INVALID_PARAMS, nil, err.message]
-      when ArgumentError then [INVALID_PARAMS, nil, @expose_errors ? err.message : GENERIC_ERROR_DATA]
-      else [INTERNAL_ERROR, nil, @expose_errors ? err.message : GENERIC_ERROR_DATA]
+      when InvalidRequest then [INVALID_REQUEST, nil, data]
+      when ArgumentError then [INVALID_PARAMS, nil, data]
+      else [INTERNAL_ERROR, nil, data]
       end
     end
   end

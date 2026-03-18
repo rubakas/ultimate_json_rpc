@@ -88,6 +88,9 @@ module Reclamo
   end
 
   class Server
+    include Logging
+    include RateLimitSupport
+
     attr_reader name: String?
     attr_reader version: String?
     attr_reader description: String?

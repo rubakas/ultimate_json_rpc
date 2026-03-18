@@ -216,3 +216,91 @@ class TestRequestIdFalse < Minitest::Test
     end
   end
 end
+
+class TestStoreMetadataScalarGuard < Minitest::Test
+  def test_expose_with_scalar_deprecated_does_not_crash
+    server = Reclamo::Server.new
+    server.expose(Calculator, deprecated: true)
+
+    # Should register methods without raising NoMethodError on `true[:method_name]`
+    assert server.method?("add")
+  end
+
+  def test_expose_with_string_deprecated_does_not_crash
+    server = Reclamo::Server.new
+    server.expose(Calculator, deprecated: "use v2")
+
+    assert server.method?("add")
+  end
+end
+
+class TestInvalidRequestFromMiddleware < Minitest::Test
+  def test_middleware_raising_invalid_request_returns_invalid_request_code
+    server = Reclamo::Server.new(expose_errors: true)
+    server.expose(Calculator)
+    server.use { |_req, _nxt| raise Reclamo::InvalidRequest, "bad request from middleware" }
+
+    request = '{"jsonrpc":"2.0","method":"add","params":[1,2],"id":1}'
+    response = JSON.parse(server.handle(request))
+
+    assert_equal(-32_600, response["error"]["code"])
+    assert_equal "bad request from middleware", response["error"]["data"]
+  end
+
+  def test_middleware_raising_invalid_request_without_expose_errors
+    server = Reclamo::Server.new(expose_errors: false)
+    server.expose(Calculator)
+    server.use { |_req, _nxt| raise Reclamo::InvalidRequest, "secret details" }
+
+    request = '{"jsonrpc":"2.0","method":"add","params":[1,2],"id":1}'
+    response = JSON.parse(server.handle(request))
+
+    assert_equal(-32_600, response["error"]["code"])
+    assert_equal "Internal server error", response["error"]["data"]
+  end
+end
+
+class TestDocsDiscoverGuard < Minitest::Test
+  def test_docs_raises_when_discover_blocked_by_middleware
+    require "reclamo/docs"
+    server = Reclamo::Server.new
+    server.expose(Calculator)
+    server.use(only: "rpc.discover") { |_req, _nxt| raise Reclamo::InvalidRequest, "blocked" }
+
+    error = assert_raises(RuntimeError) { Reclamo::Docs.new(server).to_markdown }
+    assert_match(/rpc\.discover returned an error/, error.message)
+  end
+end
+
+class TestDangerousMethodsExtended < Minitest::Test
+  %w[instance_variable_get instance_variable_set const_get const_set method].each do |dangerous|
+    define_method("test_expose_method_#{dangerous}_is_blocked") do
+      handler = Reclamo::Handler.new
+      assert_raises(ArgumentError) { handler.expose_method(dangerous) { nil } }
+    end
+  end
+end
+
+class TestDeepDupFrozenKeys < Minitest::Test
+  def test_handle_parsed_with_frozen_string_keys
+    server = Reclamo::Server.new
+    server.expose_method("ping") { "pong" }
+
+    # All string keys are already frozen (normal Ruby behavior for string literals)
+    request = { "jsonrpc" => "2.0", "method" => "ping", "params" => { "key" => "val" }, "id" => 1 }
+    response = JSON.parse(server.handle_parsed(request))
+
+    assert_equal "pong", response["result"]
+  end
+
+  def test_handle_parsed_with_symbol_keyed_params
+    server = Reclamo::Server.new
+    server.expose_method("echo") { |value:| value }
+
+    # Symbol keys in params — deep_dup should handle without crashing
+    request = { "jsonrpc" => "2.0", "method" => "echo", "params" => { value: "hello" }, "id" => 1 }
+    response = JSON.parse(server.handle_parsed(request))
+
+    assert_equal "hello", response["result"]
+  end
+end

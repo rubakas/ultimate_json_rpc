@@ -14,6 +14,9 @@ module Reclamo
     exit exit! abort
     require require_relative load
     open
+    instance_variable_get instance_variable_set
+    const_get const_set
+    method
   ].freeze
   private_constant :DANGEROUS_METHODS
 
@@ -196,6 +199,7 @@ module Reclamo
 
     def store_metadata(full_name:, method_name:, store:, source:, &transform)
       return unless source
+      return unless source.is_a?(Hash)
 
       value = source[method_name.to_sym] || source[method_name.to_s]
       return unless value

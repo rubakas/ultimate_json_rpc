@@ -20,7 +20,10 @@ module Reclamo
     def discover
       @discover ||= begin
         request = { "jsonrpc" => "2.0", "method" => "rpc.discover", "id" => 1 }
-        @json.parse(@server.handle(@json.generate(request)))["result"]
+        result = @json.parse(@server.handle(@json.generate(request)))
+        raise "rpc.discover returned an error: #{result["error"]&.inspect}" unless result.key?("result")
+
+        result["result"]
       end
     end
 
