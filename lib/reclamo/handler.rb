@@ -10,16 +10,29 @@ module Reclamo
       prefix = namespace ? "#{namespace}." : ""
       methods = callable_methods(target)
       methods.each do |method_name|
-        @targets["#{prefix}#{method_name}"] = [target, method_name]
+        full_name = "#{prefix}#{method_name}"
+        validate_method_name!(full_name)
+        @targets[full_name] = [target, method_name]
       end
+    end
+
+    def expose_method(name, &block)
+      raise ArgumentError, "block required" unless block
+
+      validate_method_name!(name)
+      @targets[name] = block
     end
 
     def call(method_name, params)
       entry = @targets[method_name]
       raise MethodNotFound, method_name unless entry
 
-      target, meth = entry
-      invoke(target, meth, params)
+      if entry.is_a?(Array)
+        target, meth = entry
+        invoke(target, meth, params)
+      else
+        invoke_callable(entry, params)
+      end
     end
 
     def method?(method_name)
@@ -41,9 +54,16 @@ module Reclamo
       end
     end
 
+    def validate_method_name!(name)
+      raise ArgumentError, "method names starting with 'rpc.' are reserved" if name.start_with?("rpc.")
+    end
+
     def invoke(target, method_name, params)
       callable = target.method(method_name.to_sym)
+      invoke_callable(callable, params)
+    end
 
+    def invoke_callable(callable, params)
       case params
       when Array
         callable.call(*params)

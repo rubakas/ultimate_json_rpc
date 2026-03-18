@@ -34,6 +34,7 @@ module Reclamo
   class Handler
     def initialize: () -> void
     def expose: (Module | Object, ?namespace: String?) -> void
+    def expose_method: (String) { (*untyped) -> untyped } -> void
     def call: (String, Array[untyped] | Hash[String, untyped] | nil) -> untyped
     def method?: (String) -> bool
     def methods_list: () -> Array[String]
@@ -42,6 +43,7 @@ module Reclamo
   class Server
     def initialize: () -> void
     def expose: (Module | Object, ?namespace: String?) -> self
+    def expose_method: (String) { (*untyped) -> untyped } -> self
     def handle: (String) -> String?
     def methods_list: () -> Array[String]
   end

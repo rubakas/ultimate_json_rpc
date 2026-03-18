@@ -251,6 +251,71 @@ class TestServerBatch < Minitest::Test
   end
 end
 
+class TestServerExposeMethod < Minitest::Test
+  def test_expose_block_as_method
+    server = Reclamo::Server.new
+    server.expose_method("double") { |num| num * 2 }
+
+    request = { "jsonrpc" => "2.0", "method" => "double", "params" => [5], "id" => 1 }
+    response = JSON.parse(server.handle(JSON.generate(request)))
+
+    assert_equal 10, response["result"]
+  end
+
+  def test_expose_block_with_keyword_params
+    server = Reclamo::Server.new
+    server.expose_method("greet") { |name:, greeting: "Hello"| "#{greeting}, #{name}!" }
+
+    request = { "jsonrpc" => "2.0", "method" => "greet",
+                "params" => { "name" => "World" }, "id" => 1 }
+    response = JSON.parse(server.handle(JSON.generate(request)))
+
+    assert_equal "Hello, World!", response["result"]
+  end
+
+  def test_expose_method_returns_self
+    server = Reclamo::Server.new
+
+    assert_equal server, server.expose_method("noop") { nil }
+  end
+
+  def test_expose_method_rejects_rpc_prefix
+    server = Reclamo::Server.new
+
+    assert_raises(ArgumentError) do
+      server.expose_method("rpc.foo") { "bar" }
+    end
+  end
+
+  def test_expose_method_without_block_raises
+    handler = Reclamo::Handler.new
+
+    assert_raises(ArgumentError) { handler.expose_method("foo") }
+  end
+end
+
+class TestServerDiscover < Minitest::Test
+  def test_rpc_discover_returns_methods
+    server = Reclamo::Server.new
+    server.expose(Calculator)
+
+    request = { "jsonrpc" => "2.0", "method" => "rpc.discover", "id" => 1 }
+    response = JSON.parse(server.handle(JSON.generate(request)))
+
+    assert_equal({ "methods" => %w[add divide] }, response["result"])
+  end
+
+  def test_rpc_discover_includes_custom_methods
+    server = Reclamo::Server.new
+    server.expose_method("ping") { "pong" }
+
+    request = { "jsonrpc" => "2.0", "method" => "rpc.discover", "id" => 1 }
+    response = JSON.parse(server.handle(JSON.generate(request)))
+
+    assert_includes response["result"]["methods"], "ping"
+  end
+end
+
 class TestHandler < Minitest::Test
   def test_method_query
     handler = Reclamo::Handler.new
@@ -258,6 +323,12 @@ class TestHandler < Minitest::Test
 
     assert handler.method?("add")
     refute handler.method?("nonexistent")
+  end
+
+  def test_expose_rejects_rpc_namespace
+    handler = Reclamo::Handler.new
+
+    assert_raises(ArgumentError) { handler.expose(Calculator, namespace: "rpc") }
   end
 
   def test_does_not_expose_inherited_object_methods

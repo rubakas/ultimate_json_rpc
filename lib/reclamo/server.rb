@@ -11,6 +11,11 @@ module Reclamo
       self
     end
 
+    def expose_method(name, &)
+      @handler.expose_method(name, &)
+      self
+    end
+
     def handle(json_string)
       data = parse_json(json_string)
       return JSON.generate(Response.error(PARSE_ERROR, nil)) unless data
@@ -53,12 +58,21 @@ module Reclamo
     end
 
     def execute_request(request)
-      result = @handler.call(request.method_name, request.params)
+      result = dispatch(request)
       return nil if request.notification?
 
       Response.success(result, request.id)
     rescue StandardError => e
       error_response_for(request, e)
+    end
+
+    def dispatch(request)
+      case request.method_name
+      when "rpc.discover"
+        { "methods" => @handler.methods_list }
+      else
+        @handler.call(request.method_name, request.params)
+      end
     end
 
     def error_response_for(request, err)
