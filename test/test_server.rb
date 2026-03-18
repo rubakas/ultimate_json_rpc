@@ -565,6 +565,20 @@ class TestServerDiscoverServiceInfo < Minitest::Test
     refute result.key?("name")
     refute result.key?("version")
   end
+
+  def test_name_and_version_readers
+    server = Reclamo::Server.new(name: "My API", version: "2.0")
+
+    assert_equal "My API", server.name
+    assert_equal "2.0", server.version
+  end
+
+  def test_name_and_version_default_to_nil
+    server = Reclamo::Server.new
+
+    assert_nil server.name
+    assert_nil server.version
+  end
 end
 
 class TestServerApplicationError < Minitest::Test

@@ -61,6 +61,9 @@ module Reclamo
   end
 
   class Server
+    attr_reader name: String?
+    attr_reader version: String?
+
     def initialize: (?name: String?, ?version: String?) -> void
     def expose: (Module | Object, ?namespace: String | Symbol | nil, ?only: Array[Symbol | String]?, ?except: Array[Symbol | String]?, ?descriptions: Hash[Symbol | String, String]?) -> self
     def expose_method: (String | Symbol, ?description: String?) { (*untyped) -> untyped } -> self

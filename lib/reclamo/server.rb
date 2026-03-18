@@ -6,6 +6,8 @@ module Reclamo
   private_constant :PARSE_FAILED
 
   class Server
+    attr_reader :name, :version
+
     def initialize(name: nil, version: nil)
       @name = name
       @version = version
