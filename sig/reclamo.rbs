@@ -22,6 +22,8 @@ module Reclamo
   METHOD_NOT_FOUND: Integer
   INVALID_PARAMS: Integer
   INTERNAL_ERROR: Integer
+  SERVER_ERROR_MIN: Integer
+  SERVER_ERROR_MAX: Integer
   ERROR_MESSAGES: Hash[Integer, String]
 
   class Request
@@ -54,7 +56,7 @@ module Reclamo
     def use: () { (Request, Proc) -> untyped } -> self
     def method?: (String) -> bool
     def handle: (String) -> String?
-    def handle_parsed: (Hash[String, untyped] | Array[Hash[String, untyped]]) -> String?
+    def handle_parsed: (untyped) -> String?
     def methods_list: () -> Array[String]
   end
 end

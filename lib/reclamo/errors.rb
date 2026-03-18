@@ -7,6 +7,10 @@ module Reclamo
   INVALID_PARAMS = -32_602
   INTERNAL_ERROR = -32_603
 
+  # Implementation-defined server error range (-32000 to -32099)
+  SERVER_ERROR_MIN = -32_099
+  SERVER_ERROR_MAX = -32_000
+
   ERROR_MESSAGES = {
     PARSE_ERROR => "Parse error",
     INVALID_REQUEST => "Invalid Request",

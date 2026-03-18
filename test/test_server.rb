@@ -139,6 +139,13 @@ class TestServerErrors < Minitest::Test
     assert_nil response["id"]
   end
 
+  def test_handle_nil_input
+    response = JSON.parse(@server.handle(nil))
+
+    assert_equal(-32_700, response["error"]["code"])
+    assert_nil response["id"]
+  end
+
   def test_invalid_request_missing_method
     request = { "jsonrpc" => "2.0", "id" => 1 }
     response = JSON.parse(@server.handle(JSON.generate(request)))

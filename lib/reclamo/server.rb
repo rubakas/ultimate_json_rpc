@@ -51,7 +51,7 @@ module Reclamo
 
     def parse_json(json_string)
       JSON.parse(json_string)
-    rescue JSON::ParserError
+    rescue JSON::ParserError, TypeError
       nil
     end
 
