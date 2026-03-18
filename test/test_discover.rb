@@ -5,13 +5,13 @@ require "json"
 
 class TestServerDiscover < Minitest::Test
   def test_rpc_discover_returns_method_names
-    methods = discover_methods(Calculator)
+    methods = discover_methods_for(Calculator)
 
     assert_equal "add", methods.find { |m| m["name"] == "add" }["name"]
   end
 
   def test_rpc_discover_includes_param_info
-    methods = discover_methods(Calculator)
+    methods = discover_methods_for(Calculator)
     add_method = methods.find { |m| m["name"] == "add" }
 
     assert_equal 2, add_method["params"].size
@@ -78,7 +78,7 @@ class TestServerDiscover < Minitest::Test
 
   private
 
-  def discover_methods(target)
+  def discover_methods_for(target)
     server = Reclamo::Server.new
     server.expose(target)
     discover(server)

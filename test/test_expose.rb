@@ -98,6 +98,12 @@ class TestServerExposeMethod < Minitest::Test
 
     assert_raises(ArgumentError) { server.expose_method("empty") }
   end
+
+  def test_expose_method_rejects_non_callable
+    server = Reclamo::Server.new
+
+    assert_raises(ArgumentError) { server.expose_method("bad", "not callable") }
+  end
 end
 
 class TestServerMethodFiltering < Minitest::Test

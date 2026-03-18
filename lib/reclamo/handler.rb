@@ -38,12 +38,8 @@ module Reclamo
       entry = @targets[method_name]
       raise MethodNotFound, method_name unless entry
 
-      if entry.is_a?(Array)
-        target, meth = entry
-        invoke(target, meth, params)
-      else
-        invoke_callable(entry, params)
-      end
+      callable = entry.is_a?(Array) ? entry[0].method(entry[1].to_sym) : entry
+      invoke_callable(callable, params)
     end
 
     def method?(method_name) = @targets.key?(method_name)
@@ -121,11 +117,9 @@ module Reclamo
       raise ArgumentError, "provide either a callable or a block, not both" if callable && block
       raise ArgumentError, "a callable or block is required" unless callable || block
 
-      callable || block
-    end
-
-    def invoke(target, method_name, params)
-      invoke_callable(target.method(method_name.to_sym), params)
+      (callable || block).tap do |resolved|
+        raise ArgumentError, "callable must respond to #call" unless resolved.respond_to?(:call)
+      end
     end
 
     def invoke_callable(callable, params)
