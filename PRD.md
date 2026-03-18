@@ -3,7 +3,7 @@
 > Product Requirements Document for Reclamo, a network-agnostic Ruby gem
 > that exposes Ruby objects through JSON-RPC 2.0.
 >
-> Current version: 0.2.0 | Ruby >= 3.2
+> Current version: 0.2.0 | Ruby >= 3.2 | 23 items (3 P0, 8 P1, 9 P2, 3 P3)
 
 ---
 
@@ -44,6 +44,8 @@ Items within each tier are ordered by dependency (no-dependency items first, the
 
 ## P1 — High Priority
 
+Schema & discovery:
+
 - [ ] **Parameter validation (JSON Schema)**
   Allow methods to declare parameter schemas validated before dispatch. Return `InvalidParams` (-32602) with descriptive messages on mismatch. Schemas feed into `rpc.discover` / OpenRPC output. Declared via `expose_method("add", params_schema: { ... })` or inferred from Ruby signatures with optional type hints.
   *Depends on: nothing (enhances OpenRPC when both are present, but works standalone).*
@@ -51,6 +53,8 @@ Items within each tier are ordered by dependency (no-dependency items first, the
 - [ ] **Return type annotations**
   Let methods declare their return type for discovery metadata: `expose_method("add", returns: { type: "number" })`. Purely informational — no runtime enforcement. Feeds into OpenRPC output and enables richer client generation.
   *Depends on: nothing (enhances OpenRPC when both are present).*
+
+Reliability & performance:
 
 - [ ] **Structured logging / instrumentation hooks**
   Lifecycle callbacks (`on_request`, `on_response`, `on_error`) emitting structured data (method name, duration, error code, request id). Dedicated hooks are cleaner than middleware for observability — they can't accidentally swallow errors or alter the response.
@@ -63,6 +67,8 @@ Items within each tier are ordered by dependency (no-dependency items first, the
 - [ ] **Concurrent batch execution**
   Process batch items concurrently via thread pool (opt-in: `concurrent_batches: true`). Current sequential execution is a bottleneck for I/O-bound handlers. Should respect `max_batch_size` and pair well with request timeout.
   *Depends on: nothing (benefits from request timeout to cap runaway items).*
+
+Adoption & integration:
 
 - [ ] **Richer test helpers**
   Add `assert_rpc_success(response, expected)`, `assert_rpc_error(response, code:)`, and `assert_rpc_notification(server, method, params:)` to the optional `reclamo/test_helpers` module.
