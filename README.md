@@ -193,6 +193,20 @@ server.expose(Calculator, deprecated: { add: "Use add_v2" })
 
 Deprecated methods still work normally but appear flagged in `rpc.discover` output.
 
+### Per-method profiling
+
+Collect per-method timing statistics:
+
+```ruby
+require "reclamo/profiler"
+
+profiler = Reclamo::Profiler.new(server)
+# ... handle requests ...
+profiler["add"]  # => {count: 150, min: 0.0001, max: 0.05, avg: 0.002, p50: ..., p95: ..., p99: ...}
+profiler.stats   # => all methods
+profiler.reset   # clear data
+```
+
 ### Structured logging
 
 Logger-agnostic observability via `log_to`:

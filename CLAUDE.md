@@ -43,6 +43,7 @@ bin/console            # Interactive console with gem loaded
 - `lib/reclamo/stdio.rb` — optional stdio adapter (Reclamo::Stdio), NOT auto-required
 - `lib/reclamo/logging.rb` — optional structured logging (Reclamo::Logging), NOT auto-required
 - `lib/reclamo/mcp.rb` — optional MCP adapter (Reclamo::MCP), NOT auto-required
+- `lib/reclamo/profiler.rb` — optional per-method profiler (Reclamo::Profiler), NOT auto-required
 - `lib/reclamo/rate_limit.rb` — optional rate limiter (Reclamo::RateLimiter), NOT auto-required
 - `lib/reclamo/recorder.rb` — optional exchange recorder (Reclamo::Recorder), NOT auto-required
 - `lib/reclamo/test_helpers.rb` — optional test helpers (rpc_call, rpc_notify, rpc_batch), NOT auto-required
@@ -73,6 +74,7 @@ bin/console            # Interactive console with gem loaded
 - `test/test_deprecation.rb` — method deprecation markers: boolean, string, expose hash, namespace, freeze
 - `test/test_logging.rb` — structured logging: levels, duration, method names, errors, chaining
 - `test/test_mcp.rb` — MCP adapter: initialize, tools/list, tools/call, schemas, namespaces, errors
+- `test/test_profiler.rb` — per-method profiling: count, min/max/avg, percentiles, reset, thread safety
 - `test/test_rate_limit.rb` — rate limiting: sliding window, per-caller, scoping, thread safety
 - `test/test_recorder.rb` — exchange recorder: capture, clear, JSONL output, thread safety, batch
 - `test/test_expose.rb` — expose_method, method filtering, callable objects
