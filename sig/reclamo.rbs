@@ -8,6 +8,9 @@ module Reclamo
   end
 
   class MethodNotFound < Error
+    attr_reader method_name: String
+
+    def initialize: (String) -> void
   end
 
   class ApplicationError < Error

@@ -760,6 +760,26 @@ class TestRequestValidation < Minitest::Test
     assert_equal 3, response["result"]
   end
 
+  def test_id_zero_is_valid
+    server = Reclamo::Server.new
+    server.expose(Calculator)
+    request = { "jsonrpc" => "2.0", "method" => "add", "params" => [1, 2], "id" => 0 }
+    response = JSON.parse(server.handle(JSON.generate(request)))
+
+    assert_equal 3, response["result"]
+    assert_equal 0, response["id"]
+  end
+
+  def test_boolean_id_returns_null_in_error
+    server = Reclamo::Server.new
+    server.expose(Calculator)
+    request = { "jsonrpc" => "2.0", "method" => "add", "params" => [1, 2], "id" => true }
+    response = JSON.parse(server.handle(JSON.generate(request)))
+
+    assert_equal(-32_600, response["error"]["code"])
+    assert_nil response["id"]
+  end
+
   def test_invalid_request_preserves_valid_id
     server = Reclamo::Server.new
     request = { "jsonrpc" => "1.0", "method" => "add", "id" => 99 }
@@ -1381,6 +1401,23 @@ class TestHandler < Minitest::Test
 
     assert_equal 2, greet_info["params"].size
     refute greet_info["params"][0].key?("required")
+  end
+end
+
+class TestHandlerEdgeCases < Minitest::Test
+  def test_method_not_found_exposes_method_name
+    handler = Reclamo::Handler.new
+    err = assert_raises(Reclamo::MethodNotFound) { handler.call("missing", nil) }
+
+    assert_equal "missing", err.method_name
+    assert_equal "missing", err.message
+  end
+
+  def test_invoke_with_invalid_params_type_raises
+    handler = Reclamo::Handler.new
+    handler.expose(Calculator)
+
+    assert_raises(ArgumentError) { handler.call("add", "not valid") }
   end
 end
 

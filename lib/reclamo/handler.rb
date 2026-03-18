@@ -120,9 +120,17 @@ module Reclamo
       when Array then callable.call(*params)
       when Hash  then callable.call(**params.transform_keys(&:to_sym))
       when nil   then callable.call
+      else raise ArgumentError, "params must be an Array, Hash, or nil"
       end
     end
   end
 
-  class MethodNotFound < Error; end
+  class MethodNotFound < Error
+    attr_reader :method_name
+
+    def initialize(method_name)
+      @method_name = method_name
+      super
+    end
+  end
 end
