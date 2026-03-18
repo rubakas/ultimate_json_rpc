@@ -7,8 +7,8 @@ module Reclamo
     def initialize(data)
       validate!(data)
       @method_name = data["method"].freeze
-      @params = data["params"]
-      @id = data["id"]
+      @params = data["params"].freeze
+      @id = data["id"].freeze
     end
 
     def notification?

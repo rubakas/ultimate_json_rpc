@@ -135,6 +135,18 @@ class TestServerMiddlewareEdgeCases < Minitest::Test
     assert response["result"].key?("methods")
   end
 
+  def test_request_params_are_frozen
+    server = Reclamo::Server.new
+    server.expose(Calculator)
+    server.use do |request, next_call|
+      assert_predicate request.params, :frozen?
+      next_call.call
+    end
+
+    request = { "jsonrpc" => "2.0", "method" => "add", "params" => [1, 2], "id" => 1 }
+    server.handle(JSON.generate(request))
+  end
+
   def test_middleware_unexpected_error_returns_internal_error
     server = Reclamo::Server.new
     server.expose(Calculator)
