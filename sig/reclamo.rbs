@@ -47,6 +47,7 @@ module Reclamo
     def call: (String, Array[untyped] | Hash[String, untyped] | nil) -> untyped
     def method?: (String) -> bool
     def methods_list: () -> Array[String]
+    def methods_info: () -> Array[Hash[String, untyped]]
     def size: () -> Integer
   end
 

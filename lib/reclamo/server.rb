@@ -58,19 +58,23 @@ module Reclamo
     def handle_batch(requests)
       return JSON.generate(Response.error(INVALID_REQUEST, nil)) if requests.empty?
 
-      responses = requests.filter_map { |req| process_request(req) }
-      return nil if responses.empty?
+      json_parts = requests.filter_map { |req| serialize_single(req) }
+      return nil if json_parts.empty?
 
-      JSON.generate(responses)
-    rescue JSON::JSONError
-      JSON.generate(Response.error(INTERNAL_ERROR, nil))
+      "[#{json_parts.join(",")}]"
     end
 
     def handle_single(data)
-      result = process_request(data)
-      result ? JSON.generate(result) : nil
+      serialize_single(data)
+    end
+
+    def serialize_single(data)
+      response = process_request(data)
+      return nil unless response
+
+      JSON.generate(response)
     rescue JSON::JSONError
-      id = result.is_a?(Hash) ? result["id"] : nil
+      id = response.is_a?(Hash) ? response["id"] : nil
       JSON.generate(Response.error(INTERNAL_ERROR, id))
     end
 
@@ -107,7 +111,7 @@ module Reclamo
     end
 
     def invoke_handler(request)
-      return { "methods" => @handler.methods_list } if request.method_name == "rpc.discover"
+      return { "methods" => @handler.methods_info } if request.method_name == "rpc.discover"
 
       @handler.call(request.method_name, request.params)
     end

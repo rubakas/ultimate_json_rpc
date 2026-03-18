@@ -297,16 +297,35 @@ class TestServerBatch < Minitest::Test
     assert_equal 3, responses[1]["result"]
   end
 
-  def test_batch_with_non_serializable_result
+  def test_batch_non_serializable_does_not_break_other_responses
+    responses = batch_with_bad_and_good_responses
+
+    assert_equal 2, responses.size
+    assert_equal(-32_603, responses[0]["error"]["code"])
+    assert_equal 5, responses[1]["result"]
+  end
+
+  def test_batch_non_serializable_preserves_ids
+    responses = batch_with_bad_and_good_responses
+
+    assert_equal 1, responses[0]["id"]
+    assert_equal 2, responses[1]["id"]
+  end
+
+  private
+
+  def batch_with_bad_and_good_responses
     server = Reclamo::Server.new
     circ = {}
     circ["self"] = circ
     server.expose_method("bad") { circ }
+    server.expose(Calculator)
 
-    requests = [{ "jsonrpc" => "2.0", "method" => "bad", "id" => 1 }]
-    response = JSON.parse(server.handle(JSON.generate(requests)))
-
-    assert_equal(-32_603, response["error"]["code"])
+    requests = [
+      { "jsonrpc" => "2.0", "method" => "bad", "id" => 1 },
+      { "jsonrpc" => "2.0", "method" => "add", "params" => [2, 3], "id" => 2 }
+    ]
+    JSON.parse(server.handle(JSON.generate(requests)))
   end
 end
 
@@ -373,33 +392,72 @@ class TestServerExposeMethod < Minitest::Test
 end
 
 class TestServerDiscover < Minitest::Test
-  def test_rpc_discover_returns_methods
-    server = Reclamo::Server.new
-    server.expose(Calculator)
+  def test_rpc_discover_returns_method_names
+    methods = discover_methods(Calculator)
 
-    request = { "jsonrpc" => "2.0", "method" => "rpc.discover", "id" => 1 }
-    response = JSON.parse(server.handle(JSON.generate(request)))
+    assert_equal "add", methods.find { |m| m["name"] == "add" }["name"]
+  end
 
-    assert_equal({ "methods" => %w[add divide] }, response["result"])
+  def test_rpc_discover_includes_param_info
+    methods = discover_methods(Calculator)
+    add_method = methods.find { |m| m["name"] == "add" }
+
+    assert_equal 2, add_method["params"].size
+    assert_equal true, add_method["params"][0]["required"]
   end
 
   def test_rpc_discover_includes_custom_methods
     server = Reclamo::Server.new
     server.expose_method("ping") { "pong" }
+    method_names = discover(server).map { |m| m["name"] }
 
-    request = { "jsonrpc" => "2.0", "method" => "rpc.discover", "id" => 1 }
-    response = JSON.parse(server.handle(JSON.generate(request)))
+    assert_includes method_names, "ping"
+  end
 
-    assert_includes response["result"]["methods"], "ping"
+  def test_rpc_discover_keyword_params_required
+    server = Reclamo::Server.new
+    server.expose(Greeter.new("Hi"), namespace: "greeter")
+    greet_method = discover(server).find { |m| m["name"] == "greeter.greet" }
+    name_param = greet_method["params"][0]
+
+    assert_equal true, name_param["required"]
+    assert_equal true, name_param["keyword"]
+  end
+
+  def test_rpc_discover_no_params_omits_key
+    server = Reclamo::Server.new
+    server.expose_method("ping") { "pong" }
+    ping_method = discover(server).find { |m| m["name"] == "ping" }
+
+    refute ping_method.key?("params")
+  end
+
+  def test_rpc_discover_variadic_params
+    server = Reclamo::Server.new
+    server.expose_method("sum") { |*nums| nums.sum }
+    sum_method = discover(server).find { |m| m["name"] == "sum" }
+
+    assert_equal true, sum_method["params"][0]["variadic"]
   end
 
   def test_rpc_discover_as_notification
     server = Reclamo::Server.new
     server.expose(Calculator)
 
-    request = { "jsonrpc" => "2.0", "method" => "rpc.discover" }
+    assert_nil server.handle(JSON.generate({ "jsonrpc" => "2.0", "method" => "rpc.discover" }))
+  end
 
-    assert_nil server.handle(JSON.generate(request))
+  private
+
+  def discover_methods(target)
+    server = Reclamo::Server.new
+    server.expose(target)
+    discover(server)
+  end
+
+  def discover(server)
+    request = { "jsonrpc" => "2.0", "method" => "rpc.discover", "id" => 1 }
+    JSON.parse(server.handle(JSON.generate(request)))["result"]["methods"]
   end
 end
 
@@ -755,11 +813,12 @@ class TestIntegration < Minitest::Test
   end
 
   def test_discover_lists_all_methods
-    methods = call(@server, "rpc.discover", id: 1)
+    result = call(@server, "rpc.discover", id: 1)
+    method_names = result["methods"].map { |m| m["name"] }
 
-    assert_includes methods["methods"], "calc.add"
-    assert_includes methods["methods"], "greeter.greet"
-    assert_includes methods["methods"], "ping"
+    assert_includes method_names, "calc.add"
+    assert_includes method_names, "greeter.greet"
+    assert_includes method_names, "ping"
   end
 
   def test_call_namespaced_module
@@ -949,6 +1008,39 @@ class TestHandler < Minitest::Test
     handler.expose_method("middle") { nil }
 
     assert_equal %w[alpha middle zebra], handler.methods_list
+  end
+
+  def test_methods_info_for_required_positional_params
+    handler = Reclamo::Handler.new
+    handler.expose(Calculator)
+    add_info = handler.methods_info.find { |m| m["name"] == "add" }
+
+    assert_equal(%w[left right], add_info["params"].map { |p| p["name"] })
+    assert(add_info["params"].all? { |p| p["required"] })
+  end
+
+  def test_methods_info_marks_keyword_params
+    handler = Reclamo::Handler.new
+    handler.expose(Greeter.new("Hi"))
+    greet_info = handler.methods_info.find { |m| m["name"] == "greet" }
+
+    assert_equal true, greet_info["params"][0]["keyword"]
+  end
+
+  def test_methods_info_omits_params_when_none
+    handler = Reclamo::Handler.new
+    handler.expose_method("ping") { "pong" }
+
+    refute handler.methods_info[0].key?("params")
+  end
+
+  def test_methods_info_block_params_are_optional
+    handler = Reclamo::Handler.new
+    handler.expose_method("greet") { |name, greeting| "#{greeting}, #{name}!" }
+    greet_info = handler.methods_info[0]
+
+    assert_equal 2, greet_info["params"].size
+    refute greet_info["params"][0].key?("required")
   end
 end
 

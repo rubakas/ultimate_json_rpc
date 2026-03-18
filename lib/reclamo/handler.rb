@@ -1,6 +1,10 @@
 # frozen_string_literal: true
 
 module Reclamo
+  # @api private
+  VARIADIC_DEFAULTS = { rest: "args", keyrest: "kwargs" }.freeze
+  private_constant :VARIADIC_DEFAULTS
+
   class Handler
     def initialize
       @targets = {}
@@ -40,19 +44,31 @@ module Reclamo
       end
     end
 
-    def method?(method_name)
-      @targets.key?(method_name)
-    end
-
-    def methods_list
-      @targets.keys.sort
-    end
-
-    def size
-      @targets.size
-    end
+    def method?(method_name) = @targets.key?(method_name)
+    def methods_list = @targets.keys.sort
+    def methods_info = @targets.keys.sort.map { |name| method_info(name) }
+    def size = @targets.size
 
     private
+
+    def method_info(name)
+      entry = @targets[name]
+      callable = entry.is_a?(Array) ? entry[0].method(entry[1].to_sym) : entry
+      info = { "name" => name }
+      params = callable.parameters.filter_map { |type, pname| param_descriptor(type, pname) }
+      info["params"] = params unless params.empty?
+      info
+    end
+
+    def param_descriptor(type, pname)
+      return if type == :block
+
+      desc = { "name" => pname&.to_s || VARIADIC_DEFAULTS.fetch(type, "arg") }
+      desc["required"] = true if %i[req keyreq].include?(type)
+      desc["variadic"] = true if %i[rest keyrest].include?(type)
+      desc["keyword"] = true if %i[key keyreq keyrest].include?(type)
+      desc
+    end
 
     def callable_methods(target)
       case target
@@ -85,19 +101,14 @@ module Reclamo
     end
 
     def invoke(target, method_name, params)
-      callable = target.method(method_name.to_sym)
-      invoke_callable(callable, params)
+      invoke_callable(target.method(method_name.to_sym), params)
     end
 
     def invoke_callable(callable, params)
       case params
-      when Array
-        callable.call(*params)
-      when Hash
-        kwargs = params.transform_keys(&:to_sym)
-        callable.call(**kwargs)
-      when nil
-        callable.call
+      when Array then callable.call(*params)
+      when Hash  then callable.call(**params.transform_keys(&:to_sym))
+      when nil   then callable.call
       end
     end
   end
