@@ -1,0 +1,48 @@
+module Reclamo
+  VERSION: String
+
+  class Error < StandardError
+  end
+
+  class InvalidRequest < Error
+  end
+
+  class MethodNotFound < Error
+  end
+
+  PARSE_ERROR: Integer
+  INVALID_REQUEST: Integer
+  METHOD_NOT_FOUND: Integer
+  INVALID_PARAMS: Integer
+  INTERNAL_ERROR: Integer
+  ERROR_MESSAGES: Hash[Integer, String]
+
+  class Request
+    attr_reader method_name: String
+    attr_reader params: Array[untyped] | Hash[String, untyped] | nil
+    attr_reader id: untyped
+
+    def initialize: (Hash[String, untyped]) -> void
+    def notification?: () -> bool
+  end
+
+  module Response
+    def self.success: (untyped, untyped) -> Hash[String, untyped]
+    def self.error: (Integer, untyped, ?data: String?) -> Hash[String, untyped]
+  end
+
+  class Handler
+    def initialize: () -> void
+    def expose: (Module | Object, ?namespace: String?) -> void
+    def call: (String, Array[untyped] | Hash[String, untyped] | nil) -> untyped
+    def method?: (String) -> bool
+    def methods_list: () -> Array[String]
+  end
+
+  class Server
+    def initialize: () -> void
+    def expose: (Module | Object, ?namespace: String?) -> self
+    def handle: (String) -> String?
+    def methods_list: () -> Array[String]
+  end
+end
