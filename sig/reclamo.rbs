@@ -162,7 +162,7 @@ module Reclamo
     def initialize: (Server, ?max_samples: Integer) -> void
     def []: (String) -> Hash[Symbol, untyped]?
     def tracked_methods: () -> Array[String]
-    alias methods tracked_methods
+    alias method_names tracked_methods
     def stats: () -> Hash[String, Hash[Symbol, untyped]]
     def reset: () -> void
   end

@@ -9,7 +9,7 @@ module Reclamo
     def initialize(data)
       validate!(data)
       @method_name = data["method"].freeze
-      @params = deep_freeze(data["params"])
+      @params = deep_freeze(deep_dup(data["params"]))
       @id = data["id"].freeze
       @context = {}
     end
@@ -45,6 +45,14 @@ module Reclamo
       return if id.nil? || id.is_a?(String) || id.is_a?(Numeric)
 
       raise InvalidRequest, "id must be a String, Number, or Null"
+    end
+
+    def deep_dup(obj)
+      case obj
+      when Hash then obj.to_h { |k, v| [k.dup, deep_dup(v)] }
+      when Array then obj.map { |v| deep_dup(v) }
+      else obj
+      end
     end
 
     def deep_freeze(obj, depth = 0)

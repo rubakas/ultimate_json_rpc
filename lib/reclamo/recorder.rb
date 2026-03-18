@@ -44,7 +44,10 @@ module Reclamo
       entry["error"] = error if error
       @mutex.synchronize do
         @exchanges << entry
-        @output&.puts(@json.generate(entry))
+        if @output
+          @output.puts(@json.generate(entry))
+          @output.flush
+        end
       end
     end
   end

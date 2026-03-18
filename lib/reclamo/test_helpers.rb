@@ -3,20 +3,23 @@
 module Reclamo
   module TestHelpers
     def rpc_call(server, method, params: nil, id: 1)
+      json = rpc_json_adapter(server)
       request = { "jsonrpc" => "2.0", "method" => method, "id" => id }
       request["params"] = params if params
-      JSON.parse(server.handle(JSON.generate(request)))
+      json.parse(server.handle(json.generate(request)))
     end
 
     def rpc_notify(server, method, params: nil)
+      json = rpc_json_adapter(server)
       request = { "jsonrpc" => "2.0", "method" => method }
       request["params"] = params if params
-      server.handle(JSON.generate(request))
+      server.handle(json.generate(request))
     end
 
     def rpc_batch(server, *requests)
-      result = server.handle(JSON.generate(requests))
-      result ? JSON.parse(result) : nil
+      json = rpc_json_adapter(server)
+      result = server.handle(json.generate(requests))
+      result ? json.parse(result) : nil
     end
 
     def assert_rpc_success(response, expected: :__not_given__, msg: nil)
@@ -37,6 +40,12 @@ module Reclamo
     def assert_rpc_notification(server, method, params: nil, msg: nil)
       result = rpc_notify(server, method, params: params)
       assert_nil result, msg || "Expected nil for notification but got: #{result.inspect}"
+    end
+
+    private
+
+    def rpc_json_adapter(server)
+      server.instance_variable_get(:@json) || JSON
     end
   end
 end

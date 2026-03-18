@@ -18,6 +18,7 @@ module Reclamo
       @running = false
       @tcp_server = nil
       @connection_count = 0
+      @client_threads = []
       @mutex = Mutex.new
     end
 
@@ -34,6 +35,8 @@ module Reclamo
     def stop
       @running = false
       close_server
+      threads = @mutex.synchronize { @client_threads.dup }
+      threads.each { |t| t.join(5) }
     end
 
     def running? = @running
@@ -61,7 +64,8 @@ module Reclamo
 
     def accept_or_reject(client)
       if acquire_connection_slot
-        Thread.new(client) { |c| handle_client(c) }
+        thread = Thread.new(client) { |c| handle_client(c) }
+        @mutex.synchronize { @client_threads << thread }
       else
         client.close
       end
@@ -95,7 +99,10 @@ module Reclamo
     end
 
     def decrement_connections
-      @mutex.synchronize { @connection_count -= 1 }
+      @mutex.synchronize do
+        @connection_count -= 1
+        @client_threads.delete(Thread.current)
+      end
     end
 
     def close_server

@@ -206,7 +206,7 @@ class TestMCPToolsCall < Minitest::Test
     server = Reclamo::Server.new
     server.expose_method("identity", &:inspect)
     mcp = Reclamo::MCP.new(server)
-    result = mcp_call(mcp, "tools/call", { "name" => "identity", "arguments" => { "x" => nil } })
+    result = mcp_call(mcp, "tools/call", { "name" => "identity", "arguments" => { "arg" => nil } })
 
     assert_equal "nil", result["content"][0]["text"]
   end

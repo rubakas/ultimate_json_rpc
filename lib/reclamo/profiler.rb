@@ -24,7 +24,7 @@ module Reclamo
     def tracked_methods
       @mutex.synchronize { @data.keys.sort }
     end
-    alias methods tracked_methods
+    alias method_names tracked_methods
 
     def stats
       entries = @mutex.synchronize { @data.to_h { |name, entry| [name, snapshot_entry(entry)] } }

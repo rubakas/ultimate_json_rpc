@@ -107,7 +107,17 @@ module Reclamo
       return arguments if params.any? { |p| p["keyword"] }
 
       # Positional params: convert Hash to Array in parameter order
-      params.reject { |p| p["variadic"] }.map { |p| arguments[p["name"]] }
+      params.reject { |p| p["variadic"] }.map do |p|
+        validate_required_argument!(arguments, p)
+        arguments[p["name"]]
+      end
+    end
+
+    def validate_required_argument!(arguments, param)
+      name = param["name"]
+      return if name.empty? || !param["required"] || arguments.key?(name)
+
+      raise ArgumentError, "missing required argument: #{name}"
     end
 
     def format_call_response(response)

@@ -85,7 +85,7 @@ class TestProfiler < Minitest::Test
     rpc(server, "add", [1, 2])
     rpc(server, "divide", [6, 2])
 
-    assert_equal %w[add divide], profiler.methods
+    assert_equal %w[add divide], profiler.method_names
   end
 
   def test_stats_returns_all
@@ -112,7 +112,7 @@ class TestProfiler < Minitest::Test
     profiler.reset
 
     assert_nil profiler["add"]
-    assert_empty profiler.methods
+    assert_empty profiler.method_names
   end
 
   def test_records_errors_too

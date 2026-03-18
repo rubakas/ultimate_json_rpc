@@ -35,14 +35,14 @@ module Reclamo
       results
     end
 
-    # Thread-safety: each worker writes to a unique index in the results array.
-    # Under CRuby's GVL, unique-index array writes are safe without additional synchronization.
     def spawn_workers(queue:, results:, pool_size:)
+      mutex = Mutex.new
       pool_size.times.map do
         Thread.new do
           loop do
             req, i = queue.pop(true)
-            results[i] = safe_serialize(req)
+            result = safe_serialize(req)
+            mutex.synchronize { results[i] = result }
           rescue ThreadError
             break
           end
