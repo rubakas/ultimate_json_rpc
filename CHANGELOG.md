@@ -7,14 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-03-18
+
 ### Added
 - `InvalidParams` error class for explicit -32602 errors from user code
-- `expose_method` now accepts callable objects (Method, Proc, lambda) as first argument
+- `expose_method` accepts callable objects (Method, Proc, lambda) as first argument
+- `Server#empty?` and `Handler#empty?` convenience methods
+- Callable validation: `expose_method` checks that callable responds to `#call`
 
 ### Changed
 - `MethodNotFound` now has a descriptive Ruby exception message ("Method not found: name")
 - `ApplicationError` validates that error code is an Integer
 - Request params and id are frozen after construction for immutability
+- `ServerError` uses `between?` for range validation (consistency)
 
 ## [0.1.0] - 2025-05-01
 
