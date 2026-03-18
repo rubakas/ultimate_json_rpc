@@ -291,6 +291,7 @@ server.handle(request)  # still works
 - **Chainable API** — all setup methods return `self`
 - **Callable** — `to_proc` enables `requests.map(&server)`
 - **Rack adapter** — `Reclamo::Rack.new(server)` for instant HTTP deployment
+- **MCP adapter** — `Reclamo::MCP.new(server).run` for AI tool integration (Claude, Cursor, etc.)
 - **stdio adapter** — `Reclamo::Stdio.new(server).run` for CLI/MCP-style integrations
 - **Test helpers** — `rpc_call`, `assert_rpc_success`, `assert_rpc_error` for cleaner tests
 - **Concurrent batches** — `concurrent_batches: true` processes batch items in parallel
@@ -318,6 +319,21 @@ run Reclamo::Rack.new(server)
 ```
 
 `Reclamo::Rack` handles Content-Type, returns 200 for responses, 204 for notifications, and 405 for non-POST requests.
+
+#### MCP (Model Context Protocol)
+
+Expose methods as AI tools via MCP:
+
+```ruby
+require "reclamo/mcp"
+
+server = Reclamo::Server.new(name: "My Tools", version: "1.0")
+server.expose(Calculator, descriptions: { add: "Add two numbers" })
+
+Reclamo::MCP.new(server).run
+```
+
+`Reclamo::MCP` handles the MCP lifecycle (`initialize`, `tools/list`, `tools/call`), maps methods to tool definitions with input schemas, and runs over stdio for integration with Claude, Cursor, and other AI tools.
 
 #### stdio
 

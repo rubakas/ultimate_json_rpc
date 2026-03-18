@@ -3,8 +3,8 @@
 > Product Requirements Document for Reclamo, a network-agnostic Ruby gem
 > that exposes Ruby objects through JSON-RPC 2.0.
 >
-> Current version: 0.2.0 | Ruby >= 3.2 | 26 items — 16 done, 10 pending
-> (3 P0 ✓, 8 P1 — 7 done, 10 P2 — 6 done, 5 P3)
+> Current version: 0.2.0 | Ruby >= 3.2 | 26 items — 17 done, 9 pending
+> (3 P0 ✓, 8 P1 — 7 done, 10 P2 — 7 done, 5 P3)
 
 ---
 
@@ -115,7 +115,7 @@ Transport & integration:
   Reference adapter or documented pattern for running Reclamo over WebSockets (e.g., `faye-websocket`, `AnyCable`). WebSocket is the second most common JSON-RPC transport after HTTP.
   *Depends on: nothing (gem is already transport-agnostic).*
 
-- [ ] **MCP (Model Context Protocol) compatibility**
+- [x] **MCP (Model Context Protocol) compatibility**
   Translation layer mapping MCP tool definitions to Reclamo methods and vice versa. JSON-RPC is already MCP's wire protocol — the gap is mainly schema mapping and the stdio transport convention.
   *Depends on: stdio adapter (P1), OpenRPC schema generation (P0).*
 
