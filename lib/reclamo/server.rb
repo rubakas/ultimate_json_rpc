@@ -20,8 +20,8 @@ module Reclamo
       self
     end
 
-    def expose_method(name, description: nil, &)
-      @handler.expose_method(name, description: description, &)
+    def expose_method(name, callable = nil, description: nil, &)
+      @handler.expose_method(name, callable, description: description, &)
       self
     end
 

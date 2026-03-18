@@ -25,13 +25,12 @@ module Reclamo
       end
     end
 
-    def expose_method(name, description: nil, &block)
-      raise ArgumentError, "block required" unless block
-
+    def expose_method(name, callable = nil, description: nil, &block)
+      callable = resolve_callable(callable, block)
       name = name.to_s
       validate_method_name!(name)
       check_duplicate!(name)
-      @targets[name] = block
+      @targets[name] = callable
       @descriptions[name] = description.to_s if description
     end
 
@@ -115,6 +114,13 @@ module Reclamo
 
     def check_duplicate!(name)
       raise ArgumentError, "method '#{name}' is already registered" if @targets.key?(name)
+    end
+
+    def resolve_callable(callable, block)
+      raise ArgumentError, "provide either a callable or a block, not both" if callable && block
+      raise ArgumentError, "a callable or block is required" unless callable || block
+
+      callable || block
     end
 
     def invoke(target, method_name, params)

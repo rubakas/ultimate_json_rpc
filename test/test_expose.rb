@@ -63,6 +63,41 @@ class TestServerExposeMethod < Minitest::Test
       server.expose_method("") { "hidden" }
     end
   end
+
+  def test_expose_method_with_lambda
+    server = Reclamo::Server.new
+    doubler = ->(n) { n * 2 }
+    server.expose_method("double", doubler)
+
+    request = { "jsonrpc" => "2.0", "method" => "double", "params" => [5], "id" => 1 }
+    response = JSON.parse(server.handle(JSON.generate(request)))
+
+    assert_equal 10, response["result"]
+  end
+
+  def test_expose_method_with_method_object
+    server = Reclamo::Server.new
+    server.expose_method("add", Calculator.method(:add))
+
+    request = { "jsonrpc" => "2.0", "method" => "add", "params" => [2, 3], "id" => 1 }
+    response = JSON.parse(server.handle(JSON.generate(request)))
+
+    assert_equal 5, response["result"]
+  end
+
+  def test_expose_method_rejects_both_callable_and_block
+    server = Reclamo::Server.new
+
+    assert_raises(ArgumentError) do
+      server.expose_method("double", ->(n) { n * 2 }) { |n| n * 3 }
+    end
+  end
+
+  def test_expose_method_rejects_neither_callable_nor_block
+    server = Reclamo::Server.new
+
+    assert_raises(ArgumentError) { server.expose_method("empty") }
+  end
 end
 
 class TestServerMethodFiltering < Minitest::Test
