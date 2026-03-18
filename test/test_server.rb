@@ -120,6 +120,15 @@ class TestServerCalls < Minitest::Test
   def test_server_size
     assert_equal 4, @server.size
   end
+
+  def test_server_methods_info
+    info = @server.methods_info
+    add_info = info.find { |m| m["name"] == "add" }
+
+    assert_equal 4, info.size
+    assert_equal "add", add_info["name"]
+    assert add_info.key?("params")
+  end
 end
 
 class TestServerErrors < Minitest::Test
@@ -519,6 +528,24 @@ class TestServerApplicationError < Minitest::Test
 
     assert_equal 0, response["error"]["data"]
   end
+
+  def test_application_error_rejects_reserved_codes
+    assert_raises(ArgumentError) { Reclamo::ApplicationError.new(-32_700, "Parse error") }
+    assert_raises(ArgumentError) { Reclamo::ApplicationError.new(-32_600, "Invalid") }
+    assert_raises(ArgumentError) { Reclamo::ApplicationError.new(-32_000, "Server error") }
+    assert_raises(ArgumentError) { Reclamo::ApplicationError.new(-32_768, "Edge of range") }
+  end
+
+  def test_application_error_allows_non_reserved_codes
+    err = Reclamo::ApplicationError.new(-31_999, "Just outside range")
+    assert_equal(-31_999, err.code)
+
+    err2 = Reclamo::ApplicationError.new(-32_769, "Below range")
+    assert_equal(-32_769, err2.code)
+
+    err3 = Reclamo::ApplicationError.new(1, "Positive code")
+    assert_equal 1, err3.code
+  end
 end
 
 class TestRequestValidation < Minitest::Test
@@ -858,6 +885,43 @@ class TestIntegration < Minitest::Test
     req = { "jsonrpc" => "2.0", "method" => method, "id" => id }
     req["params"] = params if params
     JSON.parse(server.handle(JSON.generate(req)))["error"]
+  end
+end
+
+class TestServerParamErrors < Minitest::Test
+  def setup
+    @server = Reclamo::Server.new
+    @server.expose(Calculator)
+    @server.expose(Greeter.new("Hi"), namespace: "greeter")
+  end
+
+  def test_too_many_positional_args_returns_invalid_params
+    request = { "jsonrpc" => "2.0", "method" => "add", "params" => [1, 2, 3], "id" => 1 }
+    response = JSON.parse(@server.handle(JSON.generate(request)))
+
+    assert_equal(-32_602, response["error"]["code"])
+  end
+
+  def test_too_few_positional_args_returns_invalid_params
+    request = { "jsonrpc" => "2.0", "method" => "add", "params" => [1], "id" => 1 }
+    response = JSON.parse(@server.handle(JSON.generate(request)))
+
+    assert_equal(-32_602, response["error"]["code"])
+  end
+
+  def test_missing_required_keyword_returns_invalid_params
+    request = { "jsonrpc" => "2.0", "method" => "greeter.greet",
+                "params" => { "wrong_key" => "World" }, "id" => 1 }
+    response = JSON.parse(@server.handle(JSON.generate(request)))
+
+    assert_equal(-32_602, response["error"]["code"])
+  end
+
+  def test_unknown_rpc_method_returns_method_not_found
+    request = { "jsonrpc" => "2.0", "method" => "rpc.listMethods", "id" => 1 }
+    response = JSON.parse(@server.handle(JSON.generate(request)))
+
+    assert_equal(-32_601, response["error"]["code"])
   end
 end
 

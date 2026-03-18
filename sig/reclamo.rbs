@@ -24,6 +24,8 @@ module Reclamo
   INTERNAL_ERROR: Integer
   SERVER_ERROR_MIN: Integer
   SERVER_ERROR_MAX: Integer
+  RESERVED_ERROR_MIN: Integer
+  RESERVED_ERROR_MAX: Integer
   ERROR_MESSAGES: Hash[Integer, String]
 
   class Request
@@ -60,6 +62,7 @@ module Reclamo
     def handle: (String) -> String?
     def handle_parsed: (untyped) -> String?
     def methods_list: () -> Array[String]
+    def methods_info: () -> Array[Hash[String, untyped]]
     def size: () -> Integer
   end
 end

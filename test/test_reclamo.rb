@@ -20,4 +20,9 @@ class TestReclamo < Minitest::Test
     assert_equal(-32_000, Reclamo::SERVER_ERROR_MAX)
     assert Reclamo::SERVER_ERROR_MIN < Reclamo::SERVER_ERROR_MAX
   end
+
+  def test_reserved_error_range_constants
+    assert_equal(-32_768, Reclamo::RESERVED_ERROR_MIN)
+    assert_equal(-32_000, Reclamo::RESERVED_ERROR_MAX)
+  end
 end
