@@ -3,8 +3,8 @@
 > Product Requirements Document for Reclamo, a network-agnostic Ruby gem
 > that exposes Ruby objects through JSON-RPC 2.0.
 >
-> Current version: 0.2.0 | Ruby >= 3.2 | 26 items — 15 done, 11 pending
-> (3 P0 ✓, 8 P1 — 7 done, 10 P2 — 5 done, 5 P3)
+> Current version: 0.2.0 | Ruby >= 3.2 | 26 items — 16 done, 10 pending
+> (3 P0 ✓, 8 P1 — 7 done, 10 P2 — 6 done, 5 P3)
 
 ---
 
@@ -137,7 +137,7 @@ Observability:
 
 Testing:
 
-- [ ] **Request/response recording for replay testing**
+- [x] **Request/response recording for replay testing**
   Optional recorder capturing JSON-RPC exchanges to a file for backward-compatibility and regression testing.
   *Depends on: instrumentation hooks (P1).*
 

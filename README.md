@@ -344,6 +344,21 @@ data = JSON.parse(raw_json)
 response = server.handle_parsed(data)
 ```
 
+### Request/response recording
+
+Capture exchanges for replay and regression testing:
+
+```ruby
+require "reclamo/recorder"
+
+recorder = Reclamo::Recorder.new(server)
+server.handle(request_json)
+recorder.exchanges  # => [{"method" => "add", "params" => [2, 3], "result" => 5, "duration" => 0.001}]
+
+# Write JSONL to a file
+recorder = Reclamo::Recorder.new(server, output: File.open("exchanges.jsonl", "a"))
+```
+
 ### Test helpers
 
 Reclamo ships with optional test helpers for cleaner assertions:

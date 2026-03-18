@@ -42,6 +42,7 @@ bin/console            # Interactive console with gem loaded
 - `lib/reclamo/rack.rb` — optional Rack adapter (Reclamo::Rack), NOT auto-required
 - `lib/reclamo/stdio.rb` — optional stdio adapter (Reclamo::Stdio), NOT auto-required
 - `lib/reclamo/logging.rb` — optional structured logging (Reclamo::Logging), NOT auto-required
+- `lib/reclamo/recorder.rb` — optional exchange recorder (Reclamo::Recorder), NOT auto-required
 - `lib/reclamo/test_helpers.rb` — optional test helpers (rpc_call, rpc_notify, rpc_batch), NOT auto-required
 - `sig/reclamo.rbs` — RBS type signatures
 
@@ -69,6 +70,7 @@ bin/console            # Interactive console with gem loaded
 - `test/test_timeout.rb` — request timeout: slow handlers, error codes, notifications, hook integration
 - `test/test_deprecation.rb` — method deprecation markers: boolean, string, expose hash, namespace, freeze
 - `test/test_logging.rb` — structured logging: levels, duration, method names, errors, chaining
+- `test/test_recorder.rb` — exchange recorder: capture, clear, JSONL output, thread safety, batch
 - `test/test_expose.rb` — expose_method, method filtering, callable objects
 - `test/test_param_validation.rb` — parameter validation: type checking, enum, positional/keyword, expose, discover, edge cases
 - `test/test_spec_conformance.rb` — JSON-RPC 2.0 spec conformance + integration tests
