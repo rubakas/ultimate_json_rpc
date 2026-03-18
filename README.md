@@ -142,6 +142,35 @@ server = Reclamo::Server.new(timeout: 5)
 # Handlers exceeding 5 seconds receive a -32001 "Request timeout" error
 ```
 
+### Parameter validation
+
+Declare parameter schemas to validate incoming params before dispatch:
+
+```ruby
+server.expose_method("add", params_schema: {
+  a: { "type" => "number" },
+  b: { "type" => "number" }
+}) { |a, b| a + b }
+
+server.expose(Calculator, params_schema: {
+  add: { left: { "type" => "number" }, right: { "type" => "number" } }
+})
+```
+
+Supported JSON Schema keywords: `type` (`string`, `number`, `integer`, `boolean`, `array`, `object`, `null`) and `enum`. On mismatch, returns `-32602 Invalid params` with a descriptive message. Schemas also appear in `rpc.discover` output.
+
+### Method deprecation
+
+Mark methods as deprecated in discovery metadata (purely informational, no runtime enforcement):
+
+```ruby
+server.expose_method("old_add", deprecated: true) { |a, b| a + b }
+server.expose_method("old_multiply", deprecated: "Use multiply_v2 instead") { |a, b| a * b }
+server.expose(Calculator, deprecated: { add: "Use add_v2" })
+```
+
+Deprecated methods still work normally but appear flagged in `rpc.discover` output.
+
 ### Error handling
 
 Raise `ApplicationError` for custom error codes, or `ServerError` for implementation-defined errors:
@@ -192,11 +221,17 @@ server.handle(request)  # still works
 - **Middleware** — `server.use { |request, next_call| ... }` for cross-cutting concerns
 - **Scoped middleware** — `only:` / `except:` with glob patterns to target specific methods or namespaces
 - **Instrumentation hooks** — `on(:request)`, `on(:response)`, `on(:error)` for read-only observability
+- **Parameter validation** — `params_schema:` with JSON Schema types and enum constraints
+- **Request timeout** — `Server.new(timeout: 5)` prevents slow handlers from blocking
+- **Method deprecation** — mark methods as deprecated in discovery metadata
 - **Error handling** — standard JSON-RPC error codes, `ApplicationError`, and `ServerError`
+- **Error visibility** — `expose_errors: true` to include exception messages in error responses
+- **Security** — dangerous methods (eval, system, exec, etc.) are automatically blocked
 - **Chainable API** — all setup methods return `self`
 - **Callable** — `to_proc` enables `requests.map(&server)`
 - **Rack adapter** — `Reclamo::Rack.new(server)` for instant HTTP deployment
 - **stdio adapter** — `Reclamo::Stdio.new(server).run` for CLI/MCP-style integrations
+- **Test helpers** — `rpc_call`, `assert_rpc_success`, `assert_rpc_error` for cleaner tests
 - **Batch size limit** — `max_batch_size: 100` (default) prevents oversized batch requests
 - **Freezable** — `server.freeze` locks configuration after setup
 

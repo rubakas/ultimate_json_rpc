@@ -14,23 +14,97 @@ module Reclamo
   ].freeze
   private_constant :DANGEROUS_METHODS
 
+  TYPE_CHECKS = {
+    "string" => String, "number" => Numeric, "integer" => Integer,
+    "boolean" => [TrueClass, FalseClass], "array" => Array,
+    "object" => Hash, "null" => NilClass
+  }.freeze
+  private_constant :TYPE_CHECKS
+
+  JSON_TYPE_NAMES = {
+    String => "string", Integer => "integer", Float => "number",
+    TrueClass => "boolean", FalseClass => "boolean",
+    Array => "array", Hash => "object", NilClass => "null"
+  }.freeze
+  private_constant :JSON_TYPE_NAMES
+
+  PARAM_FLAGS = {
+    req: { "required" => true }, keyreq: { "required" => true, "keyword" => true },
+    opt: {}, key: { "keyword" => true },
+    rest: { "variadic" => true }, keyrest: { "variadic" => true, "keyword" => true }
+  }.freeze
+  private_constant :PARAM_FLAGS
+
+  module ParamValidator
+    private
+
+    def validate_params!(callable, params, schema)
+      return unless schema
+
+      case params
+      when Array then validate_positional!(callable, params, schema)
+      when Hash then validate_keyword!(params, schema)
+      end
+    end
+
+    def validate_positional!(callable, params, schema)
+      names = callable.parameters.filter_map { |type, pname| pname&.to_s unless type == :block }
+      params.each_with_index do |value, index|
+        validate_value!(names[index], value, schema[names[index]]) if names[index] && schema[names[index]]
+      end
+    end
+
+    def validate_keyword!(params, schema)
+      params.each { |k, v| validate_value!(k.to_s, v, schema[k.to_s]) if schema.key?(k.to_s) }
+    end
+
+    def validate_value!(name, value, pschema)
+      check_param_type!(name, value, pschema)
+      check_param_enum!(name, value, pschema)
+    end
+
+    def check_param_type!(name, value, pschema)
+      type = pschema["type"]
+      return unless type
+
+      expected = TYPE_CHECKS[type]
+      return unless expected
+      return unless Array(expected).none? { |k| value.is_a?(k) }
+
+      raise InvalidParams, "parameter '#{name}' must be #{type}, " \
+                           "got #{JSON_TYPE_NAMES.fetch(value.class, value.class.name)}"
+    end
+
+    def check_param_enum!(name, value, pschema)
+      return unless (enum = pschema["enum"]) && !enum.include?(value)
+
+      raise InvalidParams, "parameter '#{name}' must be one of: #{enum.map(&:inspect).join(", ")}"
+    end
+  end
+  private_constant :ParamValidator
+
   class Handler
+    include ParamValidator
+
     def initialize
       @targets = {}
       @descriptions = {}
       @returns = {}
       @deprecated = {}
+      @params_schemas = {}
     end
 
-    def expose(target, namespace: nil, only: nil, except: nil, descriptions: nil, returns: nil, deprecated: nil)
+    def expose(target, namespace: nil, only: nil, except: nil, descriptions: nil, returns: nil, deprecated: nil,
+               params_schema: nil)
       validate_expose_args!(target, only, except)
       prefix = namespace.to_s.then { |ns| ns.empty? ? "" : "#{ns}." }
       methods = filter_methods(callable_methods(target), only: only, except: except)
       Kernel.warn "Reclamo: expose registered 0 methods from #{target.inspect}" if methods.empty?
-      methods.each { |m| register_exposed(prefix, m, target, descriptions, returns, deprecated) }
+      methods.each { |m| register_exposed(prefix, m, target, descriptions, returns, deprecated, params_schema) }
     end
 
-    def expose_method(name, callable = nil, description: nil, returns: nil, deprecated: nil, &block)
+    def expose_method(name, callable = nil, description: nil, returns: nil, deprecated: nil, params_schema: nil,
+                      &block)
       callable = resolve_callable(callable, block)
       name = name.to_s
       validate_method_name!(name)
@@ -38,13 +112,16 @@ module Reclamo
       @descriptions[name] = description.to_s if description
       @returns[name] = returns if returns
       @deprecated[name] = deprecated == true ? true : deprecated.to_s if deprecated
+      @params_schemas[name] = params_schema.transform_keys(&:to_s) if params_schema
     end
 
     def call(method_name, params)
       entry = @targets[method_name]
       raise MethodNotFound, method_name unless entry
 
-      invoke_callable(resolve_entry(entry), params)
+      callable = resolve_entry(entry)
+      validate_params!(callable, params, @params_schemas[method_name])
+      invoke_callable(callable, params)
     end
 
     def method?(method_name) = @targets.key?(method_name)
@@ -54,7 +131,7 @@ module Reclamo
     def empty? = @targets.empty?
 
     def freeze
-      [@targets, @descriptions, @returns, @deprecated].each(&:freeze)
+      [@targets, @descriptions, @returns, @deprecated, @params_schemas].each(&:freeze)
       super
     end
 
@@ -69,13 +146,14 @@ module Reclamo
 
     def add_method_metadata(info, name, callable)
       info["description"] = @descriptions[name] if @descriptions.key?(name)
-      add_params(info, callable)
+      add_params(info, name, callable)
       info["result"] = build_result(@returns[name]) if @returns.key?(name)
       info["deprecated"] = @deprecated[name] if @deprecated.key?(name)
     end
 
-    def add_params(info, callable)
-      params = callable.parameters.filter_map { |type, pname| param_descriptor(type, pname) }
+    def add_params(info, name, callable)
+      schema = @params_schemas[name]
+      params = callable.parameters.filter_map { |type, pname| param_descriptor(type, pname, schema) }
       info["params"] = params unless params.empty?
     end
 
@@ -87,23 +165,23 @@ module Reclamo
       entry.is_a?(Array) ? entry[0].method(entry[1].to_sym) : entry
     end
 
-    def param_descriptor(type, pname)
+    def param_descriptor(type, pname, method_schema)
       return if type == :block
 
-      desc = { "name" => pname&.to_s || VARIADIC_DEFAULTS.fetch(type, "arg") }
-      desc["required"] = true if %i[req keyreq].include?(type)
-      desc["variadic"] = true if %i[rest keyrest].include?(type)
-      desc["keyword"] = true if %i[key keyreq keyrest].include?(type)
+      name = pname&.to_s || VARIADIC_DEFAULTS.fetch(type, "arg")
+      desc = { "name" => name }.merge(PARAM_FLAGS.fetch(type, {}))
+      desc["schema"] = method_schema[name] if method_schema&.key?(name)
       desc
     end
 
-    def register_exposed(prefix, method_name, target, descriptions, returns, deprecated)
+    def register_exposed(prefix, method_name, target, descriptions, returns, deprecated, params_schema)
       full_name = "#{prefix}#{method_name}"
       validate_method_name!(full_name)
       @targets[full_name] = [target, method_name]
       store_metadata(full_name, method_name, @descriptions, descriptions, &:to_s)
       store_metadata(full_name, method_name, @returns, returns)
       store_metadata(full_name, method_name, @deprecated, deprecated)
+      store_metadata(full_name, method_name, @params_schemas, params_schema) { |v| v.transform_keys(&:to_s) }
     end
 
     def store_metadata(full_name, method_name, store, source, &transform)
@@ -116,14 +194,11 @@ module Reclamo
     end
 
     def callable_methods(target)
-      case target
-      when Class
-        (target.public_methods(false) - Class.public_instance_methods).map(&:to_s)
-      when Module
-        (target.public_methods(false) - Module.public_instance_methods).map(&:to_s)
-      else
-        (target.public_methods(false) - Object.public_instance_methods).map(&:to_s)
-      end
+      base = if target.is_a?(Class) then Class
+             elsif target.is_a?(Module) then Module
+             else Object
+             end
+      (target.public_methods(false) - base.public_instance_methods).map(&:to_s)
     end
 
     def filter_methods(methods, only:, except:)

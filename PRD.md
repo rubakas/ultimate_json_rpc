@@ -3,7 +3,8 @@
 > Product Requirements Document for Reclamo, a network-agnostic Ruby gem
 > that exposes Ruby objects through JSON-RPC 2.0.
 >
-> Current version: 0.2.0 | Ruby >= 3.2 | 23 items (3 P0, 8 P1, 9 P2, 3 P3)
+> Current version: 0.2.0 | Ruby >= 3.2 | 26 items — 10 done, 16 pending
+> (3 P0 ✓, 8 P1 — 6 done, 10 P2 — 1 done, 5 P3)
 
 ---
 
@@ -12,6 +13,8 @@
 **v0.1.0** — JSON-RPC 2.0 server, `expose`/`expose_method`, middleware, `rpc.discover`, batch requests, `freeze`, `to_proc`, `only:/except:` filtering, method descriptions, service metadata, test helpers.
 
 **v0.2.0** — `InvalidParams` error class, callable objects in `expose_method`, `empty?`, descriptive error messages, immutable request params, `expose_errors` flag, dangerous method denylist, security hardening.
+
+**Unreleased** — Method-level middleware (`only:/except:` on `use`), Rack adapter, stdio adapter, OpenRPC 1.3.2 schema, instrumentation hooks, request timeout, return type annotations, method deprecation markers, richer test helpers, parameter validation with JSON Schema types.
 
 ---
 
@@ -46,7 +49,7 @@ Items within each tier are ordered by dependency (no-dependency items first, the
 
 Schema & discovery:
 
-- [ ] **Parameter validation (JSON Schema)**
+- [x] **Parameter validation (JSON Schema)**
   Allow methods to declare parameter schemas validated before dispatch. Return `InvalidParams` (-32602) with descriptive messages on mismatch. Schemas feed into `rpc.discover` / OpenRPC output. Declared via `expose_method("add", params_schema: { ... })` or inferred from Ruby signatures with optional type hints.
   *Depends on: nothing (enhances OpenRPC when both are present, but works standalone).*
 
@@ -126,6 +129,12 @@ Security & middleware:
   Optional `Reclamo::Middleware::RateLimit` with token-bucket or sliding-window algorithm, keyed by caller identity from `request.context`.
   *Depends on: method-level middleware (P0) for per-method limits.*
 
+Observability:
+
+- [ ] **Structured logging interface**
+  Logger-agnostic structured logging built on instrumentation hooks. Log method name, params (redactable), duration, and outcome (success/error). Support log-level filtering and pluggable backends (Rails.logger, $stdout, Semantic Logger) without taking an opinion on the logging library.
+  *Depends on: instrumentation hooks (P1).*
+
 Testing:
 
 - [ ] **Request/response recording for replay testing**
@@ -144,9 +153,17 @@ Testing:
   `Reclamo::MockServer` responding with canned responses based on method+params matching. Pairs with OpenRPC for contract testing.
   *Depends on: OpenRPC schema generation (P0).*
 
+- [ ] **Per-method profiling**
+  Measure and expose per-method dispatch duration. Opt-in profiling hook that collects timing data with aggregation (min/max/avg/p99) for long-running services. Zero overhead when disabled.
+  *Depends on: instrumentation hooks (P1).*
+
 - [ ] **API documentation generation**
   Generate human-readable HTML or Markdown docs from the OpenRPC schema.
   *Depends on: OpenRPC schema generation (P0).*
+
+- [ ] **Usage examples**
+  Runnable examples for common integration patterns: basic Rack/Puma server, Rails controller integration, MCP server over stdio, multi-namespace composition, error handling patterns, and testing patterns. Examples are the fastest path to adoption.
+  *Depends on: Rack adapter (P0), Rails integration (P1), MCP compatibility (P2).*
 
 ---
 
@@ -155,7 +172,7 @@ Testing:
 ```
                     ┌──► Mock server (P3)
 OpenRPC (P0) ──────┼──► API docs (P3)
-       ▲            └──► MCP compat (P2)
+       ▲            └──► MCP compat (P2) ──► Usage examples (P3)
        :                      ▲
   [enhances]                  │
        :                      │
@@ -165,9 +182,11 @@ Return types (P1)
 Method-level MW (P0) ──► Access control (P2)
                     └──► Rate limiting MW (P2)
 
-Rack adapter (P0) ─────► Rails integration (P1)
+Rack adapter (P0) ─────► Rails integration (P1) ──► Usage examples (P3)
 
-Instrumentation (P1) ──► Replay recording (P2)
+Instrumentation (P1) ──► Structured logging (P2)
+                    ├──► Per-method profiling (P3)
+                    └──► Replay recording (P2)
 ```
 
 *Solid arrows (──►) = hard dependency. Dotted (:) = enhances but doesn't block.*

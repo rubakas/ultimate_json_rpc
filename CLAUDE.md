@@ -37,8 +37,8 @@ bin/console            # Interactive console with gem loaded
 - `lib/reclamo/errors.rb` — error codes, ERROR_MESSAGES, all error classes (InvalidRequest, InvalidParams, MethodNotFound, ApplicationError, ServerError)
 - `lib/reclamo/request.rb` — JSON-RPC request parsing, validation, deep-frozen immutable attributes, mutable context
 - `lib/reclamo/response.rb` — JSON-RPC response building
-- `lib/reclamo/handler.rb` — method registry, dispatch, introspection, callable support, dangerous method denylist, freeze
-- `lib/reclamo/server.rb` — public API: expose, handle/call, middleware, rpc.discover, service metadata, max_batch_size, expose_errors, freeze
+- `lib/reclamo/handler.rb` — method registry, dispatch, introspection, callable support, dangerous method denylist, param validation, freeze
+- `lib/reclamo/server.rb` — public API: expose, handle/call, middleware, rpc.discover, service metadata, max_batch_size, expose_errors, timeout, instrumentation hooks, freeze
 - `lib/reclamo/rack.rb` — optional Rack adapter (Reclamo::Rack), NOT auto-required
 - `lib/reclamo/stdio.rb` — optional stdio adapter (Reclamo::Stdio), NOT auto-required
 - `lib/reclamo/test_helpers.rb` — optional test helpers (rpc_call, rpc_notify, rpc_batch), NOT auto-required
@@ -64,5 +64,6 @@ bin/console            # Interactive console with gem loaded
 - `test/test_timeout.rb` — request timeout: slow handlers, error codes, notifications, hook integration
 - `test/test_deprecation.rb` — method deprecation markers: boolean, string, expose hash, namespace, freeze
 - `test/test_expose.rb` — expose_method, method filtering, callable objects
+- `test/test_param_validation.rb` — parameter validation: type checking, enum, positional/keyword, expose, discover, edge cases
 - `test/test_spec_conformance.rb` — JSON-RPC 2.0 spec conformance + integration tests
 - `test/test_test_helpers.rb` — TestHelpers module tests

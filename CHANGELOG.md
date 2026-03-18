@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Request timeout: `Server.new(timeout: 5)` wraps dispatch in `Timeout.timeout`, returns `-32001 Request timeout` on expiry
 - `RequestTimeout` error class and `REQUEST_TIMEOUT` (-32001) constant
 - Method deprecation markers: `deprecated: true` or `deprecated: "Use v2"` on `expose_method` and `expose`, appears in `rpc.discover`
+- Parameter validation: `params_schema:` on `expose_method` and `expose` for type and enum validation before dispatch, returns `-32602 Invalid params` on mismatch, schemas appear in `rpc.discover` param descriptors
 
 ### Changed
 - `rpc.discover` output restructured: service metadata moved to `info` object (`name` → `info.title`), method `returns` → `result` in OpenRPC contentDescriptor format
