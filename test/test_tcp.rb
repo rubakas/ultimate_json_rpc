@@ -81,7 +81,8 @@ class TestTCP < Minitest::Test
     tcp = Reclamo::TCP.new(server, port: 0)
 
     thread = Thread.new { tcp.run }
-    sleep(0.05)
+    deadline = Time.now + 5
+    sleep(0.05) until tcp.running? || Time.now > deadline
 
     assert tcp.running?
     tcp.stop
@@ -99,7 +100,8 @@ class TestTCP < Minitest::Test
     tcp = Reclamo::TCP.new(server, port: 0)
 
     thread = Thread.new { tcp.run }
-    sleep(0.05) until tcp.running?
+    deadline = Time.now + 5
+    sleep(0.05) until tcp.running? || Time.now > deadline
 
     # Get the actual assigned port
     port = tcp.instance_variable_get(:@tcp_server).addr[1]

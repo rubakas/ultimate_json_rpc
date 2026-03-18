@@ -64,7 +64,7 @@ class TestStdio < Minitest::Test
     assert_equal(-32_601, response["error"]["code"])
   end
 
-  def test_stop_halts_processing
+  def test_stop_on_unstarted_adapter_is_noop
     adapter = Reclamo::Stdio.new(@server, input: StringIO.new(""), output: StringIO.new)
 
     refute_predicate adapter, :running?

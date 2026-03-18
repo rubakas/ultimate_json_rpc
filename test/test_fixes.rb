@@ -150,10 +150,8 @@ class TestRateLimiterEviction < Minitest::Test
 
     # One more call should trigger eviction of stale windows
     request = { "jsonrpc" => "2.0", "method" => "m0", "id" => 999 }
-    server.handle(JSON.generate(request))
-
-    # We can't easily inspect @windows, but the above should not raise
-    assert true
+    response = JSON.parse(server.handle(JSON.generate(request)))
+    assert_equal 0, response["result"]
   end
 end
 

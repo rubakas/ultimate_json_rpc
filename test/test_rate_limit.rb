@@ -26,7 +26,7 @@ class TestRateLimit < Minitest::Test
   def test_window_slides_after_period
     server = build_server(max: 1, period: 0.05)
     call(server, "add", [1, 2])
-    sleep(0.06)
+    sleep(0.12)
     response = call(server, "add", [3, 4])
 
     assert response.key?("result"), "Request should succeed after window expires"
@@ -82,6 +82,18 @@ class TestRateLimit < Minitest::Test
 
     assert_equal 429, blocked["error"]["code"]
     assert allowed.key?("result")
+  end
+
+  def test_falsy_context_value_used_as_key
+    server = Reclamo::Server.new
+    server.expose(Calculator)
+    server.use { |req, nxt| req.context[:uid] = 0; nxt.call } # rubocop:disable Style/Semicolon
+    server.rate_limit(max: 1, period: 60, key: :uid)
+
+    r1 = call(server, "add", [1, 2])
+    r2 = call(server, "add", [3, 4])
+    assert r1.key?("result"), "First call should succeed"
+    assert_equal 429, r2["error"]["code"], "Second call should be rate-limited under key 0, not :unknown"
   end
 
   def test_custom_error_code_and_message

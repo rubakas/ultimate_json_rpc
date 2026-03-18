@@ -192,6 +192,25 @@ class TestMCPToolsCall < Minitest::Test
     assert called
   end
 
+  def test_call_method_returning_nil
+    server = Reclamo::Server.new
+    server.expose_method("void") { nil }
+    mcp = Reclamo::MCP.new(server)
+    result = mcp_call(mcp, "tools/call", { "name" => "void" })
+
+    assert_equal "null", result["content"][0]["text"]
+    refute result.key?("isError")
+  end
+
+  def test_call_with_nil_positional_argument
+    server = Reclamo::Server.new
+    server.expose_method("identity", &:inspect)
+    mcp = Reclamo::MCP.new(server)
+    result = mcp_call(mcp, "tools/call", { "name" => "identity", "arguments" => { "x" => nil } })
+
+    assert_equal "nil", result["content"][0]["text"]
+  end
+
   def test_call_with_namespaced_method
     server = Reclamo::Server.new
     server.expose(Calculator, namespace: "math")
@@ -210,26 +229,31 @@ class TestMCPToolsCall < Minitest::Test
   end
 end
 
-class TestMCPNotifications < Minitest::Test
-  def test_initialized_notification
-    mcp = build_mcp
-    # notifications/initialized is a no-op notification (no id)
-    response = mcp_handle(mcp, { "jsonrpc" => "2.0", "method" => "notifications/initialized" })
-
-    assert_nil response
-  end
-
-  private
-
-  def build_mcp
+class TestMCPLifecycle < Minitest::Test
+  def test_running_returns_false_before_run
     server = Reclamo::Server.new
     server.expose(Calculator)
-    Reclamo::MCP.new(server)
+    mcp = Reclamo::MCP.new(server)
+
+    refute mcp.running?
   end
 
-  def mcp_handle(mcp, request)
-    mcp_server = mcp.instance_variable_get(:@mcp_server)
-    mcp_server.handle(JSON.generate(request))
+  def test_stop_before_run_does_not_raise
+    server = Reclamo::Server.new
+    server.expose(Calculator)
+    mcp = Reclamo::MCP.new(server)
+
+    assert_nil mcp.stop
+  end
+end
+
+class TestMCPNotifications < Minitest::Test
+  def test_initialized_notification
+    server = Reclamo::Server.new
+    server.expose(Calculator)
+    mcp = Reclamo::MCP.new(server)
+
+    assert_nil mcp_notify(mcp, "notifications/initialized")
   end
 end
 
@@ -243,7 +267,15 @@ module MCPTestHelper
     request["params"] = params if params
     JSON.parse(mcp_server.handle(JSON.generate(request)))["result"]
   end
+
+  def mcp_notify(mcp, method)
+    mcp_server = mcp.instance_variable_get(:@mcp_server)
+    request = { "jsonrpc" => "2.0", "method" => method }
+    mcp_server.handle(JSON.generate(request))
+  end
 end
 
 # Include the helper in all MCP test classes
-[TestMCPInitialize, TestMCPToolsList, TestMCPToolsCall].each { |klass| klass.include(MCPTestHelper) }
+[TestMCPInitialize, TestMCPToolsList, TestMCPToolsCall, TestMCPLifecycle, TestMCPNotifications].each do |klass|
+  klass.include(MCPTestHelper)
+end

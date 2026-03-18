@@ -43,7 +43,7 @@ bin/console            # Interactive console with gem loaded
 - `lib/reclamo/stdio.rb` — optional stdio adapter (Reclamo::Stdio), NOT auto-required
 - `lib/reclamo/docs.rb` — optional Markdown doc generator (Reclamo::Docs), NOT auto-required
 - `lib/reclamo/logging.rb` — optional structured logging (Reclamo::Logging), NOT auto-required
-- `lib/reclamo/mcp.rb` — optional MCP adapter (Reclamo::MCP), NOT auto-required
+- `lib/reclamo/mcp.rb` — optional MCP adapter (Reclamo::MCP), NOT auto-required; internally requires `lib/reclamo/stdio.rb`
 - `lib/reclamo/mock_server.rb` — optional mock server (Reclamo::MockServer), NOT auto-required
 - `lib/reclamo/profiler.rb` — optional per-method profiler (Reclamo::Profiler), NOT auto-required
 - `lib/reclamo/rate_limit.rb` — optional rate limiter (Reclamo::RateLimiter), NOT auto-required
@@ -57,6 +57,8 @@ bin/console            # Interactive console with gem loaded
 
 - `test/test_helper.rb` — test setup, loads support fixtures
 - `test/support/fixtures.rb` — shared test fixtures (Calculator, Greeter)
+- `test/support/discover_helper.rb` — shared discover test helper
+- `test/test_fixes.rb` — regression tests for bug fixes
 - `test/test_reclamo.rb` — version, constants, error class hierarchy
 - `test/test_request.rb` — Request unit tests: validation, notification?, freezing, edge cases
 - `test/test_response.rb` — Response module unit tests: success/error structure, data handling

@@ -2,9 +2,10 @@
 
 module Reclamo
   class MockServer
-    def initialize
+    def initialize(json: JSON)
       @stubs = {}
       @any_stubs = {}
+      @json = json
     end
 
     def stub(method, params, result)
@@ -18,30 +19,30 @@ module Reclamo
     end
 
     def handle(json_string)
-      handle_parsed(JSON.parse(json_string))
-    rescue JSON::ParserError, TypeError, EncodingError
-      JSON.generate(Response.error(PARSE_ERROR, nil))
+      handle_parsed(@json.parse(json_string))
+    rescue StandardError
+      @json.generate(Response.error(PARSE_ERROR, nil))
     end
 
     def handle_parsed(data)
       case data
       when Array then handle_batch(data)
       when Hash then handle_single(data)
-      else JSON.generate(Response.error(INVALID_REQUEST, nil))
+      else @json.generate(Response.error(INVALID_REQUEST, nil))
       end
     end
 
     private
 
     def handle_batch(requests)
-      return JSON.generate(Response.error(INVALID_REQUEST, nil)) if requests.empty?
+      return @json.generate(Response.error(INVALID_REQUEST, nil)) if requests.empty?
 
       parts = requests.filter_map { |req| handle_single(req) }
       parts.empty? ? nil : "[#{parts.join(",")}]"
     end
 
     def handle_single(data)
-      return JSON.generate(Response.error(INVALID_REQUEST, nil)) unless valid_request?(data)
+      return @json.generate(Response.error(INVALID_REQUEST, nil)) unless valid_request?(data)
 
       method = data["method"]
       params = data["params"]
@@ -51,9 +52,9 @@ module Reclamo
       return nil unless id
 
       if result == :__no_stub__
-        JSON.generate(Response.error(METHOD_NOT_FOUND, id, data: method))
+        @json.generate(Response.error(METHOD_NOT_FOUND, id, data: method))
       else
-        JSON.generate(Response.success(result, id))
+        @json.generate(Response.success(result, id))
       end
     end
 
@@ -70,7 +71,14 @@ module Reclamo
     end
 
     def valid_request?(data)
-      data.is_a?(Hash) && data["jsonrpc"] == "2.0" && data["method"].is_a?(String)
+      data.is_a?(Hash) && data["jsonrpc"] == "2.0" && data["method"].is_a?(String) && valid_id?(data)
+    end
+
+    def valid_id?(data)
+      return true unless data.key?("id")
+
+      id = data["id"]
+      id.nil? || id.is_a?(String) || id.is_a?(Numeric)
     end
   end
 end

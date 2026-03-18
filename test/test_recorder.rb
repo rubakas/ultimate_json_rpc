@@ -42,6 +42,17 @@ class TestRecorder < Minitest::Test
     assert_equal "add", recorder.exchanges[0]["method"]
   end
 
+  def test_records_failed_notification
+    server, recorder = build_recorded_server
+    server.handle('{"jsonrpc":"2.0","method":"nonexistent"}')
+
+    assert_equal 1, recorder.size
+    exchange = recorder.exchanges[0]
+    assert_equal "nonexistent", exchange["method"]
+    assert exchange.key?("error")
+    assert_equal "Reclamo::MethodNotFound", exchange["error"]["class"]
+  end
+
   def test_records_multiple_exchanges
     server, recorder = build_recorded_server
     server.handle('{"jsonrpc":"2.0","method":"add","params":[1,2],"id":1}')
@@ -118,6 +129,43 @@ class TestRecorder < Minitest::Test
 
     assert recorder.exchanges[0].key?("result")
     refute recorder.exchanges[0].key?("error")
+  end
+
+  def test_records_false_result
+    server = Reclamo::Server.new
+    server.expose_method("falsy") { false }
+    recorder = Reclamo::Recorder.new(server)
+    server.handle('{"jsonrpc":"2.0","method":"falsy","id":1}')
+
+    assert_equal false, recorder.exchanges[0]["result"]
+  end
+
+  def test_records_zero_result
+    server = Reclamo::Server.new
+    server.expose_method("zero") { 0 }
+    recorder = Reclamo::Recorder.new(server)
+    server.handle('{"jsonrpc":"2.0","method":"zero","id":1}')
+
+    assert_equal 0, recorder.exchanges[0]["result"]
+  end
+
+  def test_records_empty_string_result
+    server = Reclamo::Server.new
+    server.expose_method("empty") { "" }
+    recorder = Reclamo::Recorder.new(server)
+    server.handle('{"jsonrpc":"2.0","method":"empty","id":1}')
+
+    assert_equal "", recorder.exchanges[0]["result"]
+  end
+
+  def test_records_nil_result
+    server = Reclamo::Server.new
+    server.expose_method("nil_method") { nil }
+    recorder = Reclamo::Recorder.new(server)
+    server.handle('{"jsonrpc":"2.0","method":"nil_method","id":1}')
+
+    assert recorder.exchanges[0].key?("result")
+    assert_nil recorder.exchanges[0]["result"]
   end
 
   def test_keyword_params_recorded

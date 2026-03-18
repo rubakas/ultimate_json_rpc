@@ -9,13 +9,25 @@ module Reclamo
     def initialize(server, input: $stdin, output: $stdout, json: JSON)
       @app_server = server
       @json = json
+      @methods_cache = server.methods_info
+      @methods_index = @methods_cache.to_h { |m| [m["name"], m] }
       @mcp_server = build_mcp_server
       @input = input
       @output = output
+      @stdio = nil
     end
 
     def run
-      Stdio.new(@mcp_server, input: @input, output: @output).run
+      @stdio = Stdio.new(@mcp_server, input: @input, output: @output)
+      @stdio.run
+    end
+
+    def stop
+      @stdio&.stop
+    end
+
+    def running?
+      @stdio&.running? || false
     end
 
     private
@@ -41,13 +53,13 @@ module Reclamo
     end
 
     def mcp_tools_list
-      { "tools" => @app_server.methods_info.map { |m| to_mcp_tool(m) } }
+      { "tools" => @methods_cache.map { |m| to_mcp_tool(m) } }
     end
 
     def mcp_tools_call(name, arguments)
       request = build_call_request(name, arguments)
       raw = @app_server.handle_parsed(request)
-      return format_call_response(nil) unless raw
+      return { "content" => [{ "type" => "text", "text" => "No response from server" }], "isError" => true } unless raw
 
       response = @json.parse(raw)
       format_call_response(response)
@@ -81,7 +93,7 @@ module Reclamo
       request = { "jsonrpc" => "2.0", "method" => name, "id" => "mcp" }
       return request if arguments.nil? || arguments.empty?
 
-      method_info = @app_server.methods_info.find { |m| m["name"] == name }
+      method_info = @methods_index[name]
       request["params"] = convert_arguments(arguments, method_info)
       request
     end
@@ -94,7 +106,7 @@ module Reclamo
       return arguments if params.any? { |p| p["keyword"] }
 
       # Positional params: convert Hash to Array in parameter order
-      params.filter_map { |p| arguments[p["name"]] unless p["variadic"] }
+      params.reject { |p| p["variadic"] }.map { |p| arguments[p["name"]] }
     end
 
     def format_call_response(response)

@@ -22,7 +22,7 @@ module Reclamo
     def build_key_fn(key)
       case key
       when nil then ->(_) { :global }
-      when Symbol then ->(req) { req.context[key] || :unknown }
+      when Symbol then ->(req) { req.context.fetch(key, :unknown) }
       when Proc then key
       else raise ArgumentError, "key must be nil, a Symbol, or a Proc"
       end

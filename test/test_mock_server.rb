@@ -132,6 +132,28 @@ class TestMockServer < Minitest::Test
     assert_equal [1, 2, 3], response["result"]["items"]
   end
 
+  def test_custom_json_adapter
+    adapter = Module.new do
+      def self.parse(str) = JSON.parse(str)
+      def self.generate(obj) = JSON.generate(obj)
+    end
+    mock = Reclamo::MockServer.new(json: adapter)
+    mock.stub("add", [2, 3], 5)
+    response = call(mock, "add", [2, 3])
+    assert_equal 5, response["result"]
+  end
+
+  def test_invalid_id_type_returns_invalid_request
+    mock = Reclamo::MockServer.new
+    mock.stub("add", [1, 2], 3)
+
+    response = JSON.parse(mock.handle('{"jsonrpc":"2.0","method":"add","params":[1,2],"id":[1]}'))
+    assert_equal(-32_600, response["error"]["code"])
+
+    response = JSON.parse(mock.handle('{"jsonrpc":"2.0","method":"add","params":[1,2],"id":true}'))
+    assert_equal(-32_600, response["error"]["code"])
+  end
+
   def test_handle_parsed
     mock = Reclamo::MockServer.new
     mock.stub("add", [2, 3], 5)

@@ -5,8 +5,8 @@ require "json"
 
 class TestRequestTimeout < Minitest::Test
   def test_slow_handler_times_out
-    server = Reclamo::Server.new(timeout: 0.05)
-    server.expose_method("slow") { sleep 1 }
+    server = Reclamo::Server.new(timeout: 0.1)
+    server.expose_method("slow") { sleep 0.5 }
 
     response = call(server, "slow")
     assert_equal(-32_001, response["error"]["code"])
@@ -30,16 +30,16 @@ class TestRequestTimeout < Minitest::Test
   end
 
   def test_timeout_notification_returns_nil
-    server = Reclamo::Server.new(timeout: 0.05)
-    server.expose_method("slow") { sleep 1 }
+    server = Reclamo::Server.new(timeout: 0.1)
+    server.expose_method("slow") { sleep 0.5 }
 
     request = { "jsonrpc" => "2.0", "method" => "slow" }
     assert_nil server.handle(JSON.generate(request))
   end
 
   def test_timeout_triggers_error_hook
-    server = Reclamo::Server.new(timeout: 0.05)
-    server.expose_method("slow") { sleep 1 }
+    server = Reclamo::Server.new(timeout: 0.1)
+    server.expose_method("slow") { sleep 0.5 }
     captured_error = nil
     server.on(:error) { |_req, err, _dur| captured_error = err }
 
@@ -51,6 +51,14 @@ class TestRequestTimeout < Minitest::Test
     error = Reclamo::RequestTimeout.new
     assert_kind_of Reclamo::ServerError, error
     assert_equal(-32_001, error.code)
+  end
+
+  def test_timeout_reader
+    assert_equal 5, Reclamo::Server.new(timeout: 5).timeout
+  end
+
+  def test_timeout_defaults_to_nil
+    assert_nil Reclamo::Server.new.timeout
   end
 
   def test_request_timeout_constant

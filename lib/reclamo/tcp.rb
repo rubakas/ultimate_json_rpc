@@ -24,12 +24,12 @@ module Reclamo
       accept_loop
     ensure
       @running = false
-      @tcp_server&.close unless @tcp_server&.closed?
+      close_server
     end
 
     def stop
       @running = false
-      @tcp_server&.close unless @tcp_server&.closed?
+      close_server
     end
 
     def running? = @running
@@ -38,25 +38,37 @@ module Reclamo
 
     def accept_loop
       while @running
+        next unless @tcp_server.wait_readable(0.5)
+
         client = accept_client
         break unless client
 
         accept_or_reject(client)
       end
+    rescue Errno::EBADF, IOError
+      # Server socket was closed (e.g., via stop)
     end
 
     def accept_client
       @tcp_server.accept
-    rescue IOError
+    rescue IOError, Errno::EBADF
       nil
     end
 
     def accept_or_reject(client)
-      if connection_limit_reached?
-        client.close
-      else
-        increment_connections
+      if acquire_connection_slot
         Thread.new(client) { |c| handle_client(c) }
+      else
+        client.close
+      end
+    end
+
+    def acquire_connection_slot
+      @mutex.synchronize do
+        return false if @connection_count >= @max_connections
+
+        @connection_count += 1
+        true
       end
     end
 
@@ -78,21 +90,21 @@ module Reclamo
       decrement_connections
     end
 
-    def connection_limit_reached?
-      @mutex.synchronize { @connection_count >= @max_connections }
-    end
-
-    def increment_connections
-      @mutex.synchronize { @connection_count += 1 }
-    end
-
     def decrement_connections
       @mutex.synchronize { @connection_count -= 1 }
     end
 
+    def close_server
+      @tcp_server&.close
+    rescue IOError, Errno::EBADF
+      # Already closed
+    end
+
     def trap_signals
+      # Signal handlers must not perform I/O; only set the flag.
+      # The accept_loop uses IO.select with a timeout to notice the change.
       %w[INT TERM].each do |signal|
-        Signal.trap(signal) { stop }
+        Signal.trap(signal) { @running = false }
       rescue ArgumentError
         # Signal not supported on this platform
       end

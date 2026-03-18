@@ -133,6 +133,26 @@ class TestRack < Minitest::Test
     assert_equal 5, JSON.parse(body.first)["result"]
   end
 
+  def test_response_headers_are_mutable
+    _status, headers, _body = @app.call(rack_env("add", [2, 3]))
+    headers["content-length"] = "42"
+    assert_equal "42", headers["content-length"]
+  end
+
+  def test_head_response_headers_are_mutable
+    env = { "REQUEST_METHOD" => "HEAD", "rack.input" => StringIO.new("") }
+    _status, headers, _body = @app.call(env)
+    headers["content-length"] = "0"
+    assert_equal "0", headers["content-length"]
+  end
+
+  def test_method_not_allowed_headers_are_mutable
+    env = { "REQUEST_METHOD" => "GET", "rack.input" => StringIO.new("") }
+    _status, headers, _body = @app.call(env)
+    headers["content-length"] = "99"
+    assert_equal "99", headers["content-length"]
+  end
+
   def test_nil_rack_input
     env = { "REQUEST_METHOD" => "POST", "rack.input" => nil }
     status, _, body = @app.call(env)

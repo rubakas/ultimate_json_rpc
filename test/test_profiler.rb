@@ -34,7 +34,7 @@ class TestProfiler < Minitest::Test
     server = Reclamo::Server.new
     server.expose_method("fast") { 1 }
     server.expose_method("slow") do
-      sleep(0.01)
+      sleep(0.05)
       2
     end
     profiler = Reclamo::Profiler.new(server)
@@ -97,6 +97,13 @@ class TestProfiler < Minitest::Test
     assert_equal 2, all.size
     assert all.key?("add")
     assert all.key?("divide")
+  end
+
+  def test_tracked_methods
+    server, profiler = build_profiled_server
+    rpc(server, "add", [1, 2])
+    rpc(server, "divide", [6, 2])
+    assert_equal %w[add divide], profiler.tracked_methods
   end
 
   def test_reset
