@@ -362,6 +362,58 @@ class TestRequestValidation < Minitest::Test
   end
 end
 
+class TestServerMethodFiltering < Minitest::Test
+  def test_expose_only
+    server = Reclamo::Server.new
+    server.expose(Calculator, only: [:add])
+
+    assert_includes server.methods_list, "add"
+    refute_includes server.methods_list, "divide"
+  end
+
+  def test_expose_except
+    server = Reclamo::Server.new
+    server.expose(Calculator, except: [:divide])
+
+    assert_includes server.methods_list, "add"
+    refute_includes server.methods_list, "divide"
+  end
+
+  def test_expose_only_with_strings
+    server = Reclamo::Server.new
+    server.expose(Calculator, only: ["add"])
+
+    assert_includes server.methods_list, "add"
+    refute_includes server.methods_list, "divide"
+  end
+
+  def test_expose_only_and_except_raises
+    server = Reclamo::Server.new
+
+    assert_raises(ArgumentError) do
+      server.expose(Calculator, only: [:add], except: [:divide])
+    end
+  end
+
+  def test_expose_only_with_namespace
+    server = Reclamo::Server.new
+    server.expose(Calculator, namespace: "math", only: [:add])
+
+    assert_includes server.methods_list, "math.add"
+    refute_includes server.methods_list, "math.divide"
+  end
+
+  def test_filtered_method_returns_not_found
+    server = Reclamo::Server.new
+    server.expose(Calculator, only: [:add])
+
+    request = { "jsonrpc" => "2.0", "method" => "divide", "params" => [10, 2], "id" => 1 }
+    response = JSON.parse(server.handle(JSON.generate(request)))
+
+    assert_equal(-32_601, response["error"]["code"])
+  end
+end
+
 class TestHandler < Minitest::Test
   def test_method_query
     handler = Reclamo::Handler.new

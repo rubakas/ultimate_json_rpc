@@ -6,8 +6,8 @@ module Reclamo
       @handler = Handler.new
     end
 
-    def expose(target, namespace: nil)
-      @handler.expose(target, namespace: namespace)
+    def expose(target, namespace: nil, only: nil, except: nil)
+      @handler.expose(target, namespace: namespace, only: only, except: except)
       self
     end
 

@@ -56,6 +56,7 @@ server.handle(request)
 - **Expose instances** — public methods become RPC methods
 - **Expose blocks** — `server.expose_method("name") { ... }` for standalone methods
 - **Namespacing** — `server.expose(obj, namespace: "ns")` makes methods callable as `ns.method_name`
+- **Method filtering** — `server.expose(obj, only: [:add])` or `except: [:internal]`
 - **Positional and keyword params** — arrays map to positional args, objects map to keyword args
 - **Service discovery** — built-in `rpc.discover` method
 - **Error handling** — standard JSON-RPC error codes (-32700, -32600, -32601, -32602, -32603)

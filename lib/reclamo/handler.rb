@@ -6,9 +6,12 @@ module Reclamo
       @targets = {}
     end
 
-    def expose(target, namespace: nil)
+    def expose(target, namespace: nil, only: nil, except: nil)
+      raise ArgumentError, "cannot use both :only and :except" if only && except
+
       prefix = namespace ? "#{namespace}." : ""
       methods = callable_methods(target)
+      methods = filter_methods(methods, only: only, except: except)
       methods.each do |method_name|
         full_name = "#{prefix}#{method_name}"
         validate_method_name!(full_name)
@@ -51,6 +54,18 @@ module Reclamo
         (target.public_methods(false) - Module.public_instance_methods).map(&:to_s)
       else
         (target.public_methods(false) - Object.public_instance_methods).map(&:to_s)
+      end
+    end
+
+    def filter_methods(methods, only:, except:)
+      if only
+        allowed = Array(only).map(&:to_s)
+        methods.select { |m| allowed.include?(m) }
+      elsif except
+        blocked = Array(except).map(&:to_s)
+        methods.reject { |m| blocked.include?(m) }
+      else
+        methods
       end
     end
 
