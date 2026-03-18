@@ -86,33 +86,37 @@ Adoption & integration:
 
 ## P2 — Medium Priority
 
-Independent items (no dependencies on this PRD):
+Discovery & metadata:
 
 - [ ] **Method deprecation markers**
   Mark methods as deprecated in discovery metadata (`deprecated: true` or `deprecated: "Use add_v2 instead"`). Deprecated methods still work but appear flagged in `rpc.discover` / OpenRPC output.
   *Depends on: nothing (enhances `rpc.discover`).*
 
-- [ ] **Custom JSON serializer**
-  Allow swapping the JSON encoder/decoder (e.g., `Oj`, `yajl-ruby`) via `Reclamo::Server.new(json: Oj)`. The gem currently hard-codes `JSON.parse` / `JSON.generate`.
-  *Depends on: nothing.*
-
 - [ ] **Error catalog**
   A registry for application-specific error codes and their meanings: `server.register_error(42, "InsufficientFunds", "Account balance too low")`. Registered errors appear in `rpc.discover` output so consumers know which error codes to expect.
   *Depends on: nothing (enhances `rpc.discover`).*
+
+Server configuration:
+
+- [ ] **Custom JSON serializer**
+  Allow swapping the JSON encoder/decoder (e.g., `Oj`, `yajl-ruby`) via `Reclamo::Server.new(json: Oj)`. The gem currently hard-codes `JSON.parse` / `JSON.generate`.
+  *Depends on: nothing.*
 
 - [ ] **Versioned API support**
   Run multiple API versions side by side via version prefix (`v1.add`, `v2.add`) or negotiation. Important for long-lived services evolving without breaking consumers.
   *Depends on: nothing, but design should consider namespace interaction.*
 
+Transport & integration:
+
 - [ ] **WebSocket integration guide / adapter**
   Reference adapter or documented pattern for running Reclamo over WebSockets (e.g., `faye-websocket`, `AnyCable`). WebSocket is the second most common JSON-RPC transport after HTTP.
   *Depends on: nothing (gem is already transport-agnostic).*
 
-Items with dependencies:
-
 - [ ] **MCP (Model Context Protocol) compatibility**
   Translation layer mapping MCP tool definitions to Reclamo methods and vice versa. JSON-RPC is already MCP's wire protocol — the gap is mainly schema mapping and the stdio transport convention.
   *Depends on: stdio adapter (P1), OpenRPC schema generation (P0).*
+
+Security & middleware:
 
 - [ ] **Method-level access control / authorization**
   Declarative way to require roles or permissions per method: `server.authorize("admin.*") { |req| req.context[:role] == :admin }`.
@@ -121,6 +125,8 @@ Items with dependencies:
 - [ ] **Built-in rate-limiting middleware**
   Optional `Reclamo::Middleware::RateLimit` with token-bucket or sliding-window algorithm, keyed by caller identity from `request.context`.
   *Depends on: method-level middleware (P0) for per-method limits.*
+
+Testing:
 
 - [ ] **Request/response recording for replay testing**
   Optional recorder capturing JSON-RPC exchanges to a file for backward-compatibility and regression testing.
