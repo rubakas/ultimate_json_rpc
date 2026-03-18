@@ -43,6 +43,10 @@ module Reclamo
       @handler.methods_list
     end
 
+    def method?(method_name)
+      @handler.method?(method_name)
+    end
+
     private
 
     def parse_json(json_string)

@@ -111,6 +111,11 @@ class TestServerCalls < Minitest::Test
 
     assert_equal server, server.expose(Calculator)
   end
+
+  def test_server_method_query
+    assert @server.method?("add")
+    refute @server.method?("nonexistent")
+  end
 end
 
 class TestServerErrors < Minitest::Test
