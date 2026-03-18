@@ -29,7 +29,7 @@ module Reclamo
   class Request
     attr_reader method_name: String
     attr_reader params: Array[untyped] | Hash[String, untyped] | nil
-    attr_reader id: untyped
+    attr_reader id: String | Numeric | nil
 
     def initialize: (Hash[String, untyped]) -> void
     def notification?: () -> bool

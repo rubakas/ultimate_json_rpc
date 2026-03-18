@@ -898,6 +898,23 @@ class TestHandler < Minitest::Test
     assert handler.method?("a.add")
     assert handler.method?("b.add")
   end
+
+  def test_expose_target_with_no_methods
+    handler = Reclamo::Handler.new
+    handler.expose(Object.new)
+
+    assert_equal 0, handler.size
+    assert_empty handler.methods_list
+  end
+
+  def test_methods_list_is_sorted
+    handler = Reclamo::Handler.new
+    handler.expose_method("zebra") { nil }
+    handler.expose_method("alpha") { nil }
+    handler.expose_method("middle") { nil }
+
+    assert_equal %w[alpha middle zebra], handler.methods_list
+  end
 end
 
 # JSON-RPC 2.0 Specification Conformance Tests
