@@ -918,6 +918,22 @@ class TestHandler < Minitest::Test
     assert handler.method?("b.add")
   end
 
+  def test_empty_string_namespace_treated_as_no_namespace
+    handler = Reclamo::Handler.new
+    handler.expose(Calculator, namespace: "")
+
+    assert handler.method?("add")
+    refute handler.method?(".add")
+  end
+
+  def test_symbol_namespace
+    handler = Reclamo::Handler.new
+    handler.expose(Calculator, namespace: :math)
+
+    assert handler.method?("math.add")
+    assert handler.method?("math.divide")
+  end
+
   def test_expose_target_with_no_methods
     handler = Reclamo::Handler.new
     handler.expose(Object.new)

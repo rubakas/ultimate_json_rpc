@@ -9,9 +9,8 @@ module Reclamo
     def expose(target, namespace: nil, only: nil, except: nil)
       raise ArgumentError, "cannot use both :only and :except" if only && except
 
-      prefix = namespace ? "#{namespace}." : ""
-      methods = callable_methods(target)
-      methods = filter_methods(methods, only: only, except: except)
+      prefix = namespace.to_s.then { |ns| ns.empty? ? "" : "#{ns}." }
+      methods = filter_methods(callable_methods(target), only: only, except: except)
       methods.each do |method_name|
         full_name = "#{prefix}#{method_name}"
         validate_method_name!(full_name)

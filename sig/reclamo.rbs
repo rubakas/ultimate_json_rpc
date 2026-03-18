@@ -42,7 +42,7 @@ module Reclamo
 
   class Handler
     def initialize: () -> void
-    def expose: (Module | Object, ?namespace: String?, ?only: Array[Symbol | String]?, ?except: Array[Symbol | String]?) -> void
+    def expose: (Module | Object, ?namespace: String | Symbol | nil, ?only: Array[Symbol | String]?, ?except: Array[Symbol | String]?) -> void
     def expose_method: (String | Symbol) { (*untyped) -> untyped } -> void
     def call: (String, Array[untyped] | Hash[String, untyped] | nil) -> untyped
     def method?: (String) -> bool
@@ -52,7 +52,7 @@ module Reclamo
 
   class Server
     def initialize: () -> void
-    def expose: (Module | Object, ?namespace: String?, ?only: Array[Symbol | String]?, ?except: Array[Symbol | String]?) -> self
+    def expose: (Module | Object, ?namespace: String | Symbol | nil, ?only: Array[Symbol | String]?, ?except: Array[Symbol | String]?) -> self
     def expose_method: (String | Symbol) { (*untyped) -> untyped } -> self
     def use: () { (Request, Proc) -> untyped } -> self
     def method?: (String) -> bool
