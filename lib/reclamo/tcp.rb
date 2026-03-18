@@ -24,28 +24,28 @@ module Reclamo
 
     def run
       @running = true
-      @tcp_server = TCPServer.new(@host, @port)
+      @mutex.synchronize { @tcp_server = TCPServer.new(@host, @port) }
       trap_signals
       accept_loop
     ensure
-      @running = false
+      @mutex.synchronize { @running = false }
       close_server
     end
 
     def stop
-      @running = false
+      @mutex.synchronize { @running = false }
       close_server
       threads = @mutex.synchronize { @client_threads.dup }
       threads.each { |t| t.join(5) }
     end
 
-    def running? = @running
+    def running? = @mutex.synchronize { @running }
 
     private
 
     def accept_loop
-      while @running
-        next unless @tcp_server.wait_readable(0.5)
+      while @mutex.synchronize { @running }
+        next unless tcp_server.wait_readable(0.5)
 
         client = accept_client
         break unless client
@@ -56,16 +56,25 @@ module Reclamo
       # Server socket was closed (e.g., via stop)
     end
 
+    def tcp_server
+      @mutex.synchronize { @tcp_server }
+    end
+
     def accept_client
-      @tcp_server.accept
+      tcp_server.accept
     rescue IOError, Errno::EBADF
       nil
     end
 
     def accept_or_reject(client)
       if acquire_connection_slot
-        thread = Thread.new(client) { |c| handle_client(c) }
-        @mutex.synchronize { @client_threads << thread }
+        begin
+          thread = Thread.new(client) { |c| handle_client(c) }
+          @mutex.synchronize { @client_threads << thread }
+        rescue ThreadError
+          client.close rescue nil # rubocop:disable Style/RescueModifier
+          decrement_connections
+        end
       else
         client.close
       end
@@ -106,7 +115,8 @@ module Reclamo
     end
 
     def close_server
-      @tcp_server&.close
+      server = @mutex.synchronize { @tcp_server }
+      server&.close
     rescue IOError, Errno::EBADF
       # Already closed
     end

@@ -186,3 +186,35 @@ class TestRecorder < Minitest::Test
     [server, recorder]
   end
 end
+
+class TestRecorderIOErrors < Minitest::Test
+  def test_io_error_does_not_deadlock
+    broken_io = Object.new
+    def broken_io.puts(*)
+      raise Errno::EPIPE
+    end
+
+    def broken_io.flush; end
+
+    server = Reclamo::Server.new
+    server.expose(Calculator)
+    recorder = Reclamo::Recorder.new(server, output: broken_io)
+
+    server.handle('{"jsonrpc":"2.0","method":"add","params":[1,2],"id":1}')
+    server.handle('{"jsonrpc":"2.0","method":"add","params":[3,4],"id":2}')
+
+    assert_equal 2, recorder.size
+  end
+end
+
+class TestRecorderParseError < Minitest::Test
+  def test_parse_error_not_recorded
+    server = Reclamo::Server.new
+    server.expose(Calculator)
+    recorder = Reclamo::Recorder.new(server)
+
+    server.handle("not json")
+
+    assert_equal 0, recorder.size
+  end
+end

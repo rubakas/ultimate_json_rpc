@@ -44,11 +44,17 @@ module Reclamo
       entry["error"] = error if error
       @mutex.synchronize do
         @exchanges << entry
-        if @output
-          @output.puts(@json.generate(entry))
-          @output.flush
-        end
+        write_output(entry)
       end
+    end
+
+    def write_output(entry)
+      return unless @output
+
+      @output.puts(@json.generate(entry))
+      @output.flush
+    rescue IOError, SystemCallError
+      # Output broken; exchange still recorded in memory
     end
   end
 end

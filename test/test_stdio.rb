@@ -80,6 +80,22 @@ class TestStdio < Minitest::Test
     refute_predicate adapter, :running?
   end
 
+  def test_epipe_on_output_stops_gracefully
+    broken_output = Object.new
+    def broken_output.puts(*)
+      raise Errno::EPIPE
+    end
+
+    def broken_output.flush; end
+
+    lines = [rpc_json("add", [2, 3]), rpc_json("add", [4, 5])].join("\n")
+    input = StringIO.new(lines)
+    adapter = Reclamo::Stdio.new(@server, input: input, output: broken_output)
+
+    assert_nil adapter.run
+    refute_predicate adapter, :running?
+  end
+
   def test_batch_request
     batch = JSON.generate(
       [

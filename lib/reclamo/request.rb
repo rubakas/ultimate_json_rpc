@@ -8,9 +8,9 @@ module Reclamo
 
     def initialize(data)
       validate!(data)
-      @method_name = data["method"].freeze
+      @method_name = data["method"].dup.freeze
       @params = deep_freeze(deep_dup(data["params"]))
-      @id = data["id"].freeze
+      @id = data["id"].is_a?(String) ? data["id"].dup.freeze : data["id"]
       @context = {}
     end
 
@@ -51,7 +51,7 @@ module Reclamo
       case obj
       when Hash then obj.to_h { |k, v| [k.frozen? ? k : k.dup, deep_dup(v)] }
       when Array then obj.map { |v| deep_dup(v) }
-      else obj
+      else obj.frozen? ? obj : obj.dup
       end
     end
 

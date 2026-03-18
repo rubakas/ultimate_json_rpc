@@ -198,13 +198,19 @@ module Reclamo
     end
 
     def store_metadata(full_name:, method_name:, store:, source:, &transform)
-      return unless source
       return unless source.is_a?(Hash)
 
-      value = source[method_name.to_sym] || source[method_name.to_s]
+      value = metadata_value(source, method_name)
       return unless value
 
       store[full_name] = transform ? transform.call(value) : value
+    end
+
+    def metadata_value(source, method_name)
+      sym_key = method_name.to_sym
+      return source[sym_key] if source.key?(sym_key)
+
+      source[method_name.to_s]
     end
 
     def callable_methods(target)

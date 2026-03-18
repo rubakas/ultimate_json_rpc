@@ -221,6 +221,13 @@ class TestMCPToolsCall < Minitest::Test
     assert_equal "nil", result["content"][0]["text"]
   end
 
+  def test_call_missing_required_positional_argument
+    mcp = build_mcp
+    result = mcp_call(mcp, "tools/call", { "name" => "add", "arguments" => { "left" => 2 } })
+
+    assert_equal true, result["isError"]
+  end
+
   def test_call_with_namespaced_method
     server = Reclamo::Server.new
     server.expose(Calculator, namespace: "math")

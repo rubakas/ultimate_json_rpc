@@ -310,14 +310,7 @@ class TestParamValidationEdgeCases < Minitest::Test
 end
 
 class TestParamValidationDiscover < Minitest::Test
-  private
-
-  def discover_methods(server)
-    request = { "jsonrpc" => "2.0", "method" => "rpc.discover", "id" => 1 }
-    JSON.parse(server.handle(JSON.generate(request)))["result"]["methods"]
-  end
-
-  public
+  include DiscoverHelper
 
   def test_schema_appears_in_discover
     server = Reclamo::Server.new

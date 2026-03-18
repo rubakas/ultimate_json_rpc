@@ -64,6 +64,8 @@ module Reclamo
 
       response = @json.parse(raw)
       format_call_response(response)
+    rescue ArgumentError => e
+      { "content" => [{ "type" => "text", "text" => e.message }], "isError" => true }
     end
 
     def to_mcp_tool(method_info)
@@ -103,10 +105,13 @@ module Reclamo
       params = method_info&.dig("params")
       return arguments unless params
 
-      # Keyword params: pass as Hash (Reclamo converts to **kwargs)
+      arguments = arguments.transform_keys(&:to_s)
       return arguments if params.any? { |p| p["keyword"] }
 
-      # Positional params: convert Hash to Array in parameter order
+      convert_to_positional(arguments, params)
+    end
+
+    def convert_to_positional(arguments, params)
       params.reject { |p| p["variadic"] }.map do |p|
         validate_required_argument!(arguments, p)
         arguments[p["name"]]

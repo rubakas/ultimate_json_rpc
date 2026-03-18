@@ -35,9 +35,16 @@ module Reclamo
         response = @server.handle(line)
         next unless response
 
-        @output.puts(response)
-        @output.flush
+        break unless write_response(response)
       end
+    end
+
+    def write_response(response)
+      @output.puts(response)
+      @output.flush
+      true
+    rescue Errno::EPIPE, IOError
+      false
     end
 
     def trap_signals

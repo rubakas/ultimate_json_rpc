@@ -281,6 +281,54 @@ class TestDangerousMethodsExtended < Minitest::Test
   end
 end
 
+class TestHandleParsedDoesNotFreezeCaller < Minitest::Test
+  def test_handle_parsed_does_not_freeze_callers_method_string
+    server = Reclamo::Server.new
+    server.expose_method("ping") { "pong" }
+
+    method_str = +"ping"
+    request = { "jsonrpc" => "2.0", "method" => method_str, "id" => 1 }
+    server.handle_parsed(request)
+
+    refute_predicate method_str, :frozen?, "handle_parsed should not freeze caller's method string"
+  end
+
+  def test_handle_parsed_does_not_freeze_callers_param_strings
+    server = Reclamo::Server.new
+    server.expose_method("echo") { |value:| value }
+
+    param_value = +"hello"
+    request = { "jsonrpc" => "2.0", "method" => "echo", "params" => { "value" => param_value }, "id" => 1 }
+    server.handle_parsed(request)
+
+    refute_predicate param_value, :frozen?, "handle_parsed should not freeze caller's param strings"
+  end
+end
+
+class TestStoreMetadataSymKeyPriority < Minitest::Test
+  include DiscoverHelper
+
+  def test_store_metadata_sym_key_takes_priority
+    server = Reclamo::Server.new
+    server.expose(Calculator, deprecated: { add: "via sym", "add" => "via str" })
+    method_info = discover_methods(server).find { |m| m["name"] == "add" }
+
+    assert_equal "via sym", method_info["deprecated"]
+  end
+end
+
+class TestBuildResultElseBranch < Minitest::Test
+  include DiscoverHelper
+
+  def test_returns_non_hash_non_string_wrapped_in_schema
+    server = Reclamo::Server.new
+    server.expose_method("tags", returns: [{ "type" => "string" }]) { %w[a b] }
+    method_info = discover_methods(server).find { |m| m["name"] == "tags" }
+
+    assert_equal({ "name" => "result", "schema" => [{ "type" => "string" }] }, method_info["result"])
+  end
+end
+
 class TestDeepDupFrozenKeys < Minitest::Test
   def test_handle_parsed_with_frozen_string_keys
     server = Reclamo::Server.new

@@ -4,9 +4,28 @@ require "test_helper"
 require "reclamo/websocket"
 require "json"
 
-MockEvent = Struct.new(:data)
-
 class TestWebSocket < Minitest::Test
+  MockEvent = Struct.new(:data)
+
+  class MockSocket
+    def initialize(sent)
+      @handlers = {}
+      @sent = sent
+    end
+
+    def on(event, &block)
+      @handlers[event] = block
+    end
+
+    def send(data)
+      @sent << data
+    end
+
+    def trigger(event, *)
+      @handlers[event]&.call(*)
+    end
+  end
+
   def test_on_message_returns_response
     ws = build_ws
     response = JSON.parse(ws.on_message('{"jsonrpc":"2.0","method":"add","params":[2,3],"id":1}'))
@@ -85,30 +104,28 @@ class TestWebSocket < Minitest::Test
     assert_equal 5, JSON.parse(sent[0])["result"]
   end
 
+  def test_freeze_delegates_to_server
+    ws = build_ws
+    ws.freeze
+
+    assert_predicate ws, :frozen?
+    assert_predicate ws.server, :frozen?
+  end
+
+  def test_frozen_websocket_handles_messages
+    ws = build_ws
+    ws.freeze
+
+    response = JSON.parse(ws.on_message('{"jsonrpc":"2.0","method":"add","params":[2,3],"id":1}'))
+
+    assert_equal 5, response["result"]
+  end
+
   private
 
   def build_ws
     server = Reclamo::Server.new
     server.expose(Calculator)
     Reclamo::WebSocket.new(server)
-  end
-end
-
-class MockSocket
-  def initialize(sent)
-    @handlers = {}
-    @sent = sent
-  end
-
-  def on(event, &block)
-    @handlers[event] = block
-  end
-
-  def send(data)
-    @sent << data
-  end
-
-  def trigger(event, *)
-    @handlers[event]&.call(*)
   end
 end
