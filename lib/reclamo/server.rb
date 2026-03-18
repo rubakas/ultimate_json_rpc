@@ -82,16 +82,22 @@ module Reclamo
     end
 
     def serialize_single(data)
-      request = Request.new(data)
+      request = parse_request(data)
+      return request unless request.is_a?(Request)
+
       response = execute_request(request)
       return nil unless response
 
       JSON.generate(response)
-    rescue InvalidRequest
-      JSON.generate(Response.error(INVALID_REQUEST, extract_id(data)))
     rescue JSON::JSONError
       id = response.is_a?(Hash) ? response["id"] : nil
       JSON.generate(Response.error(INTERNAL_ERROR, id))
+    end
+
+    def parse_request(data)
+      Request.new(data)
+    rescue InvalidRequest
+      JSON.generate(Response.error(INVALID_REQUEST, extract_id(data)))
     end
 
     def extract_id(data)

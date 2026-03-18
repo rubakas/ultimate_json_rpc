@@ -158,4 +158,16 @@ class TestServerMiddlewareEdgeCases < Minitest::Test
     assert_equal(-32_603, response["error"]["code"])
     assert_equal "middleware broke", response["error"]["data"]
   end
+
+  def test_invalid_request_from_middleware_returns_internal_error
+    server = Reclamo::Server.new
+    server.expose(Calculator)
+    server.use { |_request, _next_call| raise Reclamo::InvalidRequest }
+
+    request = { "jsonrpc" => "2.0", "method" => "add", "params" => [1, 2], "id" => 42 }
+    response = JSON.parse(server.handle(JSON.generate(request)))
+
+    assert_equal(-32_603, response["error"]["code"])
+    assert_equal 42, response["id"]
+  end
 end

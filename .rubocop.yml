@@ -17,6 +17,10 @@ Metrics/ClassLength:
   Exclude:
     - "test/**/*"
 
+Metrics/AbcSize:
+  Exclude:
+    - "test/**/*"
+
 Style/OneClassPerFile:
   Exclude:
     - "test/**/*"

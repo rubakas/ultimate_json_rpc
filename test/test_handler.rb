@@ -149,4 +149,92 @@ class TestHandlerEdgeCases < Minitest::Test
 
     assert_raises(ArgumentError) { handler.call("add", "not valid") }
   end
+
+  def test_call_with_hash_params_converts_keys_to_symbols
+    handler = Reclamo::Handler.new
+    handler.expose(Greeter.new("Hi"))
+    result = handler.call("greet", { "name" => "World" })
+
+    assert_equal "Hi, World!", result
+  end
+
+  def test_call_with_nil_params
+    handler = Reclamo::Handler.new
+    handler.expose(Greeter.new("Hi"))
+    result = handler.call("hello", nil)
+
+    assert_equal "hello", result
+  end
+end
+
+class TestHandlerFreeze < Minitest::Test
+  def test_frozen_handler_rejects_expose
+    handler = Reclamo::Handler.new
+    handler.freeze
+
+    assert_raises(FrozenError) { handler.expose(Calculator) }
+  end
+
+  def test_frozen_handler_rejects_expose_method
+    handler = Reclamo::Handler.new
+    handler.freeze
+
+    assert_raises(FrozenError) { handler.expose_method("foo") { "bar" } }
+  end
+
+  def test_frozen_handler_allows_calls
+    handler = Reclamo::Handler.new
+    handler.expose(Calculator)
+    handler.freeze
+
+    assert_equal 5, handler.call("add", [2, 3])
+  end
+
+  def test_frozen_handler_allows_queries
+    handler = Reclamo::Handler.new
+    handler.expose(Calculator)
+    handler.freeze
+
+    assert handler.method?("add")
+    assert_equal 2, handler.size
+    refute_predicate handler, :empty?
+    assert_equal %w[add divide], handler.methods_list
+  end
+end
+
+class TestHandlerParamDescriptors < Minitest::Test
+  def test_variadic_keyword_params
+    handler = Reclamo::Handler.new
+    handler.expose_method("flexible") { |**opts| opts }
+    info = handler.methods_info.find { |m| m["name"] == "flexible" }
+
+    assert_equal 1, info["params"].size
+    assert_equal true, info["params"][0]["variadic"]
+    assert_equal true, info["params"][0]["keyword"]
+    assert_equal "opts", info["params"][0]["name"]
+  end
+
+  def test_mixed_positional_and_keyword_params
+    handler = Reclamo::Handler.new
+    handler.expose_method("mixed") { |a, b:, c: nil| [a, b, c] }
+    info = handler.methods_info.find { |m| m["name"] == "mixed" }
+
+    assert_equal 3, info["params"].size
+    refute info["params"][0].key?("keyword")
+    assert_equal true, info["params"][1]["keyword"]
+    assert_equal true, info["params"][1]["required"]
+    assert_equal true, info["params"][2]["keyword"]
+    refute info["params"][2].key?("required")
+  end
+
+  def test_variadic_positional_params
+    handler = Reclamo::Handler.new
+    handler.expose_method("varargs") { |*args| args }
+    info = handler.methods_info.find { |m| m["name"] == "varargs" }
+
+    assert_equal 1, info["params"].size
+    assert_equal true, info["params"][0]["variadic"]
+    assert_equal "args", info["params"][0]["name"]
+    refute info["params"][0].key?("keyword")
+  end
 end
