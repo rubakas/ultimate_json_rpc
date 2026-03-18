@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-03-18
+
 ### Added
 - Method-level middleware: `server.use(only: ["admin.*"])` and `server.use(except: ["ping"])` to scope middleware to specific methods or namespaces, with glob pattern support
 - `Reclamo::Rack` built-in Rack adapter: Content-Type handling, 200/204/405 responses, `require "reclamo/rack"` to opt in
@@ -33,6 +35,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - API documentation generation: `require "reclamo/docs"` provides `Reclamo::Docs.new(server).to_markdown` generating Markdown from OpenRPC schema
 - Usage examples: `examples/` directory with runnable patterns for Rack, MCP, multi-namespace/versioning, error handling, and testing
 - WebSocket adapter: `require "reclamo/websocket"` provides `Reclamo::WebSocket` for JSON-RPC over WebSockets with any Rack-compatible library
+
+### Fixed
+- MCP `inputSchema` now always included for zero-parameter tools (MCP spec compliance)
+- `handle_parsed` no longer crashes with `TypeError` on Symbol-keyed hashes
 
 ### Changed
 - `rpc.discover` output restructured: service metadata moved to `info` object (`name` → `info.title`), method `returns` → `result` in OpenRPC contentDescriptor format

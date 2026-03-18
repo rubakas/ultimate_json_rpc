@@ -69,7 +69,7 @@ module Reclamo
     def to_mcp_tool(method_info)
       tool = { "name" => method_info["name"] }
       tool["description"] = method_info["description"] if method_info["description"]
-      tool["inputSchema"] = build_input_schema(method_info["params"]) if method_info["params"]
+      tool["inputSchema"] = method_info["params"] ? build_input_schema(method_info["params"]) : { "type" => "object" }
       tool
     end
 

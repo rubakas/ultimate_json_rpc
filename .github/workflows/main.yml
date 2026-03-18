@@ -29,3 +29,7 @@ jobs:
           bundler-cache: true
       - name: Run the default task
         run: bundle exec rake
+      - name: Validate RBS signatures
+        run: bundle exec rbs -I sig validate
+      - name: Verify gem builds
+        run: gem build reclamo.gemspec

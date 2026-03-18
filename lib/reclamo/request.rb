@@ -49,7 +49,7 @@ module Reclamo
 
     def deep_dup(obj)
       case obj
-      when Hash then obj.to_h { |k, v| [k.dup, deep_dup(v)] }
+      when Hash then obj.to_h { |k, v| [k.frozen? ? k : k.dup, deep_dup(v)] }
       when Array then obj.map { |v| deep_dup(v) }
       else obj
       end

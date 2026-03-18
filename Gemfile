@@ -13,3 +13,5 @@ gem "minitest", "~> 5.16"
 gem "rubocop", "~> 1.85"
 
 gem "logger"
+
+gem "rbs"
