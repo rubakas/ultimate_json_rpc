@@ -63,7 +63,7 @@ module Reclamo
 
   class Handler
     def initialize: () -> void
-    def expose: (Module | Object, ?namespace: String | Symbol | nil, ?only: Array[Symbol | String]?, ?except: Array[Symbol | String]?, ?descriptions: Hash[Symbol | String, String]?) -> void
+    def expose: (Module | Object, ?namespace: String | Symbol | nil, ?only: Array[Symbol | String] | Symbol | String | nil, ?except: Array[Symbol | String] | Symbol | String | nil, ?descriptions: Hash[Symbol | String, String]?) -> void
     def expose_method: (String | Symbol, ?callable?, ?description: String?) ?{ (*untyped) -> untyped } -> void
     def call: (String, Array[untyped] | Hash[String, untyped] | nil) -> untyped
     def method?: (String) -> bool
@@ -80,7 +80,7 @@ module Reclamo
     attr_reader description: String?
 
     def initialize: (?name: String?, ?version: String?, ?description: String?) -> void
-    def expose: (Module | Object, ?namespace: String | Symbol | nil, ?only: Array[Symbol | String]?, ?except: Array[Symbol | String]?, ?descriptions: Hash[Symbol | String, String]?) -> self
+    def expose: (Module | Object, ?namespace: String | Symbol | nil, ?only: Array[Symbol | String] | Symbol | String | nil, ?except: Array[Symbol | String] | Symbol | String | nil, ?descriptions: Hash[Symbol | String, String]?) -> self
     def expose_method: (String | Symbol, ?callable?, ?description: String?) ?{ (*untyped) -> untyped } -> self
     def use: () { (Request, Proc) -> untyped } -> self
     def to_proc: () -> Proc

@@ -156,4 +156,27 @@ class TestServerMethodFiltering < Minitest::Test
 
     assert_equal(-32_601, response["error"]["code"])
   end
+
+  def test_expose_only_with_single_symbol
+    server = Reclamo::Server.new
+    server.expose(Calculator, only: :add)
+
+    assert_includes server.methods_list, "add"
+    refute_includes server.methods_list, "divide"
+  end
+
+  def test_expose_only_with_no_matches
+    server = Reclamo::Server.new
+    server.expose(Calculator, only: [:nonexistent])
+
+    assert_equal 0, server.size
+  end
+
+  def test_expose_except_with_single_symbol
+    server = Reclamo::Server.new
+    server.expose(Calculator, except: :divide)
+
+    assert_includes server.methods_list, "add"
+    refute_includes server.methods_list, "divide"
+  end
 end

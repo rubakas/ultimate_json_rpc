@@ -414,6 +414,17 @@ class TestServerEdgeCases < Minitest::Test
     assert_equal nested, response["result"]
   end
 
+  def test_unicode_method_name
+    server = Reclamo::Server.new
+    server.expose_method("\u00e9cho") { |msg| msg }
+
+    request = { "jsonrpc" => "2.0", "method" => "\u00e9cho", "params" => ["hello"], "id" => 1 }
+    response = JSON.parse(server.handle(JSON.generate(request)))
+
+    assert_equal "hello", response["result"]
+    assert_includes server.methods_list, "\u00e9cho"
+  end
+
   def test_class_does_not_expose_new
     klass = Class.new do
       def self.work
@@ -506,5 +517,16 @@ class TestServerFreeze < Minitest::Test
     response = JSON.parse(server.handle(JSON.generate(request)))
 
     assert_equal(-32_601, response["error"]["code"])
+  end
+
+  def test_frozen_server_handles_concurrent_requests
+    server = Reclamo::Server.new.tap { |s| s.expose(Calculator) }.freeze
+    threads = 5.times.map do |i|
+      Thread.new do
+        req = { "jsonrpc" => "2.0", "method" => "add", "params" => [i, 1], "id" => i }
+        JSON.parse(server.handle(JSON.generate(req)))
+      end
+    end
+    threads.map(&:value).each_with_index { |r, i| assert_equal i + 1, r["result"] }
   end
 end

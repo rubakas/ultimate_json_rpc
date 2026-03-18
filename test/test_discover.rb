@@ -146,6 +146,15 @@ class TestServerDiscoverDescriptions < Minitest::Test
     refute discover_methods(server).find { |m| m["name"] == "ping" }.key?("description")
   end
 
+  def test_expose_method_lambda_with_description
+    server = Reclamo::Server.new
+    server.expose_method("double", ->(n) { n * 2 }, description: "Double a number")
+    method_info = discover_methods(server).find { |m| m["name"] == "double" }
+
+    assert_equal "Double a number", method_info["description"]
+    assert_equal 1, method_info["params"].size
+  end
+
   def test_descriptions_with_string_keys
     server = Reclamo::Server.new
     server.expose(Calculator, descriptions: { "add" => "Sum values" })
