@@ -74,7 +74,7 @@ Adoption & integration:
   Add `assert_rpc_success(response, expected)`, `assert_rpc_error(response, code:)`, and `assert_rpc_notification(server, method, params:)` to the optional `reclamo/test_helpers` module.
   *Depends on: nothing.*
 
-- [ ] **stdio adapter**
+- [x] **stdio adapter**
   Ship `Reclamo::Stdio` — a run loop reading JSON-RPC from `$stdin`, writing responses to `$stdout`. Adds signal handling, graceful shutdown, and proper buffering over the manual loop in the README. Critical path for MCP compatibility.
   *Depends on: nothing.*
 

@@ -164,6 +164,7 @@ server.handle(request)  # still works
 - **Chainable API** — all setup methods return `self`
 - **Callable** — `to_proc` enables `requests.map(&server)`
 - **Rack adapter** — `Reclamo::Rack.new(server)` for instant HTTP deployment
+- **stdio adapter** — `Reclamo::Stdio.new(server).run` for CLI/MCP-style integrations
 - **Batch size limit** — `max_batch_size: 100` (default) prevents oversized batch requests
 - **Freezable** — `server.freeze` locks configuration after setup
 
@@ -190,18 +191,19 @@ run Reclamo::Rack.new(server)
 
 #### stdio
 
+Use the built-in stdio adapter:
+
 ```ruby
 require "reclamo"
+require "reclamo/stdio"
 
 server = Reclamo::Server.new
 server.expose(Calculator)
 
-$stdin.each_line do |line|
-  response = server.handle(line)
-  $stdout.puts(response) if response
-  $stdout.flush
-end
+Reclamo::Stdio.new(server).run
 ```
+
+`Reclamo::Stdio` reads newline-delimited JSON-RPC from stdin, writes responses to stdout, skips empty lines, and handles `SIGINT`/`SIGTERM` for graceful shutdown.
 
 ### Pre-parsed input
 

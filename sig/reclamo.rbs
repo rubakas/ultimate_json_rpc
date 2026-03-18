@@ -102,6 +102,13 @@ module Reclamo
     def freeze: () -> self
   end
 
+  class Stdio
+    def initialize: (Server, ?input: IO, ?output: IO) -> void
+    def run: () -> void
+    def stop: () -> void
+    def running?: () -> bool
+  end
+
   class Rack
     def initialize: (Server) -> void
     def call: (Hash[String, untyped]) -> [Integer, Hash[String, String], Array[String]]
