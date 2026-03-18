@@ -17,6 +17,13 @@ module Reclamo
     def initialize: (Integer, String, ?untyped) -> void
   end
 
+  class ServerError < Error
+    attr_reader code: Integer
+    attr_reader rpc_data: untyped
+
+    def initialize: (Integer, String, ?untyped) -> void
+  end
+
   PARSE_ERROR: Integer
   INVALID_REQUEST: Integer
   METHOD_NOT_FOUND: Integer

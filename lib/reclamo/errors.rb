@@ -37,4 +37,19 @@ module Reclamo
       super(message)
     end
   end
+
+  class ServerError < Error
+    attr_reader :code, :rpc_data
+
+    def initialize(code, message, data = nil)
+      unless code.is_a?(Integer) && code >= SERVER_ERROR_MIN && code <= SERVER_ERROR_MAX
+        raise ArgumentError,
+              "server error code must be in range (#{SERVER_ERROR_MIN}..#{SERVER_ERROR_MAX}), got #{code}"
+      end
+
+      @code = code
+      @rpc_data = data
+      super(message)
+    end
+  end
 end

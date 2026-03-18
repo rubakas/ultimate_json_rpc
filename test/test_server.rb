@@ -548,6 +548,41 @@ class TestServerApplicationError < Minitest::Test
   end
 end
 
+class TestServerError < Minitest::Test
+  def test_server_error_allows_server_error_range
+    err = Reclamo::ServerError.new(-32_000, "Server busy")
+    assert_equal(-32_000, err.code)
+    assert_equal "Server busy", err.message
+
+    err2 = Reclamo::ServerError.new(-32_099, "Edge of range")
+    assert_equal(-32_099, err2.code)
+  end
+
+  def test_server_error_rejects_codes_outside_range
+    assert_raises(ArgumentError) { Reclamo::ServerError.new(-32_100, "Too low") }
+    assert_raises(ArgumentError) { Reclamo::ServerError.new(-31_999, "Too high") }
+    assert_raises(ArgumentError) { Reclamo::ServerError.new(1, "Positive") }
+  end
+
+  def test_server_error_with_data
+    err = Reclamo::ServerError.new(-32_000, "Busy", { "retry_after" => 5 })
+    assert_equal({ "retry_after" => 5 }, err.rpc_data)
+  end
+
+  def test_server_error_in_handler
+    server = Reclamo::Server.new
+    server.expose_method("shutdown") do
+      raise Reclamo::ServerError.new(-32_001, "Server shutting down")
+    end
+
+    request = { "jsonrpc" => "2.0", "method" => "shutdown", "id" => 1 }
+    response = JSON.parse(server.handle(JSON.generate(request)))
+
+    assert_equal(-32_001, response["error"]["code"])
+    assert_equal "Server shutting down", response["error"]["message"]
+  end
+end
+
 class TestRequestValidation < Minitest::Test
   def test_empty_method_name_is_invalid
     server = Reclamo::Server.new
@@ -763,6 +798,21 @@ class TestServerMiddleware < Minitest::Test
     server = Reclamo::Server.new
 
     assert_raises(ArgumentError) { server.use }
+  end
+
+  def test_middleware_runs_for_notifications
+    server = Reclamo::Server.new
+    server.expose(Calculator)
+    called = false
+
+    server.use do |_request, next_call|
+      called = true
+      next_call.call
+    end
+
+    request = { "jsonrpc" => "2.0", "method" => "add", "params" => [1, 2] }
+    assert_nil server.handle(JSON.generate(request))
+    assert called
   end
 
   def test_middleware_not_called_for_invalid_requests
