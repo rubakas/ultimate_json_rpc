@@ -10,10 +10,10 @@ module Reclamo
       }
     end
 
-    def self.error(code, id, data: nil)
+    def self.error(code, id, data: nil, message: nil)
       err = {
         "code" => code,
-        "message" => ERROR_MESSAGES.fetch(code, "Unknown error")
+        "message" => message || ERROR_MESSAGES.fetch(code, "Unknown error")
       }
       err["data"] = data if data
       {

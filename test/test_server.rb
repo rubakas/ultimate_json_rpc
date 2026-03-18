@@ -316,6 +316,52 @@ class TestServerDiscover < Minitest::Test
   end
 end
 
+class TestServerApplicationError < Minitest::Test
+  def setup
+    @server = Reclamo::Server.new
+    @server.expose_method("fail_custom") do
+      raise Reclamo::ApplicationError.new(42, "Custom error", { "detail" => "something went wrong" })
+    end
+    @server.expose_method("fail_simple") do
+      raise Reclamo::ApplicationError.new(100, "Simple failure")
+    end
+  end
+
+  def test_application_error_with_data
+    request = { "jsonrpc" => "2.0", "method" => "fail_custom", "id" => 1 }
+    response = JSON.parse(@server.handle(JSON.generate(request)))
+
+    assert_equal 42, response["error"]["code"]
+    assert_equal "Custom error", response["error"]["message"]
+    assert_equal({ "detail" => "something went wrong" }, response["error"]["data"])
+  end
+
+  def test_application_error_without_data
+    request = { "jsonrpc" => "2.0", "method" => "fail_simple", "id" => 1 }
+    response = JSON.parse(@server.handle(JSON.generate(request)))
+
+    assert_equal 100, response["error"]["code"]
+    assert_equal "Simple failure", response["error"]["message"]
+    refute response["error"].key?("data")
+  end
+
+  def test_application_error_notification_returns_nil
+    request = { "jsonrpc" => "2.0", "method" => "fail_custom" }
+
+    assert_nil @server.handle(JSON.generate(request))
+  end
+end
+
+class TestRequestValidation < Minitest::Test
+  def test_empty_method_name_is_invalid
+    server = Reclamo::Server.new
+    request = { "jsonrpc" => "2.0", "method" => "", "id" => 1 }
+    response = JSON.parse(server.handle(JSON.generate(request)))
+
+    assert_equal(-32_600, response["error"]["code"])
+  end
+end
+
 class TestHandler < Minitest::Test
   def test_method_query
     handler = Reclamo::Handler.new

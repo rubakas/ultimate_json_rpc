@@ -78,13 +78,16 @@ module Reclamo
     def error_response_for(request, err)
       return nil if request.notification?
 
+      code, message, data = error_details(err)
+      Response.error(code, request.id, data: data, message: message)
+    end
+
+    def error_details(err)
       case err
-      when MethodNotFound
-        Response.error(METHOD_NOT_FOUND, request.id)
-      when ArgumentError
-        Response.error(INVALID_PARAMS, request.id, data: err.message)
-      else
-        Response.error(INTERNAL_ERROR, request.id, data: err.message)
+      when MethodNotFound then [METHOD_NOT_FOUND, nil, nil]
+      when ApplicationError then [err.code, err.message, err.rpc_data]
+      when ArgumentError then [INVALID_PARAMS, nil, err.message]
+      else [INTERNAL_ERROR, nil, err.message]
       end
     end
   end

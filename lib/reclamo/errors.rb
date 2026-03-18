@@ -14,4 +14,14 @@ module Reclamo
     INVALID_PARAMS => "Invalid params",
     INTERNAL_ERROR => "Internal error"
   }.freeze
+
+  class ApplicationError < Error
+    attr_reader :code, :rpc_data
+
+    def initialize(code, message, data = nil)
+      @code = code
+      @rpc_data = data
+      super(message)
+    end
+  end
 end

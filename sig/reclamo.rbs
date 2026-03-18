@@ -10,6 +10,13 @@ module Reclamo
   class MethodNotFound < Error
   end
 
+  class ApplicationError < Error
+    attr_reader code: Integer
+    attr_reader rpc_data: untyped
+
+    def initialize: (Integer, String, ?untyped) -> void
+  end
+
   PARSE_ERROR: Integer
   INVALID_REQUEST: Integer
   METHOD_NOT_FOUND: Integer
@@ -28,7 +35,7 @@ module Reclamo
 
   module Response
     def self.success: (untyped, untyped) -> Hash[String, untyped]
-    def self.error: (Integer, untyped, ?data: String?) -> Hash[String, untyped]
+    def self.error: (Integer, untyped, ?data: untyped, ?message: String?) -> Hash[String, untyped]
   end
 
   class Handler

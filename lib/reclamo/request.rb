@@ -20,7 +20,7 @@ module Reclamo
     def validate!(data)
       raise InvalidRequest unless data.is_a?(Hash)
       raise InvalidRequest unless data["jsonrpc"] == "2.0"
-      raise InvalidRequest unless data["method"].is_a?(String)
+      raise InvalidRequest unless data["method"].is_a?(String) && !data["method"].empty?
 
       validate_params!(data["params"]) if data.key?("params")
 
