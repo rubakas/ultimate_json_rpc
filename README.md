@@ -224,11 +224,16 @@ class MyTest < Minitest::Test
 
   def test_addition
     response = rpc_call(server, "add", params: [2, 3])
-    assert_equal 5, response["result"]
+    assert_rpc_success response, 5
+  end
+
+  def test_method_not_found
+    response = rpc_call(server, "nonexistent")
+    assert_rpc_error response, code: -32_601
   end
 
   def test_notification
-    assert_nil rpc_notify(server, "add", params: [1, 2])
+    assert_rpc_notification server, "add", params: [1, 2]
   end
 end
 ```

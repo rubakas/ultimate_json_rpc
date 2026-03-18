@@ -62,4 +62,77 @@ class TestTestHelpers < Minitest::Test
 
     assert_nil rpc_batch(@server, *requests)
   end
+
+  # assert_rpc_success
+
+  def test_assert_rpc_success_passes_for_success_response
+    response = rpc_call(@server, "add", params: [2, 3])
+    assert_rpc_success(response)
+  end
+
+  def test_assert_rpc_success_with_expected_value
+    response = rpc_call(@server, "add", params: [2, 3])
+    assert_rpc_success(response, 5)
+  end
+
+  def test_assert_rpc_success_fails_for_error_response
+    response = rpc_call(@server, "nonexistent")
+    assert_raises(Minitest::Assertion) { assert_rpc_success(response) }
+  end
+
+  def test_assert_rpc_success_fails_for_wrong_value
+    response = rpc_call(@server, "add", params: [2, 3])
+    assert_raises(Minitest::Assertion) { assert_rpc_success(response, 99) }
+  end
+
+  def test_assert_rpc_success_with_nil_result
+    server = Reclamo::Server.new
+    server.expose_method("noop") { nil }
+    response = rpc_call(server, "noop")
+    assert_rpc_success(response, nil)
+  end
+
+  # assert_rpc_error
+
+  def test_assert_rpc_error_passes_for_error_response
+    response = rpc_call(@server, "nonexistent")
+    assert_rpc_error(response)
+  end
+
+  def test_assert_rpc_error_with_code
+    response = rpc_call(@server, "nonexistent")
+    assert_rpc_error(response, code: -32_601)
+  end
+
+  def test_assert_rpc_error_with_message
+    response = rpc_call(@server, "nonexistent")
+    assert_rpc_error(response, message: "Method not found")
+  end
+
+  def test_assert_rpc_error_with_code_and_message
+    response = rpc_call(@server, "nonexistent")
+    assert_rpc_error(response, code: -32_601, message: "Method not found")
+  end
+
+  def test_assert_rpc_error_fails_for_success_response
+    response = rpc_call(@server, "add", params: [1, 2])
+    assert_raises(Minitest::Assertion) { assert_rpc_error(response) }
+  end
+
+  def test_assert_rpc_error_fails_for_wrong_code
+    response = rpc_call(@server, "nonexistent")
+    assert_raises(Minitest::Assertion) { assert_rpc_error(response, code: 999) }
+  end
+
+  # assert_rpc_notification
+
+  def test_assert_rpc_notification_passes
+    assert_rpc_notification(@server, "add", params: [1, 2])
+  end
+
+  def test_assert_rpc_notification_without_params
+    server = Reclamo::Server.new
+    server.expose(Greeter.new("Hi"))
+    assert_rpc_notification(server, "hello")
+  end
 end

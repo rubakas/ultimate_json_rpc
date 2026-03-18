@@ -112,5 +112,8 @@ module Reclamo
     def rpc_call: (Server, String, ?params: untyped, ?id: String | Integer) -> Hash[String, untyped]
     def rpc_notify: (Server, String, ?params: untyped) -> nil
     def rpc_batch: (Server, *Hash[String, untyped]) -> Array[Hash[String, untyped]]?
+    def assert_rpc_success: (Hash[String, untyped], ?untyped, ?String?) -> void
+    def assert_rpc_error: (Hash[String, untyped], ?code: Integer?, ?message: String?, ?msg: String?) -> void
+    def assert_rpc_notification: (Server, String, ?params: untyped, ?msg: String?) -> void
   end
 end

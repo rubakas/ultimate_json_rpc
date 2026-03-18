@@ -70,7 +70,7 @@ Reliability & performance:
 
 Adoption & integration:
 
-- [ ] **Richer test helpers**
+- [x] **Richer test helpers**
   Add `assert_rpc_success(response, expected)`, `assert_rpc_error(response, code:)`, and `assert_rpc_notification(server, method, params:)` to the optional `reclamo/test_helpers` module.
   *Depends on: nothing.*
 
