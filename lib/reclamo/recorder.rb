@@ -5,8 +5,9 @@ module Reclamo
     UNSET = Object.new.freeze
     private_constant :UNSET
 
-    def initialize(server, output: nil, json: JSON)
+    def initialize(server, output: nil, max_exchanges: nil, json: JSON)
       @exchanges = []
+      @max_exchanges = max_exchanges
       @output = output
       @json = json
       @mutex = Mutex.new
@@ -44,8 +45,9 @@ module Reclamo
       entry["error"] = error if error
       @mutex.synchronize do
         @exchanges << entry
-        write_output(entry)
+        @exchanges.shift if @max_exchanges && @exchanges.size > @max_exchanges
       end
+      write_output(entry)
     end
 
     def write_output(entry)

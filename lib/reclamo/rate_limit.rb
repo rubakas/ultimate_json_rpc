@@ -41,7 +41,7 @@ module Reclamo
     end
 
     def evict_stale!(now)
-      @windows.delete_if { |_, w| w.none? { |t| now - t <= @period } } if @windows.size > 100
+      @windows.delete_if { |_, w| w.none? { |t| now - t <= @period } } if @windows.size > 20
     end
   end
 

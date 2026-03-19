@@ -106,6 +106,18 @@ class TestAuthorize < Minitest::Test
     assert_raises(ArgumentError) { server.authorize("add") }
   end
 
+  def test_rejects_reserved_code_at_setup
+    server = Reclamo::Server.new
+
+    assert_raises(ArgumentError) { server.authorize(code: -32_000) { |_req| false } }
+  end
+
+  def test_rejects_non_integer_code_at_setup
+    server = Reclamo::Server.new
+
+    assert_raises(ArgumentError) { server.authorize(code: "403") { |_req| false } }
+  end
+
   def test_multiple_patterns
     server = build_server
     server.authorize("add", "divide") { |_req| false }

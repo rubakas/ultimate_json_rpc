@@ -2,6 +2,7 @@
 
 require "test_helper"
 require "json"
+require "support/discover_helper"
 
 class TestParamValidationType < Minitest::Test
   def test_string_type_passes

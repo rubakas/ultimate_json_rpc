@@ -43,7 +43,7 @@ module Reclamo
             req, i = queue.pop(true)
             result = safe_serialize(req)
             mutex.synchronize { results[i] = result }
-          rescue ThreadError
+          rescue StandardError
             break
           end
         end
@@ -98,12 +98,24 @@ module Reclamo
     def authorize(*patterns, code: 403, message: "Forbidden", &block)
       raise ArgumentError, "block required" unless block
 
+      validate_authorize_code!(code)
+
       opts = patterns.empty? ? {} : { only: patterns }
       use(**opts) do |request, next_call|
         raise ApplicationError.new(code:, message:) unless block.call(request)
 
         next_call.call
       end
+    end
+
+    private
+
+    def validate_authorize_code!(code)
+      raise ArgumentError, "authorize code must be an Integer" unless code.is_a?(Integer)
+      return unless code.between?(RESERVED_ERROR_MIN, RESERVED_ERROR_MAX)
+
+      raise ArgumentError,
+            "authorize code #{code} is in the reserved JSON-RPC range (#{RESERVED_ERROR_MIN}..#{RESERVED_ERROR_MAX})"
     end
   end
   private_constant :ServerExtensions
@@ -226,8 +238,8 @@ module Reclamo
 
     def execute_request(request)
       emit(:request, request)
-      result, error, duration = timed_dispatch(request)
-      error ? handle_dispatch_error(request:, error:, duration:) : handle_dispatch_success(request, result)
+      result, error, _duration = timed_dispatch(request)
+      error ? handle_dispatch_error(request:, error:) : handle_dispatch_success(request, result)
     end
 
     def timed_dispatch(request)
@@ -246,7 +258,7 @@ module Reclamo
       request.notification? ? nil : Response.success(result, request.id)
     end
 
-    def handle_dispatch_error(request:, error:, duration:) # rubocop:disable Lint/UnusedMethodArgument
+    def handle_dispatch_error(request:, error:)
       return nil if request.notification?
 
       code, message, data = error_details(error)

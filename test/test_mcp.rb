@@ -4,7 +4,27 @@ require "test_helper"
 require "reclamo/mcp"
 require "json"
 
+# Helper used by all MCP test classes
+module MCPTestHelper
+  private
+
+  def mcp_call(mcp, method, params = nil)
+    mcp_server = mcp.instance_variable_get(:@mcp_server)
+    request = { "jsonrpc" => "2.0", "method" => method, "id" => 1 }
+    request["params"] = params if params
+    JSON.parse(mcp_server.handle(JSON.generate(request)))["result"]
+  end
+
+  def mcp_notify(mcp, method)
+    mcp_server = mcp.instance_variable_get(:@mcp_server)
+    request = { "jsonrpc" => "2.0", "method" => method }
+    mcp_server.handle(JSON.generate(request))
+  end
+end
+
 class TestMCPInitialize < Minitest::Test
+  include MCPTestHelper
+
   def test_initialize_returns_protocol_version
     result = mcp_call(build_mcp, "initialize")
 
@@ -41,6 +61,8 @@ class TestMCPInitialize < Minitest::Test
 end
 
 class TestMCPToolsList < Minitest::Test
+  include MCPTestHelper
+
   def test_tools_list_returns_methods
     mcp = build_mcp
     result = mcp_call(mcp, "tools/list")
@@ -138,6 +160,8 @@ class TestMCPToolsList < Minitest::Test
 end
 
 class TestMCPToolsCall < Minitest::Test
+  include MCPTestHelper
+
   def test_call_positional_method
     mcp = build_mcp
     result = mcp_call(mcp, "tools/call", { "name" => "add", "arguments" => { "left" => 2, "right" => 3 } })
@@ -180,6 +204,13 @@ class TestMCPToolsCall < Minitest::Test
 
     assert_equal true, result["isError"]
     assert_match(/not found/i, result["content"][0]["text"])
+  end
+
+  def test_call_nonexistent_method_with_arguments_returns_error
+    mcp = build_mcp
+    result = mcp_call(mcp, "tools/call", { "name" => "nonexistent", "arguments" => { "x" => 1 } })
+
+    assert_equal true, result["isError"]
   end
 
   def test_call_with_empty_arguments
@@ -247,6 +278,8 @@ class TestMCPToolsCall < Minitest::Test
 end
 
 class TestMCPFreezes < Minitest::Test
+  include MCPTestHelper
+
   def test_freezes_server_on_init
     server = Reclamo::Server.new
     server.expose(Calculator)
@@ -257,6 +290,8 @@ class TestMCPFreezes < Minitest::Test
 end
 
 class TestMCPLifecycle < Minitest::Test
+  include MCPTestHelper
+
   def test_running_returns_false_before_run
     server = Reclamo::Server.new
     server.expose(Calculator)
@@ -275,6 +310,8 @@ class TestMCPLifecycle < Minitest::Test
 end
 
 class TestMCPNotifications < Minitest::Test
+  include MCPTestHelper
+
   def test_initialized_notification
     server = Reclamo::Server.new
     server.expose(Calculator)
@@ -282,28 +319,4 @@ class TestMCPNotifications < Minitest::Test
 
     assert_nil mcp_notify(mcp, "notifications/initialized")
   end
-end
-
-# Helper used by all MCP test classes
-module MCPTestHelper
-  private
-
-  def mcp_call(mcp, method, params = nil)
-    mcp_server = mcp.instance_variable_get(:@mcp_server)
-    request = { "jsonrpc" => "2.0", "method" => method, "id" => 1 }
-    request["params"] = params if params
-    JSON.parse(mcp_server.handle(JSON.generate(request)))["result"]
-  end
-
-  def mcp_notify(mcp, method)
-    mcp_server = mcp.instance_variable_get(:@mcp_server)
-    request = { "jsonrpc" => "2.0", "method" => method }
-    mcp_server.handle(JSON.generate(request))
-  end
-end
-
-# Include the helper in all MCP test classes
-[TestMCPInitialize, TestMCPToolsList, TestMCPToolsCall, TestMCPFreezes,
- TestMCPLifecycle, TestMCPNotifications].each do |klass|
-  klass.include(MCPTestHelper)
 end

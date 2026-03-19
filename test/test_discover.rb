@@ -2,6 +2,7 @@
 
 require "test_helper"
 require "json"
+require "support/discover_helper"
 
 class TestServerDiscover < Minitest::Test
   def test_rpc_discover_returns_method_names
@@ -106,8 +107,6 @@ class TestServerDiscover < Minitest::Test
     JSON.parse(server.handle(JSON.generate(request)))["result"]["methods"]
   end
 end
-
-require "support/discover_helper"
 
 class TestServerDiscoverOpenRPC < Minitest::Test
   include DiscoverHelper

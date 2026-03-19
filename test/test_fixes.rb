@@ -2,6 +2,11 @@
 
 require "test_helper"
 require "json"
+require "support/discover_helper"
+require "reclamo/profiler"
+require "reclamo/rate_limit"
+require "reclamo/tcp"
+require "reclamo/recorder"
 
 class TestHandleRescueScope < Minitest::Test
   def test_handle_returns_parse_error_for_invalid_json
@@ -106,7 +111,6 @@ end
 
 class TestProfilerMaxSamples < Minitest::Test
   def test_durations_capped_at_max_samples
-    require "reclamo/profiler"
     server = Reclamo::Server.new
     server.expose(Calculator)
     profiler = Reclamo::Profiler.new(server, max_samples: 5)
@@ -122,14 +126,12 @@ class TestProfilerMaxSamples < Minitest::Test
   end
 
   def test_default_max_samples
-    require "reclamo/profiler"
     assert_equal 10_000, Reclamo::Profiler::DEFAULT_MAX_SAMPLES
   end
 end
 
 class TestRateLimiterEviction < Minitest::Test
   def test_stale_windows_evicted
-    require "reclamo/rate_limit"
     limiter = Reclamo::RateLimiter.new(max: 1, period: 0.001, key: ->(req) { req.method_name }) # rubocop:disable Style/SymbolProc
 
     server = Reclamo::Server.new
@@ -157,14 +159,12 @@ end
 
 class TestTCPConnectionLimit < Minitest::Test
   def test_default_max_connections
-    require "reclamo/tcp"
     assert_equal 64, Reclamo::TCP::DEFAULT_MAX_CONNECTIONS
   end
 end
 
 class TestRecorderThreadSafety < Minitest::Test
   def test_exchanges_returns_snapshot
-    require "reclamo/recorder"
     server = Reclamo::Server.new
     server.expose(Calculator)
     recorder = Reclamo::Recorder.new(server)
@@ -181,7 +181,6 @@ class TestRecorderThreadSafety < Minitest::Test
   end
 
   def test_size_is_synchronized
-    require "reclamo/recorder"
     server = Reclamo::Server.new
     server.expose(Calculator)
     recorder = Reclamo::Recorder.new(server)
@@ -195,7 +194,6 @@ end
 
 class TestRecorderCustomJson < Minitest::Test
   def test_recorder_uses_custom_json_adapter
-    require "reclamo/recorder"
     output = StringIO.new
     server = Reclamo::Server.new
     server.expose(Calculator)

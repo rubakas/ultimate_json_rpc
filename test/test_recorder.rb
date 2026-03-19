@@ -187,6 +187,35 @@ class TestRecorder < Minitest::Test
   end
 end
 
+class TestRecorderMaxExchanges < Minitest::Test
+  def test_exchanges_capped_at_max
+    server = Reclamo::Server.new
+    server.expose(Calculator)
+    recorder = Reclamo::Recorder.new(server, max_exchanges: 3)
+
+    5.times do |i|
+      server.handle("{\"jsonrpc\":\"2.0\",\"method\":\"add\",\"params\":[#{i},1],\"id\":#{i}}")
+    end
+
+    assert_equal 3, recorder.size
+    # Should retain the most recent entries (oldest shifted out)
+    methods = recorder.exchanges.map { |e| e["params"][0] }
+    assert_equal [2, 3, 4], methods
+  end
+
+  def test_nil_max_exchanges_means_unbounded
+    server = Reclamo::Server.new
+    server.expose(Calculator)
+    recorder = Reclamo::Recorder.new(server)
+
+    5.times do |i|
+      server.handle("{\"jsonrpc\":\"2.0\",\"method\":\"add\",\"params\":[#{i},1],\"id\":#{i}}")
+    end
+
+    assert_equal 5, recorder.size
+  end
+end
+
 class TestRecorderIOErrors < Minitest::Test
   def test_io_error_does_not_deadlock
     broken_io = Object.new

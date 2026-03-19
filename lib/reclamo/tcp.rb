@@ -36,7 +36,10 @@ module Reclamo
       @mutex.synchronize { @running = false }
       close_server
       threads = @mutex.synchronize { @client_threads.dup }
-      threads.each { |t| t.join(5) }
+      threads.each do |t|
+        t.join(5)
+        t.kill if t.alive?
+      end
     end
 
     def running? = @mutex.synchronize { @running }
@@ -48,7 +51,7 @@ module Reclamo
         next unless tcp_server.wait_readable(0.5)
 
         client = accept_client
-        break unless client
+        next unless client
 
         accept_or_reject(client)
       end
@@ -62,7 +65,7 @@ module Reclamo
 
     def accept_client
       tcp_server.accept
-    rescue IOError, Errno::EBADF
+    rescue IOError, Errno::EBADF, Errno::EMFILE, Errno::ENFILE, Errno::ECONNABORTED
       nil
     end
 
@@ -115,15 +118,20 @@ module Reclamo
     end
 
     def close_server
-      server = @mutex.synchronize { @tcp_server }
+      server = @mutex.synchronize do
+        s = @tcp_server
+        @tcp_server = nil
+        s
+      end
       server&.close
     rescue IOError, Errno::EBADF
       # Already closed
     end
 
     def trap_signals
-      # Signal handlers must not perform I/O; only set the flag.
-      # The accept_loop uses IO.select with a timeout to notice the change.
+      # Signal handlers set @running directly (no mutex). This is safe on MRI
+      # where boolean assignment is atomic. The accept_loop checks
+      # @running via mutex on each iteration, picking up the change.
       %w[INT TERM].each do |signal|
         Signal.trap(signal) { @running = false }
       rescue ArgumentError

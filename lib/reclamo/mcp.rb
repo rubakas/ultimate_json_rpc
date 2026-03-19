@@ -64,7 +64,7 @@ module Reclamo
 
       response = @json.parse(raw)
       format_call_response(response)
-    rescue ArgumentError => e
+    rescue StandardError => e
       { "content" => [{ "type" => "text", "text" => e.message }], "isError" => true }
     end
 
@@ -127,7 +127,7 @@ module Reclamo
 
     def format_call_response(response)
       if response&.key?("error")
-        { "content" => [{ "type" => "text", "text" => response.dig("error", "message") }], "isError" => true }
+        { "content" => [{ "type" => "text", "text" => response.dig("error", "message").to_s }], "isError" => true }
       else
         result = response&.fetch("result", nil)
         text = result.is_a?(String) ? result : @json.generate(result)
