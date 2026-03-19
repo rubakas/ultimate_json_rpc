@@ -135,11 +135,13 @@ module Reclamo
 
     class TCP
       DEFAULT_MAX_CONNECTIONS: Integer
+      MAX_LINE_BYTES: Integer
 
       def initialize: (Server, port: Integer, ?host: String, ?max_connections: Integer) -> void
       def run: () -> void
       def stop: () -> void
       def running?: () -> bool
+      def port: () -> Integer?
     end
 
     class WebSocket
