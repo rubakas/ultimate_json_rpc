@@ -92,12 +92,11 @@ module Reclamo
   class Handler
     include ParamValidator
 
+    Entry = Struct.new(:callable, :description, :returns, :deprecated, :params_schema)
+    private_constant :Entry
+
     def initialize
-      @targets = {}
-      @descriptions = {}
-      @returns = {}
-      @deprecated = {}
-      @params_schemas = {}
+      @entries = {}
     end
 
     def expose(target, namespace: nil, only: nil, except: nil, descriptions: nil, returns: nil, deprecated: nil,
@@ -116,53 +115,54 @@ module Reclamo
       callable = resolve_callable(callable, block)
       name = name.to_s
       validate_method_name!(name)
-      @targets[name] = callable
-      @descriptions[name] = description.to_s if description
-      @returns[name] = returns if returns
-      @deprecated[name] = deprecated == true ? true : deprecated.to_s if deprecated
-      @params_schemas[name] = params_schema.transform_keys(&:to_s) if params_schema
+      @entries[name] = Entry.new(
+        callable: callable,
+        description: description&.to_s,
+        returns: returns,
+        deprecated: normalize_deprecated(deprecated),
+        params_schema: params_schema&.transform_keys(&:to_s)
+      )
     end
 
     def call(method_name, params)
-      entry = @targets[method_name]
+      entry = @entries[method_name]
       raise MethodNotFound, method_name unless entry
 
-      callable = resolve_entry(entry)
-      validate_params!(callable, params, @params_schemas[method_name])
-      invoke_callable(callable, params)
+      validate_params!(entry.callable, params, entry.params_schema)
+      invoke_callable(entry.callable, params)
     end
 
-    def method?(method_name) = @targets.key?(method_name)
-    def methods_list = @targets.keys.sort
-    def methods_info = @targets.keys.sort.map { |name| method_info(name) }
-    def size = @targets.size
-    def empty? = @targets.empty?
+    def method?(method_name) = @entries.key?(method_name)
+    def methods_list = @entries.keys.sort
+    def methods_info = @entries.keys.sort.map { |name| method_info(name) }
+    def size = @entries.size
+    def empty? = @entries.empty?
 
     def freeze
-      @targets.each_value { |v| v.freeze if v.is_a?(Array) }
-      [@targets, @descriptions, @returns, @deprecated, @params_schemas].each(&:freeze)
+      @entries.each_value(&:freeze)
+      @entries.freeze
       super
     end
 
     private
 
     def method_info(name)
-      callable = resolve_entry(@targets[name])
+      entry = @entries[name]
       info = { "name" => name }
-      add_method_metadata(info:, name:, callable:)
+      add_method_metadata(info:, entry:)
       info
     end
 
-    def add_method_metadata(info:, name:, callable:)
-      info["description"] = @descriptions[name] if @descriptions.key?(name)
-      add_params(info:, name:, callable:)
-      info["result"] = build_result(@returns[name]) if @returns.key?(name)
-      info["deprecated"] = @deprecated[name] if @deprecated.key?(name)
+    def add_method_metadata(info:, entry:)
+      info["description"] = entry.description if entry.description
+      add_params(info:, entry:)
+      info["result"] = build_result(entry.returns) if entry.returns
+      info["deprecated"] = entry.deprecated if entry.deprecated
     end
 
-    def add_params(info:, name:, callable:)
-      schema = @params_schemas[name]
-      params = callable.parameters.filter_map { |type, pname| param_descriptor(type:, pname:, schema:) }
+    def add_params(info:, entry:)
+      schema = entry.params_schema
+      params = entry.callable.parameters.filter_map { |type, pname| param_descriptor(type:, pname:, schema:) }
       info["params"] = params unless params.empty?
     end
 
@@ -172,10 +172,6 @@ module Reclamo
       when String then { "name" => "result", "schema" => { "type" => returns } }
       else { "name" => "result", "schema" => returns }
       end
-    end
-
-    def resolve_entry(entry)
-      entry.is_a?(Array) ? entry[0].method(entry[1].to_sym) : entry
     end
 
     def param_descriptor(type:, pname:, schema:)
@@ -190,26 +186,24 @@ module Reclamo
     def register_exposed(prefix:, method_name:, target:, descriptions:, returns:, deprecated:, params_schema:)
       full_name = "#{prefix}#{method_name}"
       validate_method_name!(full_name)
-      @targets[full_name] = [target, method_name]
-      store_metadata(full_name:, method_name:, store: @descriptions, source: descriptions, &:to_s)
-      store_metadata(full_name:, method_name:, store: @returns, source: returns)
-      store_metadata(full_name:, method_name:, store: @deprecated, source: deprecated) do |v|
-        v == true ? true : v.to_s
-      end
-      store_metadata(full_name:, method_name:, store: @params_schemas,
-                     source: params_schema) { |v| v.transform_keys(&:to_s) }
+      @entries[full_name] = Entry.new(
+        callable: target.method(method_name.to_sym),
+        description: extract_metadata(descriptions, method_name)&.to_s,
+        returns: extract_metadata(returns, method_name),
+        deprecated: normalize_deprecated(extract_metadata(deprecated, method_name)),
+        params_schema: extract_metadata(params_schema, method_name)&.then { |v| v.transform_keys(&:to_s) }
+      )
     end
 
-    def store_metadata(full_name:, method_name:, store:, source:, &transform)
-      return unless source.is_a?(Hash)
+    def normalize_deprecated(value)
+      return nil unless value
 
-      value = metadata_value(source, method_name)
-      return unless value
-
-      store[full_name] = transform ? transform.call(value) : value
+      value == true ? true : value.to_s
     end
 
-    def metadata_value(source, method_name)
+    def extract_metadata(source, method_name)
+      return nil unless source.is_a?(Hash)
+
       sym_key = method_name.to_sym
       return source[sym_key] if source.key?(sym_key)
 
@@ -246,7 +240,7 @@ module Reclamo
       raise ArgumentError, "method names starting with 'rpc.' are reserved" if name.start_with?("rpc.")
 
       validate_segments!(name)
-      raise ArgumentError, "method '#{name}' is already registered" if @targets.key?(name)
+      raise ArgumentError, "method '#{name}' is already registered" if @entries.key?(name)
     end
 
     def validate_segments!(name)

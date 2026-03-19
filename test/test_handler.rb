@@ -334,13 +334,3 @@ class TestHandlerDangerousMethods < Minitest::Test
     end
   end
 end
-
-class TestHandlerFreezeTargetArrays < Minitest::Test
-  def test_target_arrays_frozen_after_freeze
-    handler = Reclamo::Handler.new
-    handler.expose(Calculator)
-    handler.freeze
-
-    assert_predicate handler, :frozen?
-  end
-end

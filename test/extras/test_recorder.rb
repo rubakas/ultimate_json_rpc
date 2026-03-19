@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 require "test_helper"
-require "reclamo/recorder"
+require "reclamo/extras/recorder"
 require "json"
 require "stringio"
 
@@ -83,7 +83,7 @@ class TestRecorder < Minitest::Test
     output = StringIO.new
     server = Reclamo::Server.new
     server.expose(Calculator)
-    Reclamo::Recorder.new(server, output:)
+    Reclamo::Extras::Recorder.new(server, output:)
     server.handle('{"jsonrpc":"2.0","method":"add","params":[2,3],"id":1}')
 
     line = JSON.parse(output.string.strip)
@@ -95,7 +95,7 @@ class TestRecorder < Minitest::Test
     output = StringIO.new
     server = Reclamo::Server.new
     server.expose(Calculator)
-    Reclamo::Recorder.new(server, output:)
+    Reclamo::Extras::Recorder.new(server, output:)
     server.handle('{"jsonrpc":"2.0","method":"add","params":[1,2],"id":1}')
     server.handle('{"jsonrpc":"2.0","method":"add","params":[3,4],"id":2}')
 
@@ -108,7 +108,7 @@ class TestRecorder < Minitest::Test
   def test_thread_safe_with_concurrent_batches
     server = Reclamo::Server.new(concurrent_batches: true)
     server.expose(Calculator)
-    recorder = Reclamo::Recorder.new(server)
+    recorder = Reclamo::Extras::Recorder.new(server)
     batch = 10.times.map { |i| { "jsonrpc" => "2.0", "method" => "add", "params" => [i, 1], "id" => i } }
     server.handle(JSON.generate(batch))
 
@@ -134,7 +134,7 @@ class TestRecorder < Minitest::Test
   def test_records_false_result
     server = Reclamo::Server.new
     server.expose_method("falsy") { false }
-    recorder = Reclamo::Recorder.new(server)
+    recorder = Reclamo::Extras::Recorder.new(server)
     server.handle('{"jsonrpc":"2.0","method":"falsy","id":1}')
 
     assert_equal false, recorder.exchanges[0]["result"]
@@ -143,7 +143,7 @@ class TestRecorder < Minitest::Test
   def test_records_zero_result
     server = Reclamo::Server.new
     server.expose_method("zero") { 0 }
-    recorder = Reclamo::Recorder.new(server)
+    recorder = Reclamo::Extras::Recorder.new(server)
     server.handle('{"jsonrpc":"2.0","method":"zero","id":1}')
 
     assert_equal 0, recorder.exchanges[0]["result"]
@@ -152,7 +152,7 @@ class TestRecorder < Minitest::Test
   def test_records_empty_string_result
     server = Reclamo::Server.new
     server.expose_method("empty") { "" }
-    recorder = Reclamo::Recorder.new(server)
+    recorder = Reclamo::Extras::Recorder.new(server)
     server.handle('{"jsonrpc":"2.0","method":"empty","id":1}')
 
     assert_equal "", recorder.exchanges[0]["result"]
@@ -161,7 +161,7 @@ class TestRecorder < Minitest::Test
   def test_records_nil_result
     server = Reclamo::Server.new
     server.expose_method("nil_method") { nil }
-    recorder = Reclamo::Recorder.new(server)
+    recorder = Reclamo::Extras::Recorder.new(server)
     server.handle('{"jsonrpc":"2.0","method":"nil_method","id":1}')
 
     assert recorder.exchanges[0].key?("result")
@@ -171,7 +171,7 @@ class TestRecorder < Minitest::Test
   def test_keyword_params_recorded
     server = Reclamo::Server.new
     server.expose(Greeter.new("Hi"))
-    recorder = Reclamo::Recorder.new(server)
+    recorder = Reclamo::Extras::Recorder.new(server)
     server.handle('{"jsonrpc":"2.0","method":"greet","params":{"name":"Alice"},"id":1}')
 
     assert_equal({ "name" => "Alice" }, recorder.exchanges[0]["params"])
@@ -182,7 +182,7 @@ class TestRecorder < Minitest::Test
   def build_recorded_server
     server = Reclamo::Server.new
     server.expose(Calculator)
-    recorder = Reclamo::Recorder.new(server)
+    recorder = Reclamo::Extras::Recorder.new(server)
     [server, recorder]
   end
 end
@@ -191,7 +191,7 @@ class TestRecorderMaxExchanges < Minitest::Test
   def test_exchanges_capped_at_max
     server = Reclamo::Server.new
     server.expose(Calculator)
-    recorder = Reclamo::Recorder.new(server, max_exchanges: 3)
+    recorder = Reclamo::Extras::Recorder.new(server, max_exchanges: 3)
 
     5.times do |i|
       server.handle("{\"jsonrpc\":\"2.0\",\"method\":\"add\",\"params\":[#{i},1],\"id\":#{i}}")
@@ -206,7 +206,7 @@ class TestRecorderMaxExchanges < Minitest::Test
   def test_nil_max_exchanges_means_unbounded
     server = Reclamo::Server.new
     server.expose(Calculator)
-    recorder = Reclamo::Recorder.new(server)
+    recorder = Reclamo::Extras::Recorder.new(server)
 
     5.times do |i|
       server.handle("{\"jsonrpc\":\"2.0\",\"method\":\"add\",\"params\":[#{i},1],\"id\":#{i}}")
@@ -227,7 +227,7 @@ class TestRecorderIOErrors < Minitest::Test
 
     server = Reclamo::Server.new
     server.expose(Calculator)
-    recorder = Reclamo::Recorder.new(server, output: broken_io)
+    recorder = Reclamo::Extras::Recorder.new(server, output: broken_io)
 
     server.handle('{"jsonrpc":"2.0","method":"add","params":[1,2],"id":1}')
     server.handle('{"jsonrpc":"2.0","method":"add","params":[3,4],"id":2}')
@@ -240,7 +240,7 @@ class TestRecorderParseError < Minitest::Test
   def test_parse_error_not_recorded
     server = Reclamo::Server.new
     server.expose(Calculator)
-    recorder = Reclamo::Recorder.new(server)
+    recorder = Reclamo::Extras::Recorder.new(server)
 
     server.handle("not json")
 
@@ -252,7 +252,7 @@ class TestRecorderThreadSafety < Minitest::Test
   def test_exchanges_returns_snapshot
     server = Reclamo::Server.new
     server.expose(Calculator)
-    recorder = Reclamo::Recorder.new(server)
+    recorder = Reclamo::Extras::Recorder.new(server)
 
     request = { "jsonrpc" => "2.0", "method" => "add", "params" => [1, 2], "id" => 1 }
     server.handle(JSON.generate(request))
@@ -267,7 +267,7 @@ class TestRecorderThreadSafety < Minitest::Test
   def test_size_is_synchronized
     server = Reclamo::Server.new
     server.expose(Calculator)
-    recorder = Reclamo::Recorder.new(server)
+    recorder = Reclamo::Extras::Recorder.new(server)
 
     request = { "jsonrpc" => "2.0", "method" => "add", "params" => [1, 2], "id" => 1 }
     server.handle(JSON.generate(request))
@@ -281,7 +281,7 @@ class TestRecorderCustomJson < Minitest::Test
     output = StringIO.new
     server = Reclamo::Server.new
     server.expose(Calculator)
-    recorder = Reclamo::Recorder.new(server, output: output, json: JSON)
+    recorder = Reclamo::Extras::Recorder.new(server, output: output, json: JSON)
 
     request = { "jsonrpc" => "2.0", "method" => "add", "params" => [1, 2], "id" => 1 }
     server.handle(JSON.generate(request))
@@ -296,7 +296,7 @@ class TestRecorderConcurrentOutput < Minitest::Test
     output = StringIO.new
     server = Reclamo::Server.new(concurrent_batches: true)
     server.expose(Calculator)
-    Reclamo::Recorder.new(server, output: output)
+    Reclamo::Extras::Recorder.new(server, output: output)
 
     requests = 10.times.map { |i| { "jsonrpc" => "2.0", "method" => "add", "params" => [i, 1], "id" => i } }
     server.handle(JSON.generate(requests))

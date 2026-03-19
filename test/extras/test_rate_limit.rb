@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 require "test_helper"
-require "reclamo/rate_limit"
+require "reclamo/extras/rate_limit"
 require "json"
 
 class TestRateLimit < Minitest::Test
@@ -121,7 +121,7 @@ class TestRateLimit < Minitest::Test
   end
 
   def test_invalid_key_type_raises
-    assert_raises(ArgumentError) { Reclamo::RateLimiter.new(max: 1, period: 60, key: "string") }
+    assert_raises(ArgumentError) { Reclamo::Extras::RateLimiter.new(max: 1, period: 60, key: "string") }
   end
 
   def test_thread_safe
@@ -156,7 +156,7 @@ end
 
 class TestRateLimiterEviction < Minitest::Test
   def test_stale_windows_evicted
-    limiter = Reclamo::RateLimiter.new(max: 1, period: 0.001, key: ->(req) { req.method_name }) # rubocop:disable Style/SymbolProc
+    limiter = Reclamo::Extras::RateLimiter.new(max: 1, period: 0.001, key: ->(req) { req.method_name }) # rubocop:disable Style/SymbolProc
 
     server = Reclamo::Server.new
     server.expose(Calculator)
@@ -182,19 +182,19 @@ end
 class TestRateLimiterCodeValidation < Minitest::Test
   def test_reserved_code_raises
     assert_raises(ArgumentError) do
-      Reclamo::RateLimiter.new(max: 10, period: 60, code: -32_000)
+      Reclamo::Extras::RateLimiter.new(max: 10, period: 60, code: -32_000)
     end
   end
 
   def test_non_integer_code_raises
     assert_raises(ArgumentError) do
-      Reclamo::RateLimiter.new(max: 10, period: 60, code: "429")
+      Reclamo::Extras::RateLimiter.new(max: 10, period: 60, code: "429")
     end
   end
 
   def test_valid_code_succeeds
-    limiter = Reclamo::RateLimiter.new(max: 10, period: 60, code: 429)
-    assert_instance_of Reclamo::RateLimiter, limiter
+    limiter = Reclamo::Extras::RateLimiter.new(max: 10, period: 60, code: 429)
+    assert_instance_of Reclamo::Extras::RateLimiter, limiter
   end
 
   def test_server_rate_limit_reserved_code_raises
