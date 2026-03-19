@@ -93,6 +93,25 @@ class TestTCP < Minitest::Test
     thread&.join(2)
   end
 
+  def test_batch_request
+    with_tcp_server do |port|
+      batch = JSON.generate(
+        [
+          { "jsonrpc" => "2.0", "method" => "add", "params" => [1, 2], "id" => 1 },
+          { "jsonrpc" => "2.0", "method" => "add", "params" => [3, 4], "id" => 2 }
+        ]
+      )
+      TCPSocket.open("127.0.0.1", port) do |sock|
+        sock.puts(batch)
+        responses = JSON.parse(sock.gets.chomp)
+
+        assert_equal 2, responses.size
+        assert_equal 3, responses[0]["result"]
+        assert_equal 7, responses[1]["result"]
+      end
+    end
+  end
+
   def test_parse_error
     with_tcp_server do |port|
       response = tcp_call(port, "not json")

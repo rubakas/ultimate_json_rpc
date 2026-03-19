@@ -57,9 +57,7 @@ module Reclamo
       private
 
       def accept_loop
-        while @mutex.synchronize { @running }
-          server = @mutex.synchronize { @tcp_server }
-          break unless server
+        while (server = @mutex.synchronize { @running && @tcp_server })
           next unless server.wait_readable(0.5)
 
           client = accept_client(server)

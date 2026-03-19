@@ -10,10 +10,7 @@ module Reclamo
       end
 
       def on_message(data)
-        response = @server.handle(data.to_s)
-        return nil unless response
-
-        response
+        @server.handle(data.to_s)
       end
 
       def call(_env, socket)
