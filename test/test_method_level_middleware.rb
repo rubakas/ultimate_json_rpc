@@ -323,6 +323,34 @@ class TestMethodLevelMiddlewareEdgeCases < Minitest::Test
     assert_equal server, result
   end
 
+  def test_only_and_except_on_separate_middleware_compose
+    log = []
+    server = Reclamo::Server.new
+    server.expose(Calculator)
+    server.expose_method("ping") { "pong" }
+
+    server.use(only: %w[add divide]) do |request, next_call|
+      log << "only:#{request.method_name}"
+      next_call.call
+    end
+
+    server.use(except: ["divide"]) do |request, next_call|
+      log << "except:#{request.method_name}"
+      next_call.call
+    end
+
+    call_method("add", [1, 2], server: server)
+    assert_equal %w[only:add except:add], log
+
+    log.clear
+    call_method("divide", [10, 2], server: server)
+    assert_equal %w[only:divide], log
+
+    log.clear
+    call_method("ping", nil, server: server)
+    assert_equal %w[except:ping], log
+  end
+
   def test_glob_pattern_does_not_match_partial_name
     server = Reclamo::Server.new
     server.expose_method("admin_panel") { "panel" }

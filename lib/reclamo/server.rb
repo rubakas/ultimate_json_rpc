@@ -59,7 +59,11 @@ module Reclamo
       serialize_single(data)
     rescue StandardError
       id = data.is_a?(Hash) ? extract_id(data) : nil
-      @json.generate(Core::Response.error(Core::INTERNAL_ERROR, id))
+      begin
+        @json.generate(Core::Response.error(Core::INTERNAL_ERROR, id))
+      rescue StandardError
+        '{"jsonrpc":"2.0","error":{"code":-32603,"message":"Internal error"},"id":null}'
+      end
     end
 
     def batch_too_large?(requests) = @max_batch_size && requests.size > @max_batch_size

@@ -157,6 +157,35 @@ class TestHandlerCallableMethods < Minitest::Test
   end
 end
 
+class TestHandlerCallableMethodsExtend < Minitest::Test
+  def test_expose_module_with_extended_methods
+    helper = Module.new { define_method(:help) { "helping" } }
+    service = Module.new
+    service.extend(helper)
+    service.define_singleton_method(:work) { "working" }
+
+    handler = Reclamo::Core::Handler.new
+    handler.expose(service)
+
+    assert handler.method?("work"), "directly defined singleton method should be exposed"
+    assert handler.method?("help"), "extended module method should be exposed"
+  end
+
+  def test_expose_class_with_extended_methods
+    helper = Module.new { define_method(:help) { "helping" } }
+    klass = Class.new
+    klass.extend(helper)
+    klass.define_singleton_method(:work) { "working" }
+
+    handler = Reclamo::Core::Handler.new
+    handler.expose(klass)
+
+    assert handler.method?("work"), "directly defined singleton method should be exposed"
+    assert handler.method?("help"), "extended module method should be exposed"
+    refute handler.method?("new"), "Class#new should not be exposed"
+  end
+end
+
 class TestHandlerMethodNameValidation < Minitest::Test
   def test_trailing_dot_rejected
     handler = Reclamo::Core::Handler.new

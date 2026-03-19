@@ -213,7 +213,7 @@ module Reclamo
 
       def callable_methods(target)
         if target.is_a?(Module)
-          target.singleton_class.public_instance_methods(false).map(&:to_s)
+          target.singleton_methods.map(&:to_s)
         else
           ((target.class.public_instance_methods(false) - Object.public_instance_methods) |
            target.singleton_methods).map(&:to_s)

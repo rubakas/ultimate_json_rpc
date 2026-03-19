@@ -256,7 +256,7 @@ class TestServerCallable < Minitest::Test
     assert_nil response["id"]
   end
 
-  def test_method_not_found_includes_method_name_in_data
+  def test_method_not_found_hides_details_by_default
     server = Reclamo::Server.new
     server.expose(Calculator)
 
@@ -286,6 +286,53 @@ class TestServerCallable < Minitest::Test
     server.expose(Calculator)
 
     assert_equal "#<Reclamo::Server name=\"My API\" methods=2 middleware=0>", server.inspect
+  end
+end
+
+class TestServerReaders < Minitest::Test
+  def test_name_returns_configured_value
+    server = Reclamo::Server.new(name: "My API")
+    assert_equal "My API", server.name
+  end
+
+  def test_version_returns_configured_value
+    server = Reclamo::Server.new(version: "1.2.3")
+    assert_equal "1.2.3", server.version
+  end
+
+  def test_description_returns_configured_value
+    server = Reclamo::Server.new(description: "A test service")
+    assert_equal "A test service", server.description
+  end
+
+  def test_name_defaults_to_nil
+    server = Reclamo::Server.new
+    assert_nil server.name
+  end
+
+  def test_version_defaults_to_nil
+    server = Reclamo::Server.new
+    assert_nil server.version
+  end
+
+  def test_max_batch_size_returns_configured_value
+    server = Reclamo::Server.new(max_batch_size: 50)
+    assert_equal 50, server.max_batch_size
+  end
+
+  def test_timeout_returns_configured_value
+    server = Reclamo::Server.new(timeout: 5)
+    assert_equal 5, server.timeout
+  end
+
+  def test_expose_errors_predicate
+    assert Reclamo::Server.new(expose_errors: true).expose_errors?
+    refute Reclamo::Server.new.expose_errors?
+  end
+
+  def test_concurrent_batches_predicate
+    assert Reclamo::Server.new(concurrent_batches: true).concurrent_batches?
+    refute Reclamo::Server.new.concurrent_batches?
   end
 end
 
