@@ -635,3 +635,66 @@ class TestArgumentErrorGenericData < Minitest::Test
     assert_includes response["error"]["data"], "wrong number of arguments"
   end
 end
+
+class TestApplicationArgumentError < Minitest::Test
+  def test_application_argument_error_maps_to_internal_error
+    server = Reclamo::Server.new(expose_errors: true)
+    server.expose_method("validate") do |age:|
+      raise ArgumentError, "age must be positive" unless age.positive?
+
+      age
+    end
+
+    request = { "jsonrpc" => "2.0", "method" => "validate", "params" => { "age" => -1 }, "id" => 1 }
+    response = JSON.parse(server.handle(JSON.generate(request)))
+
+    assert_equal(-32_603, response["error"]["code"])
+    assert_equal "age must be positive", response["error"]["data"]
+  end
+
+  def test_application_argument_error_hidden_by_default
+    server = Reclamo::Server.new(expose_errors: false)
+    server.expose_method("validate") do |age:|
+      raise ArgumentError, "age must be positive" unless age.positive?
+
+      age
+    end
+
+    request = { "jsonrpc" => "2.0", "method" => "validate", "params" => { "age" => -1 }, "id" => 1 }
+    response = JSON.parse(server.handle(JSON.generate(request)))
+
+    assert_equal(-32_603, response["error"]["code"])
+    assert_equal "Internal server error", response["error"]["data"]
+  end
+
+  def test_framework_arity_mismatch_still_maps_to_invalid_params
+    server = Reclamo::Server.new(expose_errors: true)
+    server.expose(Calculator)
+
+    request = { "jsonrpc" => "2.0", "method" => "add", "params" => [1, 2, 3], "id" => 1 }
+    response = JSON.parse(server.handle(JSON.generate(request)))
+
+    assert_equal(-32_602, response["error"]["code"])
+  end
+
+  def test_framework_unknown_keyword_still_maps_to_invalid_params
+    server = Reclamo::Server.new
+    server.expose_method("greet") { |name:| "Hello, #{name}" }
+
+    request = { "jsonrpc" => "2.0", "method" => "greet",
+                "params" => { "name" => "World", "extra" => "ignored" }, "id" => 1 }
+    response = JSON.parse(server.handle(JSON.generate(request)))
+
+    assert_equal(-32_602, response["error"]["code"])
+  end
+
+  def test_framework_missing_keyword_maps_to_invalid_params
+    server = Reclamo::Server.new
+    server.expose_method("greet") { |name:| "Hello, #{name}" }
+
+    request = { "jsonrpc" => "2.0", "method" => "greet", "params" => {}, "id" => 1 }
+    response = JSON.parse(server.handle(JSON.generate(request)))
+
+    assert_equal(-32_602, response["error"]["code"])
+  end
+end

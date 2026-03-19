@@ -62,7 +62,16 @@ module Reclamo
       begin
         @json.generate(Core::Response.error(Core::INTERNAL_ERROR, id))
       rescue Exception # rubocop:disable Lint/RescueException
-        '{"jsonrpc":"2.0","error":{"code":-32603,"message":"Internal error"},"id":null}'
+        id_json = format_fallback_id(id)
+        "{\"jsonrpc\":\"2.0\",\"error\":{\"code\":-32603,\"message\":\"Internal error\"},\"id\":#{id_json}}"
+      end
+    end
+
+    def format_fallback_id(id)
+      case id
+      when Numeric then id.to_s
+      when String then JSON.generate(id) rescue "null" # rubocop:disable Style/RescueModifier
+      else "null"
       end
     end
 
@@ -239,7 +248,8 @@ module Reclamo
       begin
         @json.generate(Core::Response.error(Core::INTERNAL_ERROR, id))
       rescue StandardError
-        '{"jsonrpc":"2.0","error":{"code":-32603,"message":"Internal error"},"id":null}'
+        id_json = format_fallback_id(id)
+        "{\"jsonrpc\":\"2.0\",\"error\":{\"code\":-32603,\"message\":\"Internal error\"},\"id\":#{id_json}}"
       end
     end
 
@@ -336,7 +346,7 @@ module Reclamo
       when Core::MethodNotFound
         [Core::METHOD_NOT_FOUND, Core::ERROR_MESSAGES[Core::METHOD_NOT_FOUND], generic_data(err)]
       when Core::ApplicationError, Core::ServerError then [err.code, err.message, err.rpc_data]
-      when Core::InvalidParams, ArgumentError then [Core::INVALID_PARAMS, nil, generic_data(err, GENERIC_PARAMS_DATA)]
+      when Core::InvalidParams then [Core::INVALID_PARAMS, nil, generic_data(err, GENERIC_PARAMS_DATA)]
       when Core::InvalidRequest then [Core::INVALID_REQUEST, nil, generic_data(err)]
       else [Core::INTERNAL_ERROR, nil, generic_data(err)]
       end

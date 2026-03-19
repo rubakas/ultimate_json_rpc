@@ -266,13 +266,20 @@ module Reclamo
         end
       end
 
+      DISPATCH_ARG_ERROR = /\Awrong number of arguments\b|\Amissing keywords?: /
+      private_constant :DISPATCH_ARG_ERROR
+
       def invoke_callable(callable, params)
         case params
         when Array then callable.call(*params)
         when Hash  then callable.call(**safe_symbolize_keys(callable, params))
         when nil   then callable.call
-        else raise ArgumentError, "params must be an Array, Hash, or nil"
+        else raise InvalidParams, "params must be an Array, Hash, or nil"
         end
+      rescue ArgumentError => e
+        raise InvalidParams, e.message if e.message.match?(DISPATCH_ARG_ERROR)
+
+        raise
       end
 
       def safe_symbolize_keys(callable, params)
@@ -281,7 +288,7 @@ module Reclamo
         known = known_keyword_params(callable)
         params.each_with_object({}) do |(k, v), h|
           key = k.to_s
-          raise ArgumentError, "unknown keyword: #{key}" unless known.key?(key)
+          raise InvalidParams, "unknown keyword: #{key}" unless known.key?(key)
 
           h[known[key]] = v
         end

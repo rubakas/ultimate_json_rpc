@@ -265,7 +265,7 @@ class TestHandlerEdgeCases < Minitest::Test
     handler = Reclamo::Core::Handler.new
     handler.expose(Calculator)
 
-    assert_raises(ArgumentError) { handler.call("add", "not valid") }
+    assert_raises(Reclamo::Core::InvalidParams) { handler.call("add", "not valid") }
   end
 
   def test_call_with_hash_params_converts_keys_to_symbols

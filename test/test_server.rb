@@ -652,7 +652,51 @@ class TestSerializeSingleLastResort < Minitest::Test
     assert_equal "2.0", response["jsonrpc"]
     assert_equal(-32_603, response["error"]["code"])
     assert_equal "Internal error", response["error"]["message"]
-    assert_nil response["id"], "last-resort fallback uses null id"
+    assert_equal 1, response["id"], "last-resort fallback preserves request id"
+  end
+
+  def test_last_resort_fallback_preserves_string_id
+    always_fail_json = Class.new do
+      def parse(str) = JSON.parse(str)
+
+      def generate(obj)
+        raise "generate exploded" if obj.is_a?(Hash) && obj.key?("error")
+
+        JSON.generate(obj)
+      end
+    end.new
+
+    server = Reclamo::Server.new(json: always_fail_json)
+    server.expose_method("boom") { raise "handler error" }
+
+    request = '{"jsonrpc":"2.0","method":"boom","id":"req-abc"}'
+    raw = server.handle(request)
+    response = JSON.parse(raw)
+
+    assert_equal "req-abc", response["id"]
+    assert_equal(-32_603, response["error"]["code"])
+  end
+
+  def test_last_resort_fallback_uses_null_for_nil_id
+    always_fail_json = Class.new do
+      def parse(str) = JSON.parse(str)
+
+      def generate(obj)
+        raise "generate exploded" if obj.is_a?(Hash) && obj.key?("error")
+
+        JSON.generate(obj)
+      end
+    end.new
+
+    server = Reclamo::Server.new(json: always_fail_json)
+    server.expose_method("boom") { raise "handler error" }
+
+    request = '{"jsonrpc":"2.0","method":"boom","id":null}'
+    raw = server.handle(request)
+    response = JSON.parse(raw)
+
+    assert_nil response["id"]
+    assert_equal(-32_603, response["error"]["code"])
   end
 end
 
