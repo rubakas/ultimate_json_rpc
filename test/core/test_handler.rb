@@ -158,7 +158,7 @@ class TestHandlerCallableMethods < Minitest::Test
 end
 
 class TestHandlerCallableMethodsExtend < Minitest::Test
-  def test_expose_module_with_extended_methods
+  def test_expose_module_excludes_extended_methods
     helper = Module.new { define_method(:help) { "helping" } }
     service = Module.new
     service.extend(helper)
@@ -168,10 +168,10 @@ class TestHandlerCallableMethodsExtend < Minitest::Test
     handler.expose(service)
 
     assert handler.method?("work"), "directly defined singleton method should be exposed"
-    assert handler.method?("help"), "extended module method should be exposed"
+    refute handler.method?("help"), "extended module method should not be auto-exposed"
   end
 
-  def test_expose_class_with_extended_methods
+  def test_expose_class_excludes_extended_methods
     helper = Module.new { define_method(:help) { "helping" } }
     klass = Class.new
     klass.extend(helper)
@@ -181,8 +181,48 @@ class TestHandlerCallableMethodsExtend < Minitest::Test
     handler.expose(klass)
 
     assert handler.method?("work"), "directly defined singleton method should be exposed"
-    assert handler.method?("help"), "extended module method should be exposed"
+    refute handler.method?("help"), "extended module method should not be auto-exposed"
     refute handler.method?("new"), "Class#new should not be exposed"
+  end
+
+  def test_extended_methods_can_be_exposed_explicitly
+    helper = Module.new { define_method(:help) { "helping" } }
+    service = Module.new
+    service.extend(helper)
+    service.define_singleton_method(:work) { "working" }
+
+    handler = Reclamo::Core::Handler.new
+    handler.expose(service)
+    handler.expose_method("help", service.method(:help))
+
+    assert handler.method?("work")
+    assert handler.method?("help")
+  end
+
+  def test_expose_module_excludes_comparable_methods
+    service = Module.new
+    service.extend(Comparable)
+    service.define_singleton_method(:work) { "working" }
+
+    handler = Reclamo::Core::Handler.new
+    handler.expose(service)
+
+    assert handler.method?("work")
+    refute handler.method?("between?")
+    refute handler.method?("clamp")
+  end
+
+  def test_expose_instance_excludes_singleton_extended_methods
+    helper = Module.new { define_method(:utility) { "help" } }
+    obj = Object.new
+    obj.extend(helper)
+    obj.define_singleton_method(:work) { "done" }
+
+    handler = Reclamo::Core::Handler.new
+    handler.expose(obj)
+
+    assert handler.method?("work")
+    refute handler.method?("utility")
   end
 end
 

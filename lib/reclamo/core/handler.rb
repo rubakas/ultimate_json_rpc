@@ -213,10 +213,10 @@ module Reclamo
 
       def callable_methods(target)
         if target.is_a?(Module)
-          target.singleton_methods.map(&:to_s)
+          target.singleton_methods(false).map(&:to_s)
         else
           ((target.class.public_instance_methods(false) - Object.public_instance_methods) |
-           target.singleton_methods).map(&:to_s)
+           target.singleton_methods(false)).map(&:to_s)
         end
       end
 
@@ -277,11 +277,9 @@ module Reclamo
         known = known_keyword_params(callable)
         params.each_with_object({}) do |(k, v), h|
           key = k.to_s
-          if known.key?(key)
-            h[known[key]] = v
-          elsif known.any?
-            raise ArgumentError, "unknown keyword: #{key}"
-          end
+          raise ArgumentError, "unknown keyword: #{key}" unless known.key?(key)
+
+          h[known[key]] = v
         end
       end
 

@@ -65,6 +65,18 @@ class TestRequestTimeout < Minitest::Test
     assert_equal(-32_001, Reclamo::Core::REQUEST_TIMEOUT)
   end
 
+  def test_timeout_not_swallowed_by_handler_rescue
+    server = Reclamo::Server.new(timeout: 0.1)
+    server.expose_method("resilient") do
+      sleep 0.5
+    rescue StandardError
+      "swallowed"
+    end
+
+    response = call(server, "resilient")
+    assert_equal(-32_001, response["error"]["code"])
+  end
+
   private
 
   def call(server, method, params = nil)

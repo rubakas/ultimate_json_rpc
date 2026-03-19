@@ -233,8 +233,9 @@ module Reclamo
 
       @json.generate(response)
     rescue StandardError
+      id = request.is_a?(Core::Request) ? request.id : extract_id(data)
       begin
-        @json.generate(Core::Response.error(Core::INTERNAL_ERROR, request.is_a?(Core::Request) ? request.id : nil))
+        @json.generate(Core::Response.error(Core::INTERNAL_ERROR, id))
       rescue StandardError
         '{"jsonrpc":"2.0","error":{"code":-32603,"message":"Internal error"},"id":null}'
       end
@@ -317,7 +318,9 @@ module Reclamo
     def with_timeout(&)
       return yield unless @timeout
 
-      Timeout.timeout(@timeout, Core::RequestTimeout, &)
+      Timeout.timeout(@timeout, &)
+    rescue Timeout::Error
+      raise Core::RequestTimeout
     end
 
     def invoke_handler(request)

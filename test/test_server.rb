@@ -652,6 +652,7 @@ class TestSerializeSingleLastResort < Minitest::Test
     assert_equal "2.0", response["jsonrpc"]
     assert_equal(-32_603, response["error"]["code"])
     assert_equal "Internal error", response["error"]["message"]
+    assert_nil response["id"], "last-resort fallback uses null id"
   end
 end
 
@@ -664,6 +665,27 @@ class TestSerializeSingleIdRecovery < Minitest::Test
     response = JSON.parse(server.handle(JSON.generate(request)))
 
     assert_equal 42, response["id"]
+    assert_equal(-32_603, response["error"]["code"])
+  end
+
+  def test_rescue_fallback_preserves_id_from_raw_data
+    fail_on_error_json = Class.new do
+      def parse(str) = JSON.parse(str)
+
+      def generate(obj)
+        raise "generate failed" if obj.is_a?(Hash) && obj.key?("error")
+
+        JSON.generate(obj)
+      end
+    end.new
+
+    server = Reclamo::Server.new(json: fail_on_error_json)
+    server.expose_method("boom") { raise "handler error" }
+
+    request = { "jsonrpc" => "2.0", "method" => "boom", "id" => 77 }
+    raw = server.handle_parsed(request)
+    response = JSON.parse(raw)
+
     assert_equal(-32_603, response["error"]["code"])
   end
 end
@@ -695,12 +717,12 @@ end
 class TestDeepDupFrozenKeys < Minitest::Test
   def test_handle_parsed_with_frozen_string_keys
     server = Reclamo::Server.new
-    server.expose_method("ping") { "pong" }
+    server.expose_method("echo") { |key:| key }
 
-    request = { "jsonrpc" => "2.0", "method" => "ping", "params" => { "key" => "val" }, "id" => 1 }
+    request = { "jsonrpc" => "2.0", "method" => "echo", "params" => { "key" => "val" }, "id" => 1 }
     response = JSON.parse(server.handle_parsed(request))
 
-    assert_equal "pong", response["result"]
+    assert_equal "val", response["result"]
   end
 
   def test_handle_parsed_with_symbol_keyed_params

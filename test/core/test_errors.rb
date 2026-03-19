@@ -444,6 +444,20 @@ class TestServerParamErrors < Minitest::Test
     assert_equal "hello", response["result"]
   end
 
+  def test_hash_params_to_positional_only_method_returns_invalid_params
+    request = { "jsonrpc" => "2.0", "method" => "add", "params" => { "a" => 1, "b" => 2 }, "id" => 1 }
+    response = JSON.parse(@server.handle(JSON.generate(request)))
+
+    assert_equal(-32_602, response["error"]["code"])
+  end
+
+  def test_hash_params_to_no_arg_method_returns_invalid_params
+    request = { "jsonrpc" => "2.0", "method" => "greeter.hello", "params" => { "x" => 1 }, "id" => 1 }
+    response = JSON.parse(@server.handle(JSON.generate(request)))
+
+    assert_equal(-32_602, response["error"]["code"])
+  end
+
   def test_extra_keyword_args_returns_invalid_params
     request = { "jsonrpc" => "2.0", "method" => "greeter.greet",
                 "params" => { "name" => "World", "extra" => "ignored" }, "id" => 1 }
