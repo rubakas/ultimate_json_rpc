@@ -46,7 +46,7 @@ module Reclamo
       private
 
       def rpc_json_adapter(server)
-        server.instance_variable_get(:@json) || JSON
+        server.json_adapter
       end
     end
   end

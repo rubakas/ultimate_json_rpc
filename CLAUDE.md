@@ -45,10 +45,10 @@ bin/console            # Interactive console with gem loaded
 - `lib/reclamo/transport/tcp.rb` — optional TCP adapter (Reclamo::Transport::TCP), NOT auto-required
 - `lib/reclamo/transport/websocket.rb` — optional WebSocket adapter (Reclamo::Transport::WebSocket), NOT auto-required
 - `lib/reclamo/extras/docs.rb` — optional Markdown doc generator (Reclamo::Extras::Docs), NOT auto-required
-- `lib/reclamo/extras/logging.rb` — optional structured logging (Reclamo::Extras::Logging), NOT auto-required
+- `lib/reclamo/extras/logging.rb` — optional structured logging (Reclamo::Extras::Logging class), NOT auto-required
 - `lib/reclamo/extras/mcp.rb` — optional MCP protocol adapter (Reclamo::Extras::MCP), NOT auto-required; internally requires transport/stdio
 - `lib/reclamo/extras/profiler.rb` — optional per-method profiler (Reclamo::Extras::Profiler), NOT auto-required
-- `lib/reclamo/extras/rate_limit.rb` — optional rate limiter (Reclamo::Extras::RateLimiter), NOT auto-required
+- `lib/reclamo/extras/rate_limit.rb` — optional rate limiter (Reclamo::Extras::RateLimiter class), NOT auto-required
 - `lib/reclamo/extras/recorder.rb` — optional exchange recorder (Reclamo::Extras::Recorder), NOT auto-required
 - `lib/reclamo/extras/test_helpers.rb` — optional test helpers (Reclamo::Extras::TestHelpers: rpc_call, rpc_notify, rpc_batch), NOT auto-required
 - `sig/reclamo.rbs` — RBS type signatures

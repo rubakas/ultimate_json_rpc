@@ -37,7 +37,7 @@ class TestRateLimit < Minitest::Test
     server = Reclamo::Server.new
     server.expose(Calculator)
     server.use { |req, nxt| req.context[:user] = user; nxt.call } # rubocop:disable Style/Semicolon
-    server.rate_limit(max: 1, period: 60, key: :user)
+    Reclamo::Extras::RateLimiter.new(server, max: 1, period: 60, key: :user)
 
     assert call(server, "add", [1, 2]).key?("result")
     assert_equal 429, call(server, "add", [3, 4])["error"]["code"]
@@ -52,7 +52,7 @@ class TestRateLimit < Minitest::Test
     server = Reclamo::Server.new
     server.expose(Calculator)
     server.use { |req, nxt| req.context[:api_key] = api_key; nxt.call } # rubocop:disable Style/Semicolon
-    server.rate_limit(max: 1, period: 60, key: ->(req) { req.context[:api_key] })
+    Reclamo::Extras::RateLimiter.new(server, max: 1, period: 60, key: ->(req) { req.context[:api_key] })
 
     assert call(server, "add", [1, 2]).key?("result")
     assert_equal 429, call(server, "add", [3, 4])["error"]["code"]
@@ -61,7 +61,7 @@ class TestRateLimit < Minitest::Test
   def test_scoped_with_only
     server = Reclamo::Server.new
     server.expose(Calculator)
-    server.rate_limit(max: 1, period: 60, only: ["add"])
+    Reclamo::Extras::RateLimiter.new(server, max: 1, period: 60, only: ["add"])
 
     call(server, "add", [1, 2])
     blocked = call(server, "add", [3, 4])
@@ -74,7 +74,7 @@ class TestRateLimit < Minitest::Test
   def test_scoped_with_except
     server = Reclamo::Server.new
     server.expose(Calculator)
-    server.rate_limit(max: 1, period: 60, except: ["divide"])
+    Reclamo::Extras::RateLimiter.new(server, max: 1, period: 60, except: ["divide"])
 
     call(server, "add", [1, 2])
     blocked = call(server, "add", [3, 4])
@@ -88,7 +88,7 @@ class TestRateLimit < Minitest::Test
     server = Reclamo::Server.new
     server.expose(Calculator)
     server.use { |req, nxt| req.context[:uid] = 0; nxt.call } # rubocop:disable Style/Semicolon
-    server.rate_limit(max: 1, period: 60, key: :uid)
+    Reclamo::Extras::RateLimiter.new(server, max: 1, period: 60, key: :uid)
 
     r1 = call(server, "add", [1, 2])
     r2 = call(server, "add", [3, 4])
@@ -99,7 +99,7 @@ class TestRateLimit < Minitest::Test
   def test_custom_error_code_and_message
     server = Reclamo::Server.new
     server.expose(Calculator)
-    server.rate_limit(max: 1, period: 60, code: 1429, message: "Slow down")
+    Reclamo::Extras::RateLimiter.new(server, max: 1, period: 60, code: 1429, message: "Slow down")
 
     call(server, "add", [1, 2])
     response = call(server, "add", [3, 4])
@@ -108,26 +108,23 @@ class TestRateLimit < Minitest::Test
     assert_equal "Slow down", response["error"]["message"]
   end
 
-  def test_chainable
-    server = Reclamo::Server.new
-    result = server.rate_limit(max: 10, period: 60)
-
-    assert_equal server, result
-  end
-
   def test_only_and_except_together_raises
     server = Reclamo::Server.new
-    assert_raises(ArgumentError) { server.rate_limit(max: 1, period: 60, only: ["add"], except: ["divide"]) }
+    assert_raises(ArgumentError) do
+      Reclamo::Extras::RateLimiter.new(server, max: 1, period: 60, only: ["add"], except: ["divide"])
+    end
   end
 
   def test_invalid_key_type_raises
-    assert_raises(ArgumentError) { Reclamo::Extras::RateLimiter.new(max: 1, period: 60, key: "string") }
+    assert_raises(ArgumentError) do
+      Reclamo::Extras::RateLimiter.new(Reclamo::Server.new, max: 1, period: 60, key: "string")
+    end
   end
 
   def test_thread_safe
     server = Reclamo::Server.new(concurrent_batches: true)
     server.expose(Calculator)
-    server.rate_limit(max: 5, period: 60)
+    Reclamo::Extras::RateLimiter.new(server, max: 5, period: 60)
 
     batch = 10.times.map { |i| { "jsonrpc" => "2.0", "method" => "add", "params" => [i, 1], "id" => i } }
     responses = JSON.parse(server.handle(JSON.generate(batch)))
@@ -144,7 +141,7 @@ class TestRateLimit < Minitest::Test
   def build_server(max:, period:)
     server = Reclamo::Server.new
     server.expose(Calculator)
-    server.rate_limit(max:, period:)
+    Reclamo::Extras::RateLimiter.new(server, max:, period:)
     server
   end
 
@@ -156,15 +153,13 @@ end
 
 class TestRateLimiterEviction < Minitest::Test
   def test_stale_windows_evicted
-    limiter = Reclamo::Extras::RateLimiter.new(max: 1, period: 0.001, key: ->(req) { req.method_name }) # rubocop:disable Style/SymbolProc
-
     server = Reclamo::Server.new
     server.expose(Calculator)
 
     110.times do |i|
       server.expose_method("m#{i}") { i }
     end
-    server.use { |req, nxt| limiter.call(req, nxt) }
+    Reclamo::Extras::RateLimiter.new(server, max: 1, period: 0.001, key: :method_name.to_proc)
 
     110.times do |i|
       request = { "jsonrpc" => "2.0", "method" => "m#{i}", "id" => i }
@@ -182,27 +177,27 @@ end
 class TestRateLimiterCodeValidation < Minitest::Test
   def test_reserved_code_raises
     assert_raises(ArgumentError) do
-      Reclamo::Extras::RateLimiter.new(max: 10, period: 60, code: -32_000)
+      Reclamo::Extras::RateLimiter.new(Reclamo::Server.new, max: 10, period: 60, code: -32_000)
     end
   end
 
   def test_non_integer_code_raises
     assert_raises(ArgumentError) do
-      Reclamo::Extras::RateLimiter.new(max: 10, period: 60, code: "429")
+      Reclamo::Extras::RateLimiter.new(Reclamo::Server.new, max: 10, period: 60, code: "429")
     end
   end
 
   def test_valid_code_succeeds
-    limiter = Reclamo::Extras::RateLimiter.new(max: 10, period: 60, code: 429)
+    limiter = Reclamo::Extras::RateLimiter.new(Reclamo::Server.new, max: 10, period: 60, code: 429)
     assert_instance_of Reclamo::Extras::RateLimiter, limiter
   end
 
-  def test_server_rate_limit_reserved_code_raises
+  def test_reserved_code_via_constructor_raises
     server = Reclamo::Server.new
     server.expose(Calculator)
 
     assert_raises(ArgumentError) do
-      server.rate_limit(max: 10, period: 60, code: -32_600)
+      Reclamo::Extras::RateLimiter.new(server, max: 10, period: 60, code: -32_600)
     end
   end
 end

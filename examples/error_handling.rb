@@ -23,7 +23,7 @@ server = Reclamo::Server.new(name: "Bank API", version: "1.0", expose_errors: tr
 server.expose(BankService, descriptions: { transfer: "Transfer money between accounts" })
 server.register_error(code: 1001, message: "InsufficientFunds", description: "Account balance too low for transfer")
 server.register_error(code: 1002, message: "AccountFrozen", description: "Account is frozen and cannot transact")
-server.log_to(Logger.new($stdout, level: :info))
+Reclamo::Extras::Logging.new(server, Logger.new($stdout, level: :info))
 
 # Successful transfer
 puts "=== Successful transfer ==="

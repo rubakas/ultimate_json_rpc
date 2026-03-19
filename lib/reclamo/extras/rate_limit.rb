@@ -3,7 +3,7 @@
 module Reclamo
   module Extras
     class RateLimiter
-      def initialize(max:, period:, key: nil, code: 429, message: "Rate limit exceeded")
+      def initialize(server, max:, period:, key: nil, code: 429, message: "Rate limit exceeded", only: nil, except: nil)
         validate_code!(code)
         @max = max
         @period = period
@@ -12,11 +12,10 @@ module Reclamo
         @message = message
         @windows = {}
         @mutex = Mutex.new
-      end
-
-      def call(request, next_call)
-        check!(@key_fn.call(request))
-        next_call.call
+        server.use(only:, except:) do |request, next_call|
+          check!(@key_fn.call(request))
+          next_call.call
+        end
       end
 
       private
@@ -54,15 +53,5 @@ module Reclamo
               "code #{code} is in the reserved JSON-RPC range (#{Core::RESERVED_ERROR_MIN}..#{Core::RESERVED_ERROR_MAX})"
       end
     end
-
-    module RateLimitSupport
-      def rate_limit(max:, period:, key: nil, code: 429, message: "Rate limit exceeded", only: nil, except: nil)
-        limiter = RateLimiter.new(max:, period:, key:, code:, message:)
-        use(only:, except:) { |request, next_call| limiter.call(request, next_call) }
-      end
-    end
   end
-
-  # Intentional load-time patching: adds rate_limit to Server when reclamo/rate_limit is required.
-  Server.include(Extras::RateLimitSupport)
 end

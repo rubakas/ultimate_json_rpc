@@ -15,7 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - RBS type signatures now correctly reflect Core/Extras/Transport namespace structure
-- RBS `Server` class no longer declares conditional `include` for `Extras::Logging` and `Extras::RateLimitSupport`
+- RBS `Server` class no longer declares conditional `include` for extras
 - Recorder `max_exchanges:` and TCP `MAX_LINE_BYTES` added to RBS type signatures
 - `Docs#escape_cell` now escapes newlines in Markdown table cells
 - Flaky profiler test with timing-dependent percentile assertion
@@ -39,10 +39,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Error catalog: `server.register_error(code, name, description)` registers application error codes that appear in `rpc.discover` under `components.errors`
 - Custom JSON serializer: `Server.new(json: Oj)` to swap JSON encoder/decoder, any object responding to `parse` and `generate`
 - Method-level authorization: `server.authorize("admin.*") { |req| req.context[:role] == :admin }` with glob patterns and custom error codes
-- Structured logging: `require "reclamo/extras/logging"` adds `server.log_to(logger, level: :info)` for logger-agnostic observability
+- Structured logging: `require "reclamo/extras/logging"` provides `Reclamo::Extras::Logging.new(server, logger)` for logger-agnostic observability
 - Request/response recorder: `require "reclamo/extras/recorder"` provides `Reclamo::Extras::Recorder.new(server)` capturing exchanges for replay testing, with optional JSONL file output
 - MCP (Model Context Protocol) adapter: `require "reclamo/extras/mcp"` provides `Reclamo::Extras::MCP.new(server)` for AI tool integration over stdio, mapping methods to MCP tools with schema support
-- Rate limiting: `require "reclamo/extras/rate_limit"` adds `server.rate_limit(max:, period:)` with sliding window, per-caller keying, and per-method scoping
+- Rate limiting: `require "reclamo/extras/rate_limit"` provides `Reclamo::Extras::RateLimiter.new(server, max:, period:)` with sliding window, per-caller keying, and per-method scoping
 - Per-method profiling: `require "reclamo/extras/profiler"` provides `Reclamo::Extras::Profiler.new(server)` collecting count, min/max/avg, and p50/p95/p99 per method
 - TCP server adapter: `require "reclamo/transport/tcp"` provides `Reclamo::Transport::TCP.new(server, port: 4000)` for newline-delimited JSON-RPC over TCP with multi-client threading
 - API documentation generation: `require "reclamo/extras/docs"` provides `Reclamo::Extras::Docs.new(server).to_markdown` generating Markdown from OpenRPC schema

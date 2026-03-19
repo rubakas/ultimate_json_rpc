@@ -91,15 +91,12 @@ module Reclamo
   type callable = Proc | Method | _Callable
 
   class Server
-    # Extras::Logging and Extras::RateLimitSupport are conditionally included
-    # at load time when their respective files are required. Their method
-    # signatures are defined in their own module blocks below.
-
     attr_reader name: String?
     attr_reader version: String?
     attr_reader description: String?
     attr_reader max_batch_size: Integer?
     attr_reader timeout: Numeric?
+    attr_reader json_adapter: _JsonAdapter
 
     def initialize: (?name: String?, ?version: String?, ?description: String?, ?max_batch_size: Integer?, ?expose_errors: bool, ?timeout: Numeric?, ?concurrent_batches: bool, ?max_concurrency: Integer, ?json: _JsonAdapter) -> void
     def expose: (Module | Object, ?namespace: String | Symbol | nil, ?only: Array[Symbol | String] | Symbol | String | nil, ?except: Array[Symbol | String] | Symbol | String | nil, ?descriptions: Hash[Symbol | String, String]?, ?returns: Hash[Symbol | String, untyped]?, ?deprecated: Hash[Symbol | String, untyped]?, ?params_schema: Hash[Symbol | String, untyped]?) -> self
@@ -180,16 +177,11 @@ module Reclamo
     end
 
     class RateLimiter
-      def initialize: (max: Integer, period: Numeric, ?key: (Symbol | Proc)?, ?code: Integer, ?message: String) -> void
-      def call: (Core::Request, Proc) -> untyped
+      def initialize: (Server, max: Integer, period: Numeric, ?key: (Symbol | Proc)?, ?code: Integer, ?message: String, ?only: Array[String | Symbol] | String | Symbol | nil, ?except: Array[String | Symbol] | String | Symbol | nil) -> void
     end
 
-    module RateLimitSupport
-      def rate_limit: (max: Integer, period: Numeric, ?key: (Symbol | Proc)?, ?code: Integer, ?message: String, ?only: Array[String | Symbol] | String | Symbol | nil, ?except: Array[String | Symbol] | String | Symbol | nil) -> self
-    end
-
-    module Logging
-      def log_to: (untyped, ?level: Symbol) -> self
+    class Logging
+      def initialize: (Server, untyped, ?level: Symbol) -> void
     end
 
     class Recorder

@@ -132,7 +132,7 @@ module Reclamo
     include OpenRPCBuilder
     include ServerExtensions
 
-    attr_reader :name, :version, :description, :max_batch_size, :timeout
+    attr_reader :name, :version, :description, :max_batch_size, :timeout, :json_adapter
 
     HOOK_EVENTS = %i[request response error].freeze
     private_constant :HOOK_EVENTS
@@ -147,7 +147,7 @@ module Reclamo
       @timeout = timeout
       @concurrent_batches = concurrent_batches
       @max_concurrency = max_concurrency
-      @json = json
+      @json = @json_adapter = json
       @handler = Core::Handler.new
       @middleware = []
       @hooks = HOOK_EVENTS.to_h { |e| [e, []] }
@@ -208,6 +208,7 @@ module Reclamo
       [@handler, @middleware, @hooks].each(&:freeze)
       @error_catalog&.each(&:freeze)
       @error_catalog&.freeze
+      precompile_middleware
       super
     end
 
@@ -286,8 +287,16 @@ module Reclamo
 
     def elapsed(start) = Process.clock_gettime(Process::CLOCK_MONOTONIC) - start
 
+    def precompile_middleware
+      methods = @handler.methods_list + ["rpc.discover"]
+      @middleware_index = methods.to_h do |name|
+        [name, @middleware.select { |_, matcher| matcher.call(name) }.freeze]
+      end.freeze
+    end
+
     def build_chain(request)
-      applicable = @middleware.select { |_, matcher| matcher.call(request.method_name) }
+      applicable = @middleware_index&.[](request.method_name) ||
+                   @middleware.select { |_, matcher| matcher.call(request.method_name) }
       applicable.reverse.reduce(-> { invoke_handler(request) }) do |core, (mw, _)|
         -> { mw.call(request, core) }
       end
