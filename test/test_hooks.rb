@@ -112,7 +112,7 @@ class TestHooksOnError < Minitest::Test
 
     call(server, "nonexistent")
     assert_equal "nonexistent", captured[:method]
-    assert_equal Reclamo::MethodNotFound, captured[:error_class]
+    assert_equal Reclamo::Core::MethodNotFound, captured[:error_class]
     assert_kind_of Float, captured[:duration]
   end
 
@@ -122,7 +122,7 @@ class TestHooksOnError < Minitest::Test
     server.on(:error) { |_req, err, _dur| captured_error = err }
 
     notify(server, "nonexistent")
-    assert_instance_of Reclamo::MethodNotFound, captured_error
+    assert_instance_of Reclamo::Core::MethodNotFound, captured_error
   end
 
   def test_on_error_does_not_fire_on_success

@@ -11,9 +11,9 @@ module Reclamo
     private
 
     def handle_batch(requests)
-      return @json.generate(Response.error(INVALID_REQUEST, nil)) if requests.empty?
+      return @json.generate(Core::Response.error(Core::INVALID_REQUEST, nil)) if requests.empty?
       if batch_too_large?(requests)
-        return @json.generate(Response.error(INVALID_REQUEST, nil, message: "Batch too large"))
+        return @json.generate(Core::Response.error(Core::INVALID_REQUEST, nil, message: "Batch too large"))
       end
 
       json_parts = process_batch_items(requests)
@@ -55,7 +55,7 @@ module Reclamo
       serialize_single(data)
     rescue StandardError
       id = data.is_a?(Hash) ? extract_id(data) : nil
-      @json.generate(Response.error(INTERNAL_ERROR, id))
+      @json.generate(Core::Response.error(Core::INTERNAL_ERROR, id))
     end
 
     def batch_too_large?(requests) = @max_batch_size && requests.size > @max_batch_size
@@ -82,9 +82,10 @@ module Reclamo
     def register_error(code:, message:, description: nil)
       raise ArgumentError, "error code must be an Integer" unless code.is_a?(Integer)
 
-      if code.between?(RESERVED_ERROR_MIN, RESERVED_ERROR_MAX)
+      if code.between?(Core::RESERVED_ERROR_MIN, Core::RESERVED_ERROR_MAX)
         raise ArgumentError,
-              "error code #{code} is in the reserved JSON-RPC range (#{RESERVED_ERROR_MIN}..#{RESERVED_ERROR_MAX})"
+              "error code #{code} is in the reserved JSON-RPC range " \
+              "(#{Core::RESERVED_ERROR_MIN}..#{Core::RESERVED_ERROR_MAX})"
       end
 
       @error_catalog ||= []
@@ -103,7 +104,7 @@ module Reclamo
 
       opts = patterns.empty? ? {} : { only: patterns }
       use(**opts) do |request, next_call|
-        raise ApplicationError.new(code:, message:) unless block.call(request)
+        raise Core::ApplicationError.new(code:, message:) unless block.call(request)
 
         next_call.call
       end
@@ -113,10 +114,11 @@ module Reclamo
 
     def validate_authorize_code!(code)
       raise ArgumentError, "authorize code must be an Integer" unless code.is_a?(Integer)
-      return unless code.between?(RESERVED_ERROR_MIN, RESERVED_ERROR_MAX)
+      return unless code.between?(Core::RESERVED_ERROR_MIN, Core::RESERVED_ERROR_MAX)
 
       raise ArgumentError,
-            "authorize code #{code} is in the reserved JSON-RPC range (#{RESERVED_ERROR_MIN}..#{RESERVED_ERROR_MAX})"
+            "authorize code #{code} is in the reserved JSON-RPC range " \
+            "(#{Core::RESERVED_ERROR_MIN}..#{Core::RESERVED_ERROR_MAX})"
     end
   end
   private_constant :ServerExtensions
@@ -142,7 +144,7 @@ module Reclamo
       @concurrent_batches = concurrent_batches
       @max_concurrency = max_concurrency
       @json = json
-      @handler = Handler.new
+      @handler = Core::Handler.new
       @middleware = []
       @hooks = HOOK_EVENTS.to_h { |e| [e, []] }
     end
@@ -177,7 +179,7 @@ module Reclamo
     def handle(json_string)
       data = @json.parse(json_string)
     rescue StandardError
-      @json.generate(Response.error(PARSE_ERROR, nil))
+      @json.generate(Core::Response.error(Core::PARSE_ERROR, nil))
     else
       handle_parsed(data)
     end
@@ -188,7 +190,7 @@ module Reclamo
       case data
       when Array then handle_batch(data)
       when Hash then serialize_single(data)
-      else @json.generate(Response.error(INVALID_REQUEST, nil))
+      else @json.generate(Core::Response.error(Core::INVALID_REQUEST, nil))
       end
     end
 
@@ -215,7 +217,7 @@ module Reclamo
 
     def serialize_single(data)
       request = parse_request(data)
-      return request unless request.is_a?(Request)
+      return request unless request.is_a?(Core::Request)
 
       response = execute_request(request)
       return nil unless response
@@ -223,16 +225,16 @@ module Reclamo
       @json.generate(response)
     rescue StandardError
       begin
-        @json.generate(Response.error(INTERNAL_ERROR, request.is_a?(Request) ? request.id : nil))
+        @json.generate(Core::Response.error(Core::INTERNAL_ERROR, request.is_a?(Core::Request) ? request.id : nil))
       rescue StandardError
         '{"jsonrpc":"2.0","error":{"code":-32603,"message":"Internal error"},"id":null}'
       end
     end
 
     def parse_request(data)
-      Request.new(data)
-    rescue InvalidRequest
-      @json.generate(Response.error(INVALID_REQUEST, extract_id(data)))
+      Core::Request.new(data)
+    rescue Core::InvalidRequest
+      @json.generate(Core::Response.error(Core::INVALID_REQUEST, extract_id(data)))
     end
 
     def extract_id(data)
@@ -260,14 +262,14 @@ module Reclamo
     end
 
     def handle_dispatch_success(request, result)
-      request.notification? ? nil : Response.success(result, request.id)
+      request.notification? ? nil : Core::Response.success(result, request.id)
     end
 
     def handle_dispatch_error(request:, error:)
       return nil if request.notification?
 
       code, message, data = error_details(error)
-      Response.error(code, request.id, data: data, message: message)
+      Core::Response.error(code, request.id, data: data, message: message)
     end
 
     def emit(event, *args)
@@ -298,7 +300,7 @@ module Reclamo
     def with_timeout(&)
       return yield unless @timeout
 
-      Timeout.timeout(@timeout, RequestTimeout, &)
+      Timeout.timeout(@timeout, Core::RequestTimeout, &)
     end
 
     def invoke_handler(request)
@@ -309,12 +311,13 @@ module Reclamo
 
     def error_details(err)
       case err
-      when MethodNotFound then [METHOD_NOT_FOUND, ERROR_MESSAGES[METHOD_NOT_FOUND], err.method_name]
-      when ApplicationError, ServerError then [err.code, err.message, err.rpc_data]
-      when InvalidParams then [INVALID_PARAMS, nil, err.message]
-      when InvalidRequest then [INVALID_REQUEST, nil, generic_data(err)]
-      when ArgumentError then [INVALID_PARAMS, nil, generic_data(err, GENERIC_PARAMS_DATA)]
-      else [INTERNAL_ERROR, nil, generic_data(err)]
+      when Core::MethodNotFound
+        [Core::METHOD_NOT_FOUND, Core::ERROR_MESSAGES[Core::METHOD_NOT_FOUND], err.method_name]
+      when Core::ApplicationError, Core::ServerError then [err.code, err.message, err.rpc_data]
+      when Core::InvalidParams then [Core::INVALID_PARAMS, nil, err.message]
+      when Core::InvalidRequest then [Core::INVALID_REQUEST, nil, generic_data(err)]
+      when ArgumentError then [Core::INVALID_PARAMS, nil, generic_data(err, GENERIC_PARAMS_DATA)]
+      else [Core::INTERNAL_ERROR, nil, generic_data(err)]
       end
     end
 

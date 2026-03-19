@@ -198,9 +198,9 @@ Deprecated methods still work normally but appear flagged in `rpc.discover` outp
 Collect per-method timing statistics:
 
 ```ruby
-require "reclamo/profiler"
+require "reclamo/extras/profiler"
 
-profiler = Reclamo::Profiler.new(server)
+profiler = Reclamo::Extras::Profiler.new(server)
 # ... handle requests ...
 profiler["add"]  # => {count: 150, min: 0.0001, max: 0.05, avg: 0.002, p50: ..., p95: ..., p99: ...}
 profiler.stats   # => all methods
@@ -212,7 +212,7 @@ profiler.reset   # clear data
 Logger-agnostic observability via `log_to`:
 
 ```ruby
-require "reclamo/logging"
+require "reclamo/extras/logging"
 
 server.log_to(Logger.new($stdout))           # logs at INFO by default
 server.log_to(Rails.logger, level: :debug)   # custom level
@@ -225,7 +225,7 @@ Successful responses log at the specified level; errors always log at ERROR.
 Sliding-window rate limiting with per-caller keying:
 
 ```ruby
-require "reclamo/rate_limit"
+require "reclamo/extras/rate_limit"
 
 server.rate_limit(max: 100, period: 60)                          # 100 req/min global
 server.rate_limit(max: 10, period: 60, only: ["expensive.*"])    # per-method
@@ -318,7 +318,7 @@ server.handle(request)  # still works
 - **Chainable API** — all setup methods return `self`
 - **Callable** — `to_proc` enables `requests.map(&server)`
 - **Rack adapter** — `Reclamo::Transport::Rack.new(server)` for instant HTTP deployment
-- **MCP adapter** — `Reclamo::MCP.new(server).run` for AI tool integration (Claude, Cursor, etc.)
+- **MCP adapter** — `Reclamo::Extras::MCP.new(server).run` for AI tool integration (Claude, Cursor, etc.)
 - **stdio adapter** — `Reclamo::Transport::Stdio.new(server).run` for CLI/MCP-style integrations
 - **Test helpers** — `rpc_call`, `assert_rpc_success`, `assert_rpc_error` for cleaner tests
 - **Concurrent batches** — `concurrent_batches: true` processes batch items in parallel
@@ -352,15 +352,15 @@ run Reclamo::Transport::Rack.new(server)
 Expose methods as AI tools via MCP:
 
 ```ruby
-require "reclamo/mcp"
+require "reclamo/extras/mcp"
 
 server = Reclamo::Server.new(name: "My Tools", version: "1.0")
 server.expose(Calculator, descriptions: { add: "Add two numbers" })
 
-Reclamo::MCP.new(server).run
+Reclamo::Extras::MCP.new(server).run
 ```
 
-`Reclamo::MCP` handles the MCP lifecycle (`initialize`, `tools/list`, `tools/call`), maps methods to tool definitions with input schemas, and runs over stdio for integration with Claude, Cursor, and other AI tools.
+`Reclamo::Extras::MCP` handles the MCP lifecycle (`initialize`, `tools/list`, `tools/call`), maps methods to tool definitions with input schemas, and runs over stdio for integration with Claude, Cursor, and other AI tools.
 
 #### WebSocket
 
@@ -423,14 +423,14 @@ response = server.handle_parsed(data)
 Capture exchanges for replay and regression testing:
 
 ```ruby
-require "reclamo/recorder"
+require "reclamo/extras/recorder"
 
-recorder = Reclamo::Recorder.new(server)
+recorder = Reclamo::Extras::Recorder.new(server)
 server.handle(request_json)
 recorder.exchanges  # => [{"method" => "add", "params" => [2, 3], "result" => 5, "duration" => 0.001}]
 
 # Write JSONL to a file
-recorder = Reclamo::Recorder.new(server, output: File.open("exchanges.jsonl", "a"))
+recorder = Reclamo::Extras::Recorder.new(server, output: File.open("exchanges.jsonl", "a"))
 ```
 
 ### Mock server
@@ -438,9 +438,9 @@ recorder = Reclamo::Recorder.new(server, output: File.open("exchanges.jsonl", "a
 Canned responses for contract testing:
 
 ```ruby
-require "reclamo/mock_server"
+require "reclamo/extras/mock_server"
 
-mock = Reclamo::MockServer.new
+mock = Reclamo::Extras::MockServer.new
 mock.stub("add", params: [2, 3], result: 5)
 mock.stub("greet", params: { "name" => "Alice" }, result: "Hi Alice")
 mock.stub_any("ping", "pong")  # matches any params
@@ -453,10 +453,10 @@ response = mock.handle('{"jsonrpc":"2.0","method":"add","params":[2,3],"id":1}')
 Reclamo ships with optional test helpers for cleaner assertions:
 
 ```ruby
-require "reclamo/test_helpers"
+require "reclamo/extras/test_helpers"
 
 class MyTest < Minitest::Test
-  include Reclamo::TestHelpers
+  include Reclamo::Extras::TestHelpers
 
   def test_addition
     response = rpc_call(server, "add", params: [2, 3])

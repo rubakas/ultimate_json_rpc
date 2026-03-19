@@ -4,11 +4,13 @@ require "json"
 require_relative "reclamo/version"
 
 module Reclamo
-  class Error < StandardError; end
+  module Core
+    class Error < StandardError; end
+  end
 end
 
-require_relative "reclamo/errors"
-require_relative "reclamo/request"
-require_relative "reclamo/response"
-require_relative "reclamo/handler"
+require_relative "reclamo/core/errors"
+require_relative "reclamo/core/request"
+require_relative "reclamo/core/response"
+require_relative "reclamo/core/handler"
 require_relative "reclamo/server"

@@ -246,7 +246,7 @@ class TestIntegration < Minitest::Test
     server = Reclamo::Server.new
     server.expose(Calculator)
     server.use do |request, next_call|
-      raise Reclamo::ApplicationError.new(code: 401, message: "Unauthorized") if request.method_name == "divide"
+      raise Reclamo::Core::ApplicationError.new(code: 401, message: "Unauthorized") if request.method_name == "divide"
 
       next_call.call
     end

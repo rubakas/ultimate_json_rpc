@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 require "test_helper"
-require "reclamo/logging"
+require "reclamo/extras/logging"
 require "json"
 require "logger"
 require "stringio"

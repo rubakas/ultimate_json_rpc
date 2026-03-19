@@ -17,7 +17,7 @@
 #   }
 
 require "reclamo"
-require "reclamo/mcp"
+require "reclamo/extras/mcp"
 
 module MathTools
   def self.add(a, b) = a + b
@@ -39,4 +39,4 @@ server.expose(MathTools,
                                multiply: { a: { "type" => "number" }, b: { "type" => "number" } },
                                divide: { a: { "type" => "number" }, b: { "type" => "number" } } })
 
-Reclamo::MCP.new(server).run
+Reclamo::Extras::MCP.new(server).run

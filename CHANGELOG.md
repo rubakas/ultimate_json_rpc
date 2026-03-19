@@ -25,14 +25,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Error catalog: `server.register_error(code, name, description)` registers application error codes that appear in `rpc.discover` under `components.errors`
 - Custom JSON serializer: `Server.new(json: Oj)` to swap JSON encoder/decoder, any object responding to `parse` and `generate`
 - Method-level authorization: `server.authorize("admin.*") { |req| req.context[:role] == :admin }` with glob patterns and custom error codes
-- Structured logging: `require "reclamo/logging"` adds `server.log_to(logger, level: :info)` for logger-agnostic observability
-- Request/response recorder: `require "reclamo/recorder"` provides `Reclamo::Recorder.new(server)` capturing exchanges for replay testing, with optional JSONL file output
-- MCP (Model Context Protocol) adapter: `require "reclamo/mcp"` provides `Reclamo::MCP.new(server)` for AI tool integration over stdio, mapping methods to MCP tools with schema support
-- Rate limiting: `require "reclamo/rate_limit"` adds `server.rate_limit(max:, period:)` with sliding window, per-caller keying, and per-method scoping
-- Per-method profiling: `require "reclamo/profiler"` provides `Reclamo::Profiler.new(server)` collecting count, min/max/avg, and p50/p95/p99 per method
-- Mock server: `require "reclamo/mock_server"` provides `Reclamo::MockServer` with `stub`/`stub_any` for consumer-driven contract testing
+- Structured logging: `require "reclamo/extras/logging"` adds `server.log_to(logger, level: :info)` for logger-agnostic observability
+- Request/response recorder: `require "reclamo/extras/recorder"` provides `Reclamo::Extras::Recorder.new(server)` capturing exchanges for replay testing, with optional JSONL file output
+- MCP (Model Context Protocol) adapter: `require "reclamo/extras/mcp"` provides `Reclamo::Extras::MCP.new(server)` for AI tool integration over stdio, mapping methods to MCP tools with schema support
+- Rate limiting: `require "reclamo/extras/rate_limit"` adds `server.rate_limit(max:, period:)` with sliding window, per-caller keying, and per-method scoping
+- Per-method profiling: `require "reclamo/extras/profiler"` provides `Reclamo::Extras::Profiler.new(server)` collecting count, min/max/avg, and p50/p95/p99 per method
+- Mock server: `require "reclamo/extras/mock_server"` provides `Reclamo::Extras::MockServer` with `stub`/`stub_any` for consumer-driven contract testing
 - TCP server adapter: `require "reclamo/transport/tcp"` provides `Reclamo::Transport::TCP.new(server, port: 4000)` for newline-delimited JSON-RPC over TCP with multi-client threading
-- API documentation generation: `require "reclamo/docs"` provides `Reclamo::Docs.new(server).to_markdown` generating Markdown from OpenRPC schema
+- API documentation generation: `require "reclamo/extras/docs"` provides `Reclamo::Extras::Docs.new(server).to_markdown` generating Markdown from OpenRPC schema
 - Usage examples: `examples/` directory with runnable patterns for Rack, MCP, multi-namespace/versioning, error handling, and testing
 - WebSocket adapter: `require "reclamo/transport/websocket"` provides `Reclamo::Transport::WebSocket` for JSON-RPC over WebSockets with any Rack-compatible library
 

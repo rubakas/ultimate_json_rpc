@@ -1,10 +1,10 @@
 # frozen_string_literal: true
 
 require "test_helper"
-require "reclamo/test_helpers"
+require "reclamo/extras/test_helpers"
 
 class TestTestHelpers < Minitest::Test
-  include Reclamo::TestHelpers
+  include Reclamo::Extras::TestHelpers
 
   def setup
     @server = Reclamo::Server.new

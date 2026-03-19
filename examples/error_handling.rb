@@ -6,14 +6,14 @@
 # Run: ruby examples/error_handling.rb
 
 require "reclamo"
-require "reclamo/logging"
+require "reclamo/extras/logging"
 require "json"
 require "logger"
 
 module BankService
   def self.transfer(from:, to:, amount:)
-    raise Reclamo::ApplicationError.new(code: 1001, message: "Insufficient funds", data: { balance: 50 }) if amount > 100
-    raise Reclamo::ApplicationError.new(code: 1002, message: "Account frozen") if from == "frozen"
+    raise Reclamo::Core::ApplicationError.new(code: 1001, message: "Insufficient funds", data: { balance: 50 }) if amount > 100
+    raise Reclamo::Core::ApplicationError.new(code: 1002, message: "Account frozen") if from == "frozen"
 
     { from:, to:, amount:, status: "completed" }
   end

@@ -44,12 +44,12 @@ class TestRequestTimeout < Minitest::Test
     server.on(:error) { |_req, err, _dur| captured_error = err }
 
     call(server, "slow")
-    assert_instance_of Reclamo::RequestTimeout, captured_error
+    assert_instance_of Reclamo::Core::RequestTimeout, captured_error
   end
 
   def test_request_timeout_is_a_server_error
-    error = Reclamo::RequestTimeout.new
-    assert_kind_of Reclamo::ServerError, error
+    error = Reclamo::Core::RequestTimeout.new
+    assert_kind_of Reclamo::Core::ServerError, error
     assert_equal(-32_001, error.code)
   end
 
@@ -62,7 +62,7 @@ class TestRequestTimeout < Minitest::Test
   end
 
   def test_request_timeout_constant
-    assert_equal(-32_001, Reclamo::REQUEST_TIMEOUT)
+    assert_equal(-32_001, Reclamo::Core::REQUEST_TIMEOUT)
   end
 
   private

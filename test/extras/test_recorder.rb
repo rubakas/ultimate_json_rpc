@@ -30,7 +30,7 @@ class TestRecorder < Minitest::Test
 
     assert_equal 1, recorder.size
     assert_equal "nonexistent", recorder.exchanges[0]["method"]
-    assert_equal "Reclamo::MethodNotFound", recorder.exchanges[0]["error"]["class"]
+    assert_equal "Reclamo::Core::MethodNotFound", recorder.exchanges[0]["error"]["class"]
     refute recorder.exchanges[0].key?("result")
   end
 
@@ -50,7 +50,7 @@ class TestRecorder < Minitest::Test
     exchange = recorder.exchanges[0]
     assert_equal "nonexistent", exchange["method"]
     assert exchange.key?("error")
-    assert_equal "Reclamo::MethodNotFound", exchange["error"]["class"]
+    assert_equal "Reclamo::Core::MethodNotFound", exchange["error"]["class"]
   end
 
   def test_records_multiple_exchanges

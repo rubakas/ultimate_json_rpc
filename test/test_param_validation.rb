@@ -117,7 +117,7 @@ class TestParamValidationType < Minitest::Test
   def assert_invalid_params(server, method, params, message_pattern)
     response = call(server, method, params)
 
-    assert_equal Reclamo::INVALID_PARAMS, response.dig("error", "code")
+    assert_equal Reclamo::Core::INVALID_PARAMS, response.dig("error", "code")
     assert_match message_pattern, response.dig("error", "data")
   end
 end
@@ -136,7 +136,7 @@ class TestParamValidationEnum < Minitest::Test
     server.expose_method("color", params_schema: { c: { "enum" => %w[red green blue] } }) { |c| c }
     response = call(server, "color", ["yellow"])
 
-    assert_equal Reclamo::INVALID_PARAMS, response.dig("error", "code")
+    assert_equal Reclamo::Core::INVALID_PARAMS, response.dig("error", "code")
     assert_match(/parameter 'c' must be one of/, response.dig("error", "data"))
   end
 
@@ -145,7 +145,7 @@ class TestParamValidationEnum < Minitest::Test
     server.expose_method("level", params_schema: { n: { "type" => "integer", "enum" => [1, 2, 3] } }) { |n| n }
     response = call(server, "level", ["not_int"])
 
-    assert_equal Reclamo::INVALID_PARAMS, response.dig("error", "code")
+    assert_equal Reclamo::Core::INVALID_PARAMS, response.dig("error", "code")
     assert_match(/must be integer/, response.dig("error", "data"))
   end
 
@@ -154,7 +154,7 @@ class TestParamValidationEnum < Minitest::Test
     server.expose_method("level", params_schema: { n: { "type" => "integer", "enum" => [1, 2, 3] } }) { |n| n }
     response = call(server, "level", [99])
 
-    assert_equal Reclamo::INVALID_PARAMS, response.dig("error", "code")
+    assert_equal Reclamo::Core::INVALID_PARAMS, response.dig("error", "code")
     assert_match(/must be one of/, response.dig("error", "data"))
   end
 
@@ -180,7 +180,7 @@ class TestParamValidationKeywordParams < Minitest::Test
     server.expose_method("greet", params_schema: { name: { "type" => "string" } }) { |name:| "Hi #{name}" }
     response = call(server, "greet", { "name" => 123 })
 
-    assert_equal Reclamo::INVALID_PARAMS, response.dig("error", "code")
+    assert_equal Reclamo::Core::INVALID_PARAMS, response.dig("error", "code")
     assert_match(/parameter 'name' must be string/, response.dig("error", "data"))
   end
 
@@ -200,7 +200,7 @@ class TestParamValidationExpose < Minitest::Test
                   })
     response = call(server, "add", ["not_a_number", 2])
 
-    assert_equal Reclamo::INVALID_PARAMS, response.dig("error", "code")
+    assert_equal Reclamo::Core::INVALID_PARAMS, response.dig("error", "code")
     assert_match(/parameter 'left' must be number/, response.dig("error", "data"))
   end
 
@@ -221,7 +221,7 @@ class TestParamValidationExpose < Minitest::Test
                   })
     response = call(server, "math.add", ["bad", 2])
 
-    assert_equal Reclamo::INVALID_PARAMS, response.dig("error", "code")
+    assert_equal Reclamo::Core::INVALID_PARAMS, response.dig("error", "code")
   end
 
   def test_expose_string_keys
@@ -231,7 +231,7 @@ class TestParamValidationExpose < Minitest::Test
                   })
     response = call(server, "add", ["nope", 2])
 
-    assert_equal Reclamo::INVALID_PARAMS, response.dig("error", "code")
+    assert_equal Reclamo::Core::INVALID_PARAMS, response.dig("error", "code")
   end
 
   private
@@ -264,7 +264,7 @@ class TestParamValidationEdgeCases < Minitest::Test
     server.expose_method("pair", params_schema: { a: { "type" => "string" } }) { |a, b| [a, b] }
     response = call(server, "pair", [42, "hello"])
 
-    assert_equal Reclamo::INVALID_PARAMS, response.dig("error", "code")
+    assert_equal Reclamo::Core::INVALID_PARAMS, response.dig("error", "code")
   end
 
   def test_nil_params_skips_validation
@@ -289,7 +289,7 @@ class TestParamValidationEdgeCases < Minitest::Test
     server.expose_method("double", doubler, params_schema: { n: { "type" => "number" } })
     response = call(server, "double", ["bad"])
 
-    assert_equal Reclamo::INVALID_PARAMS, response.dig("error", "code")
+    assert_equal Reclamo::Core::INVALID_PARAMS, response.dig("error", "code")
   end
 
   def test_schema_survives_freeze
@@ -298,7 +298,7 @@ class TestParamValidationEdgeCases < Minitest::Test
     server.freeze
     response = call(server, "add", ["bad"])
 
-    assert_equal Reclamo::INVALID_PARAMS, response.dig("error", "code")
+    assert_equal Reclamo::Core::INVALID_PARAMS, response.dig("error", "code")
   end
 
   private

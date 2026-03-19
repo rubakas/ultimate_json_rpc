@@ -40,7 +40,7 @@ class TestServerExposeMethod < Minitest::Test
   end
 
   def test_expose_method_without_block_raises
-    handler = Reclamo::Handler.new
+    handler = Reclamo::Core::Handler.new
 
     assert_raises(ArgumentError) { handler.expose_method("foo") }
   end

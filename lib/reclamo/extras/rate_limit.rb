@@ -35,7 +35,7 @@ module Reclamo
         @mutex.synchronize do
           window = (@windows[bucket] ||= [])
           window.reject! { |t| now - t > @period }
-          raise ApplicationError.new(code: @code, message: @message) if window.size >= @max
+          raise Core::ApplicationError.new(code: @code, message: @message) if window.size >= @max
 
           window << now
           evict_stale!(now)
@@ -48,10 +48,10 @@ module Reclamo
 
       def validate_code!(code)
         raise ArgumentError, "code must be an Integer" unless code.is_a?(Integer)
-        return unless code.between?(RESERVED_ERROR_MIN, RESERVED_ERROR_MAX)
+        return unless code.between?(Core::RESERVED_ERROR_MIN, Core::RESERVED_ERROR_MAX)
 
         raise ArgumentError,
-              "code #{code} is in the reserved JSON-RPC range (#{RESERVED_ERROR_MIN}..#{RESERVED_ERROR_MAX})"
+              "code #{code} is in the reserved JSON-RPC range (#{Core::RESERVED_ERROR_MIN}..#{Core::RESERVED_ERROR_MAX})"
       end
     end
 

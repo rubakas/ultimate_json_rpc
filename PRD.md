@@ -150,7 +150,7 @@ Testing:
   *Depends on: nothing.*
 
 - [x] **Mock server for consumer-driven testing**
-  `Reclamo::MockServer` responding with canned responses based on method+params matching. Pairs with OpenRPC for contract testing.
+  `Reclamo::Extras::MockServer` responding with canned responses based on method+params matching. Pairs with OpenRPC for contract testing.
   *Depends on: OpenRPC schema generation (P0).*
 
 - [x] **Per-method profiling**
