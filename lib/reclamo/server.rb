@@ -4,7 +4,8 @@ require "timeout"
 
 module Reclamo
   GENERIC_ERROR_DATA = "Internal server error"
-  private_constant :GENERIC_ERROR_DATA
+  GENERIC_PARAMS_DATA = "Invalid method parameters"
+  private_constant :GENERIC_ERROR_DATA, :GENERIC_PARAMS_DATA
 
   module BatchProcessor
     private
@@ -303,15 +304,16 @@ module Reclamo
     end
 
     def error_details(err)
-      data = @expose_errors ? err.message : GENERIC_ERROR_DATA
       case err
-      when MethodNotFound then [METHOD_NOT_FOUND, nil, err.method_name]
+      when MethodNotFound then [METHOD_NOT_FOUND, ERROR_MESSAGES[METHOD_NOT_FOUND], err.method_name]
       when ApplicationError, ServerError then [err.code, err.message, err.rpc_data]
       when InvalidParams then [INVALID_PARAMS, nil, err.message]
-      when InvalidRequest then [INVALID_REQUEST, nil, data]
-      when ArgumentError then [INVALID_PARAMS, nil, data]
-      else [INTERNAL_ERROR, nil, data]
+      when InvalidRequest then [INVALID_REQUEST, nil, generic_data(err)]
+      when ArgumentError then [INVALID_PARAMS, nil, generic_data(err, GENERIC_PARAMS_DATA)]
+      else [INTERNAL_ERROR, nil, generic_data(err)]
       end
     end
+
+    def generic_data(err, fallback = GENERIC_ERROR_DATA) = @expose_errors ? err.message : fallback
   end
 end

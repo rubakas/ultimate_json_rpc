@@ -67,7 +67,8 @@ module Reclamo
     def timing_stats(entry)
       avg = entry[:count].zero? ? 0.0 : entry[:total] / entry[:count]
       { count: entry[:count], total: entry[:total].round(6),
-        min: entry[:min].round(6), max: entry[:max].round(6), avg: avg.round(6) }
+        min: entry[:min].round(6), max: entry[:max].round(6), avg: avg.round(6),
+        samples: entry[:durations].size }
     end
 
     def percentile_stats(sorted)

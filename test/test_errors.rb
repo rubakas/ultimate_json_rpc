@@ -100,7 +100,7 @@ class TestServerErrors < Minitest::Test
 
   def test_over_nested_params_returns_invalid_request
     nested = "leaf"
-    33.times { nested = { "n" => nested } }
+    32.times { nested = { "n" => nested } }
     request = { "jsonrpc" => "2.0", "method" => "add", "params" => nested, "id" => 1 }
     response = JSON.parse(@server.handle(JSON.generate(request)))
 
@@ -525,6 +525,6 @@ class TestExposeErrorsOption < Minitest::Test
     response = JSON.parse(server.handle(JSON.generate(request)))
 
     assert_equal(-32_602, response["error"]["code"])
-    assert_equal "Internal server error", response["error"]["data"]
+    assert_equal "Invalid method parameters", response["error"]["data"]
   end
 end

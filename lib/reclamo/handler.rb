@@ -139,6 +139,7 @@ module Reclamo
     def empty? = @targets.empty?
 
     def freeze
+      @targets.each_value { |v| v.freeze if v.is_a?(Array) }
       [@targets, @descriptions, @returns, @deprecated, @params_schemas].each(&:freeze)
       super
     end
@@ -192,7 +193,9 @@ module Reclamo
       @targets[full_name] = [target, method_name]
       store_metadata(full_name:, method_name:, store: @descriptions, source: descriptions, &:to_s)
       store_metadata(full_name:, method_name:, store: @returns, source: returns)
-      store_metadata(full_name:, method_name:, store: @deprecated, source: deprecated)
+      store_metadata(full_name:, method_name:, store: @deprecated, source: deprecated) do |v|
+        v == true ? true : v.to_s
+      end
       store_metadata(full_name:, method_name:, store: @params_schemas,
                      source: params_schema) { |v| v.transform_keys(&:to_s) }
     end
@@ -214,11 +217,11 @@ module Reclamo
     end
 
     def callable_methods(target)
-      base = if target.is_a?(Class) then Class
-             elsif target.is_a?(Module) then Module
-             else Object
-             end
-      (target.public_methods(false) - base.public_instance_methods).map(&:to_s)
+      if target.is_a?(Module)
+        target.singleton_class.public_instance_methods(false).map(&:to_s)
+      else
+        (target.public_methods(false) - Object.public_instance_methods).map(&:to_s)
+      end
     end
 
     def filter_methods(methods, only:, except:)

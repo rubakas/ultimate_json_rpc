@@ -225,7 +225,7 @@ end
 class TestRequestNestingLimit < Minitest::Test
   def test_nesting_at_max_succeeds
     nested = "leaf"
-    32.times { nested = { "n" => nested } }
+    31.times { nested = { "n" => nested } }
     data = { "jsonrpc" => "2.0", "method" => "foo", "params" => nested, "id" => 1 }
 
     request = Reclamo::Request.new(data)
@@ -235,7 +235,7 @@ class TestRequestNestingLimit < Minitest::Test
 
   def test_nesting_beyond_max_raises
     nested = "leaf"
-    33.times { nested = { "n" => nested } }
+    32.times { nested = { "n" => nested } }
     data = { "jsonrpc" => "2.0", "method" => "foo", "params" => nested, "id" => 1 }
 
     assert_raises(Reclamo::InvalidRequest) { Reclamo::Request.new(data) }

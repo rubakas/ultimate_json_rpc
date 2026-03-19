@@ -22,9 +22,13 @@ module Reclamo
       @mutex = Mutex.new
     end
 
+    MAX_LINE_BYTES = 4 * 1024 * 1024
+
     def run
-      @running = true
-      @mutex.synchronize { @tcp_server = TCPServer.new(@host, @port) }
+      @mutex.synchronize do
+        @running = true
+        @tcp_server = TCPServer.new(@host, @port)
+      end
       trap_signals
       accept_loop
     ensure
@@ -48,9 +52,11 @@ module Reclamo
 
     def accept_loop
       while @mutex.synchronize { @running }
-        next unless tcp_server.wait_readable(0.5)
+        server = @mutex.synchronize { @tcp_server }
+        break unless server
+        next unless server.wait_readable(0.5)
 
-        client = accept_client
+        client = accept_client(server)
         next unless client
 
         accept_or_reject(client)
@@ -59,12 +65,8 @@ module Reclamo
       # Server socket was closed (e.g., via stop)
     end
 
-    def tcp_server
-      @mutex.synchronize { @tcp_server }
-    end
-
-    def accept_client
-      tcp_server.accept
+    def accept_client(server)
+      server.accept
     rescue IOError, Errno::EBADF, Errno::EMFILE, Errno::ENFILE, Errno::ECONNABORTED
       nil
     end
@@ -93,7 +95,7 @@ module Reclamo
     end
 
     def handle_client(client)
-      client.each_line do |line|
+      while (line = client.gets("\n", MAX_LINE_BYTES))
         line = line.chomp
         next if line.empty?
 

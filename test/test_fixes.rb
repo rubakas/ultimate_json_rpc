@@ -7,6 +7,7 @@ require "reclamo/profiler"
 require "reclamo/rate_limit"
 require "reclamo/tcp"
 require "reclamo/recorder"
+require "reclamo/mock_server"
 
 class TestHandleRescueScope < Minitest::Test
   def test_handle_returns_parse_error_for_invalid_json
@@ -348,5 +349,234 @@ class TestDeepDupFrozenKeys < Minitest::Test
     response = JSON.parse(server.handle_parsed(request))
 
     assert_equal "hello", response["result"]
+  end
+end
+
+class TestTCPStopRace < Minitest::Test
+  def test_stop_during_accept_loop_does_not_crash
+    server = Reclamo::Server.new
+    server.expose(Calculator)
+    tcp = Reclamo::TCP.new(server, port: 0, host: "127.0.0.1")
+
+    thread = Thread.new { tcp.run }
+    sleep(0.05)
+    tcp.stop
+    thread.join(5)
+
+    refute thread.alive?, "TCP thread should have exited cleanly"
+  end
+end
+
+class TestCallableMethodsNameOverride < Minitest::Test
+  def test_module_with_self_name_is_exposed
+    mod = Module.new do
+      def self.name
+        "CustomModule"
+      end
+
+      def self.greet
+        "hello"
+      end
+    end
+
+    server = Reclamo::Server.new
+    server.expose(mod)
+
+    assert server.method?("name"), "Module.name should be exposed"
+    assert server.method?("greet"), "Module.greet should be exposed"
+  end
+
+  def test_class_with_self_name_is_exposed
+    klass = Class.new do
+      def self.name
+        "CustomClass"
+      end
+
+      def self.compute
+        42
+      end
+    end
+
+    server = Reclamo::Server.new
+    server.expose(klass)
+
+    assert server.method?("name"), "Class.name should be exposed"
+    assert server.method?("compute"), "Class.compute should be exposed"
+  end
+end
+
+class TestRateLimiterCodeValidation < Minitest::Test
+  def test_reserved_code_raises
+    assert_raises(ArgumentError) do
+      Reclamo::RateLimiter.new(max: 10, period: 60, code: -32_000)
+    end
+  end
+
+  def test_non_integer_code_raises
+    assert_raises(ArgumentError) do
+      Reclamo::RateLimiter.new(max: 10, period: 60, code: "429")
+    end
+  end
+
+  def test_valid_code_succeeds
+    limiter = Reclamo::RateLimiter.new(max: 10, period: 60, code: 429)
+    assert_instance_of Reclamo::RateLimiter, limiter
+  end
+
+  def test_server_rate_limit_reserved_code_raises
+    server = Reclamo::Server.new
+    server.expose(Calculator)
+
+    assert_raises(ArgumentError) do
+      server.rate_limit(max: 10, period: 60, code: -32_600)
+    end
+  end
+end
+
+class TestTCPMaxLineBytes < Minitest::Test
+  def test_max_line_bytes_constant
+    assert_equal 4 * 1024 * 1024, Reclamo::TCP::MAX_LINE_BYTES
+  end
+end
+
+class TestRecorderConcurrentOutput < Minitest::Test
+  def test_concurrent_output_produces_valid_jsonl
+    output = StringIO.new
+    server = Reclamo::Server.new(concurrent_batches: true)
+    server.expose(Calculator)
+    Reclamo::Recorder.new(server, output: output)
+
+    requests = 10.times.map { |i| { "jsonrpc" => "2.0", "method" => "add", "params" => [i, 1], "id" => i } }
+    server.handle(JSON.generate(requests))
+
+    lines = output.string.split("\n").reject(&:empty?)
+    assert_equal 10, lines.size
+    lines.each { |line| assert JSON.parse(line), "Each line must be valid JSON" }
+  end
+end
+
+class TestProfilerSamplesField < Minitest::Test
+  def test_samples_equals_count_within_max
+    server = Reclamo::Server.new
+    server.expose(Calculator)
+    profiler = Reclamo::Profiler.new(server, max_samples: 100)
+
+    5.times do |i|
+      request = { "jsonrpc" => "2.0", "method" => "add", "params" => [i, 1], "id" => i }
+      server.handle(JSON.generate(request))
+    end
+
+    stats = profiler["add"]
+    assert_equal 5, stats[:count]
+    assert_equal 5, stats[:samples]
+  end
+
+  def test_samples_capped_at_max_samples
+    server = Reclamo::Server.new
+    server.expose(Calculator)
+    profiler = Reclamo::Profiler.new(server, max_samples: 3)
+
+    10.times do |i|
+      request = { "jsonrpc" => "2.0", "method" => "add", "params" => [i, 1], "id" => i }
+      server.handle(JSON.generate(request))
+    end
+
+    stats = profiler["add"]
+    assert_equal 10, stats[:count]
+    assert_equal 3, stats[:samples]
+  end
+end
+
+class TestArgumentErrorGenericData < Minitest::Test
+  def test_argument_error_uses_generic_params_data_when_hidden
+    server = Reclamo::Server.new(expose_errors: false)
+    server.expose(Calculator)
+
+    request = { "jsonrpc" => "2.0", "method" => "add", "params" => [1, 2, 3], "id" => 1 }
+    response = JSON.parse(server.handle(JSON.generate(request)))
+
+    assert_equal(-32_602, response["error"]["code"])
+    assert_equal "Invalid method parameters", response["error"]["data"]
+  end
+
+  def test_argument_error_exposes_message_when_enabled
+    server = Reclamo::Server.new(expose_errors: true)
+    server.expose(Calculator)
+
+    request = { "jsonrpc" => "2.0", "method" => "add", "params" => [1, 2, 3], "id" => 1 }
+    response = JSON.parse(server.handle(JSON.generate(request)))
+
+    assert_equal(-32_602, response["error"]["code"])
+    assert_includes response["error"]["data"], "wrong number of arguments"
+  end
+end
+
+class TestMockServerNonSerializableStub < Minitest::Test
+  def test_non_serializable_stub_returns_internal_error
+    mock = Reclamo::MockServer.new
+    circular = {}
+    circular["self"] = circular
+    mock.stub("broken", params: nil, result: circular)
+
+    request = { "jsonrpc" => "2.0", "method" => "broken", "id" => 1 }
+    response = JSON.parse(mock.handle(JSON.generate(request)))
+
+    assert_equal(-32_603, response["error"]["code"])
+  end
+
+  def test_non_serializable_stub_does_not_abort_batch
+    mock = Reclamo::MockServer.new
+    circular = {}
+    circular["self"] = circular
+    mock.stub("broken", params: nil, result: circular)
+    mock.stub("ok", params: nil, result: "fine")
+
+    requests = [
+      { "jsonrpc" => "2.0", "method" => "ok", "params" => nil, "id" => 1 },
+      { "jsonrpc" => "2.0", "method" => "broken", "params" => nil, "id" => 2 },
+      { "jsonrpc" => "2.0", "method" => "ok", "params" => nil, "id" => 3 }
+    ]
+    responses = JSON.parse(mock.handle(JSON.generate(requests)))
+
+    assert_equal 3, responses.size
+    assert_equal "fine", responses[0]["result"]
+    assert_equal(-32_603, responses[1]["error"]["code"])
+    assert_equal "fine", responses[2]["result"]
+  end
+end
+
+class TestDeprecatedNormalizationViaExpose < Minitest::Test
+  include DiscoverHelper
+
+  def test_deprecated_hash_string_values_normalized
+    mod = Module.new do
+      def self.alpha
+        "a"
+      end
+
+      def self.beta
+        "b"
+      end
+    end
+
+    server = Reclamo::Server.new
+    server.expose(mod, deprecated: { alpha: true, beta: :use_gamma })
+
+    methods = discover_methods(server)
+    alpha = methods.find { |m| m["name"] == "alpha" }
+    beta = methods.find { |m| m["name"] == "beta" }
+
+    assert_equal true, alpha["deprecated"]
+    assert_equal "use_gamma", beta["deprecated"]
+  end
+end
+
+class TestHandlerFreezeTargetArrays < Minitest::Test
+  def test_target_arrays_frozen_after_freeze
+    handler = Reclamo::Handler.new
+    handler.expose(Calculator)
+    handler.freeze
+
+    assert_predicate handler, :frozen?
   end
 end

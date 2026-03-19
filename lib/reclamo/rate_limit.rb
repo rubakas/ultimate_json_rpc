@@ -3,6 +3,7 @@
 module Reclamo
   class RateLimiter
     def initialize(max:, period:, key: nil, code: 429, message: "Rate limit exceeded")
+      validate_code!(code)
       @max = max
       @period = period
       @key_fn = build_key_fn(key)
@@ -42,6 +43,14 @@ module Reclamo
 
     def evict_stale!(now)
       @windows.delete_if { |_, w| w.none? { |t| now - t <= @period } } if @windows.size > 20
+    end
+
+    def validate_code!(code)
+      raise ArgumentError, "code must be an Integer" unless code.is_a?(Integer)
+      return unless code.between?(RESERVED_ERROR_MIN, RESERVED_ERROR_MAX)
+
+      raise ArgumentError,
+            "code #{code} is in the reserved JSON-RPC range (#{RESERVED_ERROR_MIN}..#{RESERVED_ERROR_MAX})"
     end
   end
 

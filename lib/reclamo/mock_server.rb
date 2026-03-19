@@ -43,18 +43,19 @@ module Reclamo
 
     def handle_single(data)
       return @json.generate(Response.error(INVALID_REQUEST, nil)) unless valid_request?(data)
-
-      method = data["method"]
-      params = data["params"]
-      id = data["id"]
-      result = lookup(method, params)
-
       return nil unless data.key?("id")
 
+      dispatch_stub(data)
+    rescue StandardError
+      @json.generate(Response.error(INTERNAL_ERROR, data.is_a?(Hash) ? data["id"] : nil))
+    end
+
+    def dispatch_stub(data)
+      result = lookup(data["method"], data["params"])
       if result == :__no_stub__
-        @json.generate(Response.error(METHOD_NOT_FOUND, id, data: method))
+        @json.generate(Response.error(METHOD_NOT_FOUND, data["id"], data: data["method"]))
       else
-        @json.generate(Response.success(result, id))
+        @json.generate(Response.success(result, data["id"]))
       end
     end
 

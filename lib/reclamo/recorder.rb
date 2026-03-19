@@ -11,6 +11,7 @@ module Reclamo
       @output = output
       @json = json
       @mutex = Mutex.new
+      @output_mutex = Mutex.new
       attach(server)
     end
 
@@ -53,8 +54,10 @@ module Reclamo
     def write_output(entry)
       return unless @output
 
-      @output.puts(@json.generate(entry))
-      @output.flush
+      @output_mutex.synchronize do
+        @output.puts(@json.generate(entry))
+        @output.flush
+      end
     rescue IOError, SystemCallError
       # Output broken; exchange still recorded in memory
     end
