@@ -215,7 +215,8 @@ module Reclamo
         if target.is_a?(Module)
           target.singleton_class.public_instance_methods(false).map(&:to_s)
         else
-          (target.public_methods(false) - Object.public_instance_methods).map(&:to_s)
+          ((target.class.public_instance_methods(false) - Object.public_instance_methods) |
+           target.singleton_methods).map(&:to_s)
         end
       end
 
@@ -264,10 +265,34 @@ module Reclamo
       def invoke_callable(callable, params)
         case params
         when Array then callable.call(*params)
-        when Hash  then callable.call(**params.transform_keys(&:to_sym))
+        when Hash  then callable.call(**safe_symbolize_keys(callable, params))
         when nil   then callable.call
         else raise ArgumentError, "params must be an Array, Hash, or nil"
         end
+      end
+
+      def safe_symbolize_keys(callable, params)
+        return params.transform_keys(&:to_sym) if accepts_keyrest?(callable)
+
+        known = known_keyword_params(callable)
+        params.each_with_object({}) do |(k, v), h|
+          key = k.to_s
+          if known.key?(key)
+            h[known[key]] = v
+          elsif known.any?
+            raise ArgumentError, "unknown keyword: #{key}"
+          end
+        end
+      end
+
+      def known_keyword_params(callable)
+        callable.parameters.each_with_object({}) do |(type, name), map|
+          map[name.to_s] = name if name && %i[key keyreq].include?(type)
+        end
+      end
+
+      def accepts_keyrest?(callable)
+        callable.parameters.any? { |type, _| type == :keyrest }
       end
     end
   end

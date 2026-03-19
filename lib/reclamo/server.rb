@@ -39,16 +39,20 @@ module Reclamo
     def spawn_workers(queue:, results:, pool_size:)
       mutex = Mutex.new
       pool_size.times.map do
-        Thread.new do
-          loop do
-            req, i = queue.pop(true)
-            result = safe_serialize(req)
-            mutex.synchronize { results[i] = result }
-          rescue ThreadError
-            break
-          end
-        end
+        Thread.new { drain_queue(queue, results, mutex) }
       end.each(&:join)
+    end
+
+    def drain_queue(queue, results, mutex)
+      loop do
+        req, i = begin
+          queue.pop(true)
+        rescue ThreadError
+          break
+        end
+        result = safe_serialize(req)
+        mutex.synchronize { results[i] = result }
+      end
     end
 
     def safe_serialize(data)
@@ -312,7 +316,7 @@ module Reclamo
     def error_details(err)
       case err
       when Core::MethodNotFound
-        [Core::METHOD_NOT_FOUND, Core::ERROR_MESSAGES[Core::METHOD_NOT_FOUND], err.method_name]
+        [Core::METHOD_NOT_FOUND, Core::ERROR_MESSAGES[Core::METHOD_NOT_FOUND], generic_data(err)]
       when Core::ApplicationError, Core::ServerError then [err.code, err.message, err.rpc_data]
       when Core::InvalidParams, ArgumentError then [Core::INVALID_PARAMS, nil, generic_data(err, GENERIC_PARAMS_DATA)]
       when Core::InvalidRequest then [Core::INVALID_REQUEST, nil, generic_data(err)]

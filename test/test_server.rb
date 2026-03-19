@@ -264,7 +264,7 @@ class TestServerCallable < Minitest::Test
     response = JSON.parse(server.handle(JSON.generate(request)))
 
     assert_equal(-32_601, response["error"]["code"])
-    assert_equal "nonexistent", response["error"]["data"]
+    assert_equal "Internal server error", response["error"]["data"]
   end
 
   def test_inspect

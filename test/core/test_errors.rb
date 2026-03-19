@@ -15,7 +15,7 @@ class TestServerErrors < Minitest::Test
 
     assert_equal(-32_601, response["error"]["code"])
     assert_equal "Method not found", response["error"]["message"]
-    assert_equal "nonexistent", response["error"]["data"]
+    assert_equal "Method not found: nonexistent", response["error"]["data"]
   end
 
   def test_parse_error
@@ -100,7 +100,7 @@ class TestServerErrors < Minitest::Test
 
   def test_over_nested_params_returns_invalid_request
     nested = "leaf"
-    32.times { nested = { "n" => nested } }
+    33.times { nested = { "n" => nested } }
     request = { "jsonrpc" => "2.0", "method" => "add", "params" => nested, "id" => 1 }
     response = JSON.parse(@server.handle(JSON.generate(request)))
 
@@ -540,14 +540,24 @@ class TestExposeErrorsOption < Minitest::Test
     assert_match(/must be integer/, response["error"]["data"])
   end
 
-  def test_method_not_found_always_exposed
+  def test_method_not_found_hidden_by_default
     server = Reclamo::Server.new
 
     request = { "jsonrpc" => "2.0", "method" => "missing", "id" => 1 }
     response = JSON.parse(server.handle(JSON.generate(request)))
 
     assert_equal(-32_601, response["error"]["code"])
-    assert_equal "missing", response["error"]["data"]
+    assert_equal "Internal server error", response["error"]["data"]
+  end
+
+  def test_method_not_found_exposed_when_enabled
+    server = Reclamo::Server.new(expose_errors: true)
+
+    request = { "jsonrpc" => "2.0", "method" => "missing", "id" => 1 }
+    response = JSON.parse(server.handle(JSON.generate(request)))
+
+    assert_equal(-32_601, response["error"]["code"])
+    assert_equal "Method not found: missing", response["error"]["data"]
   end
 
   def test_argument_error_hidden_by_default

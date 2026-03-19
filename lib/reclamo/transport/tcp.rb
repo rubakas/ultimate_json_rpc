@@ -45,6 +45,10 @@ module Reclamo
           t.join(5)
           t.kill if t.alive?
         end
+        @mutex.synchronize do
+          @client_threads.clear
+          @connection_count = 0
+        end
       end
 
       def running? = @mutex.synchronize { @running }

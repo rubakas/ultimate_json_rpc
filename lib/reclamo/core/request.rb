@@ -57,7 +57,7 @@ module Reclamo
       end
 
       def deep_freeze(obj, depth = 0)
-        raise InvalidRequest, "params nesting too deep (max #{MAX_NESTING})" if depth >= MAX_NESTING
+        raise InvalidRequest, "params nesting too deep (max #{MAX_NESTING})" if depth > MAX_NESTING
 
         case obj
         when Hash
