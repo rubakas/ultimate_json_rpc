@@ -359,8 +359,10 @@ end
 
 class TestHandlerDangerousMethods < Minitest::Test
   %w[eval instance_eval class_eval module_eval send public_send __send__ system exec spawn fork
-     define_method remove_method binding method_missing respond_to_missing?
-     exit exit! abort require require_relative load open].each do |name|
+     define_method remove_method undef_method binding method_missing respond_to_missing?
+     exit exit! abort require require_relative load open
+     include extend prepend attr_accessor attr_reader attr_writer
+     public private protected].each do |name|
     safe_name = name.tr("?", "_q")
     define_method("test_expose_rejects_#{safe_name}") do
       handler = Reclamo::Core::Handler.new
@@ -396,7 +398,16 @@ class TestHandlerDangerousMethods < Minitest::Test
     assert handler.method?("evaluate")
   end
 
-  %w[instance_variable_get instance_variable_set const_get const_set method].each do |dangerous|
+  def test_expose_allows_safe_names_similar_to_dangerous
+    handler = Reclamo::Core::Handler.new
+    %w[including extended prepending publicly privately].each do |safe_name|
+      handler.expose_method(safe_name) { "ok" }
+      assert handler.method?(safe_name)
+    end
+  end
+
+  %w[instance_variable_get instance_variable_set class_variable_get class_variable_set
+     const_get const_set remove_const method].each do |dangerous|
     define_method("test_expose_method_#{dangerous}_is_blocked") do
       handler = Reclamo::Core::Handler.new
       assert_raises(ArgumentError) { handler.expose_method(dangerous) { nil } }

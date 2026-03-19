@@ -57,11 +57,11 @@ module Reclamo
 
     def safe_serialize(data)
       serialize_single(data)
-    rescue StandardError
+    rescue Exception # rubocop:disable Lint/RescueException -- worker threads must never die silently
       id = data.is_a?(Hash) ? extract_id(data) : nil
       begin
         @json.generate(Core::Response.error(Core::INTERNAL_ERROR, id))
-      rescue StandardError
+      rescue Exception # rubocop:disable Lint/RescueException
         '{"jsonrpc":"2.0","error":{"code":-32603,"message":"Internal error"},"id":null}'
       end
     end

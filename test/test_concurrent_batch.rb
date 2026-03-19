@@ -229,6 +229,57 @@ class TestConcurrentBatchWorkerResilience < Minitest::Test
   end
 end
 
+class TestConcurrentBatchExceptionResilience < Minitest::Test
+  def test_exception_in_worker_thread_returns_internal_error
+    server = Reclamo::Server.new(concurrent_batches: true)
+    server.expose_method("fatal") { raise NoMemoryError, "simulated" }
+    server.expose_method("ok") { "fine" }
+
+    requests = [
+      { "jsonrpc" => "2.0", "method" => "ok", "id" => 1 },
+      { "jsonrpc" => "2.0", "method" => "fatal", "id" => 2 },
+      { "jsonrpc" => "2.0", "method" => "ok", "id" => 3 }
+    ]
+    responses = JSON.parse(server.handle(JSON.generate(requests)))
+
+    assert_equal 3, responses.size
+    assert_equal "fine", responses[0]["result"]
+    assert_equal(-32_603, responses[1]["error"]["code"])
+    assert_equal 2, responses[1]["id"]
+    assert_equal "fine", responses[2]["result"]
+  end
+
+  def test_system_stack_error_in_worker_returns_internal_error
+    server = Reclamo::Server.new(concurrent_batches: true)
+    server.expose_method("overflow") { raise SystemStackError, "stack level too deep" }
+    server.expose_method("ok") { "fine" }
+
+    requests = [
+      { "jsonrpc" => "2.0", "method" => "ok", "id" => 1 },
+      { "jsonrpc" => "2.0", "method" => "overflow", "id" => 2 }
+    ]
+    responses = JSON.parse(server.handle(JSON.generate(requests)))
+
+    assert_equal 2, responses.size
+    assert_equal "fine", responses[0]["result"]
+    assert_equal(-32_603, responses[1]["error"]["code"])
+  end
+
+  def test_exception_in_worker_preserves_request_id
+    server = Reclamo::Server.new(concurrent_batches: true)
+    server.expose_method("fatal") { raise NoMemoryError, "simulated" }
+
+    requests = [
+      { "jsonrpc" => "2.0", "method" => "fatal", "id" => 99 }
+    ]
+    responses = JSON.parse(server.handle(JSON.generate(requests)))
+
+    assert_equal 1, responses.size
+    assert_equal 99, responses[0]["id"]
+    assert_equal(-32_603, responses[0]["error"]["code"])
+  end
+end
+
 class TestConcurrentBatchSafety < Minitest::Test
   def test_thread_exception_does_not_corrupt_batch
     bad_json = Class.new do

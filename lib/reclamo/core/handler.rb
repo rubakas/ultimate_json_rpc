@@ -10,14 +10,18 @@ module Reclamo
       eval instance_eval class_eval module_eval
       send public_send __send__
       system exec spawn fork
-      define_method remove_method
+      define_method remove_method undef_method
       binding method_missing respond_to_missing?
       exit exit! abort
       require require_relative load
       open
       instance_variable_get instance_variable_set
-      const_get const_set
+      class_variable_get class_variable_set
+      const_get const_set remove_const
       method
+      include extend prepend
+      attr_accessor attr_reader attr_writer
+      public private protected
     ].freeze
     private_constant :DANGEROUS_METHODS
 
