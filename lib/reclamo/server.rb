@@ -314,9 +314,8 @@ module Reclamo
       when Core::MethodNotFound
         [Core::METHOD_NOT_FOUND, Core::ERROR_MESSAGES[Core::METHOD_NOT_FOUND], err.method_name]
       when Core::ApplicationError, Core::ServerError then [err.code, err.message, err.rpc_data]
-      when Core::InvalidParams then [Core::INVALID_PARAMS, nil, err.message]
+      when Core::InvalidParams, ArgumentError then [Core::INVALID_PARAMS, nil, generic_data(err, GENERIC_PARAMS_DATA)]
       when Core::InvalidRequest then [Core::INVALID_REQUEST, nil, generic_data(err)]
-      when ArgumentError then [Core::INVALID_PARAMS, nil, generic_data(err, GENERIC_PARAMS_DATA)]
       else [Core::INTERNAL_ERROR, nil, generic_data(err)]
       end
     end

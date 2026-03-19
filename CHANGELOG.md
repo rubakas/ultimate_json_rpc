@@ -10,6 +10,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - `TCP#port` accessor for discovering the bound port at runtime
 
+### Changed
+- `InvalidParams` error data is now gated by `expose_errors` (same as `InvalidRequest` and `ArgumentError`). `InvalidParams` is a protocol-level schema check, not an application validation error — use `ApplicationError` for business rule violations.
+
 ### Fixed
 - RBS type signatures now correctly reflect Core/Extras/Transport namespace structure
 - RBS `Server` class no longer declares conditional `include` for `Extras::Logging` and `Extras::RateLimitSupport`

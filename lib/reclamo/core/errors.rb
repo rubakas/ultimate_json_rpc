@@ -25,6 +25,11 @@ module Reclamo
     RESERVED_ERROR_MAX = -32_000
 
     class InvalidRequest < Error; end
+
+    # Protocol-level parameter validation error (JSON-RPC -32602).
+    # Raised by the framework when params fail schema checks (type mismatch, enum violation).
+    # NOT intended for application-level business validation — use ApplicationError for that.
+    # Message is gated by expose_errors, same as InvalidRequest and ArgumentError.
     class InvalidParams < Error; end
 
     class MethodNotFound < Error

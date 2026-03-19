@@ -200,19 +200,34 @@ class TestServerApplicationError < Minitest::Test
 end
 
 class TestInvalidParams < Minitest::Test
-  def setup
-    @server = Reclamo::Server.new
-    @server.expose_method("validate") do |age:|
+  def test_invalid_params_gated_by_expose_errors
+    server = Reclamo::Server.new(expose_errors: false)
+    server.expose_method("validate") do |age:|
       raise Reclamo::Core::InvalidParams, "age must be positive" unless age.positive?
 
       age
     end
-  end
 
-  def test_invalid_params_returns_correct_error
     request = { "jsonrpc" => "2.0", "method" => "validate",
                 "params" => { "age" => -1 }, "id" => 1 }
-    response = JSON.parse(@server.handle(JSON.generate(request)))
+    response = JSON.parse(server.handle(JSON.generate(request)))
+
+    assert_equal(-32_602, response["error"]["code"])
+    assert_equal "Invalid params", response["error"]["message"]
+    assert_equal "Invalid method parameters", response["error"]["data"]
+  end
+
+  def test_invalid_params_exposed_when_enabled
+    server = Reclamo::Server.new(expose_errors: true)
+    server.expose_method("validate") do |age:|
+      raise Reclamo::Core::InvalidParams, "age must be positive" unless age.positive?
+
+      age
+    end
+
+    request = { "jsonrpc" => "2.0", "method" => "validate",
+                "params" => { "age" => -1 }, "id" => 1 }
+    response = JSON.parse(server.handle(JSON.generate(request)))
 
     assert_equal(-32_602, response["error"]["code"])
     assert_equal "Invalid params", response["error"]["message"]
@@ -220,8 +235,15 @@ class TestInvalidParams < Minitest::Test
   end
 
   def test_invalid_params_notification_returns_nil
+    server = Reclamo::Server.new
+    server.expose_method("validate") do |age:|
+      raise Reclamo::Core::InvalidParams, "age must be positive" unless age.positive?
+
+      age
+    end
+
     request = { "jsonrpc" => "2.0", "method" => "validate", "params" => { "age" => -1 } }
-    assert_nil @server.handle(JSON.generate(request))
+    assert_nil server.handle(JSON.generate(request))
   end
 end
 
@@ -492,19 +514,30 @@ class TestExposeErrorsOption < Minitest::Test
     assert_equal "retry", response["error"]["data"]
   end
 
-  def test_invalid_params_always_exposed
-    server = Reclamo::Server.new
-    server.expose_method("validate") do |age:|
-      raise Reclamo::Core::InvalidParams, "bad" unless age.positive?
-
+  def test_invalid_params_respects_expose_errors
+    server = Reclamo::Server.new(expose_errors: false)
+    server.expose_method("validate", params_schema: { "age" => { "type" => "integer" } }) do |age:|
       age
     end
 
-    request = { "jsonrpc" => "2.0", "method" => "validate", "params" => { "age" => -1 }, "id" => 1 }
+    request = { "jsonrpc" => "2.0", "method" => "validate", "params" => { "age" => "not_a_number" }, "id" => 1 }
     response = JSON.parse(server.handle(JSON.generate(request)))
 
     assert_equal(-32_602, response["error"]["code"])
-    assert_equal "bad", response["error"]["data"]
+    assert_equal "Invalid method parameters", response["error"]["data"]
+  end
+
+  def test_invalid_params_exposed_when_expose_errors_enabled
+    server = Reclamo::Server.new(expose_errors: true)
+    server.expose_method("validate", params_schema: { "age" => { "type" => "integer" } }) do |age:|
+      age
+    end
+
+    request = { "jsonrpc" => "2.0", "method" => "validate", "params" => { "age" => "not_a_number" }, "id" => 1 }
+    response = JSON.parse(server.handle(JSON.generate(request)))
+
+    assert_equal(-32_602, response["error"]["code"])
+    assert_match(/must be integer/, response["error"]["data"])
   end
 
   def test_method_not_found_always_exposed

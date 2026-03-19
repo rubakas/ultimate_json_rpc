@@ -279,7 +279,9 @@ server = Reclamo::Server.new(expose_errors: true)
 # Internal errors include the actual exception message in the data field
 ```
 
-`ApplicationError`, `ServerError`, `InvalidParams`, and `MethodNotFound` always expose their details regardless of this setting, since those are intentionally raised by your code.
+`ApplicationError`, `ServerError`, and `MethodNotFound` always expose their details regardless of this setting, since those are intentionally raised by your code.
+
+Protocol-level errors (`InvalidRequest`, `InvalidParams`, `ArgumentError`, and unhandled exceptions) are gated by `expose_errors`. `InvalidParams` is a JSON-RPC schema check (type mismatch, enum violation) — for application-level business validation, raise `ApplicationError` instead.
 
 ### Freezing
 

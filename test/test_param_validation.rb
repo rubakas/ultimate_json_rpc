@@ -98,7 +98,7 @@ class TestParamValidationType < Minitest::Test
   private
 
   def build_server(name, **, &)
-    server = Reclamo::Server.new
+    server = Reclamo::Server.new(expose_errors: true)
     server.expose_method(name, **, &)
     server
   end
@@ -124,7 +124,7 @@ end
 
 class TestParamValidationEnum < Minitest::Test
   def test_enum_passes
-    server = Reclamo::Server.new
+    server = Reclamo::Server.new(expose_errors: true)
     server.expose_method("color", params_schema: { c: { "enum" => %w[red green blue] } }) { |c| c }
     response = call(server, "color", ["red"])
 
@@ -132,7 +132,7 @@ class TestParamValidationEnum < Minitest::Test
   end
 
   def test_enum_fails
-    server = Reclamo::Server.new
+    server = Reclamo::Server.new(expose_errors: true)
     server.expose_method("color", params_schema: { c: { "enum" => %w[red green blue] } }) { |c| c }
     response = call(server, "color", ["yellow"])
 
@@ -141,7 +141,7 @@ class TestParamValidationEnum < Minitest::Test
   end
 
   def test_enum_with_type
-    server = Reclamo::Server.new
+    server = Reclamo::Server.new(expose_errors: true)
     server.expose_method("level", params_schema: { n: { "type" => "integer", "enum" => [1, 2, 3] } }) { |n| n }
     response = call(server, "level", ["not_int"])
 
@@ -150,7 +150,7 @@ class TestParamValidationEnum < Minitest::Test
   end
 
   def test_type_passes_but_enum_fails
-    server = Reclamo::Server.new
+    server = Reclamo::Server.new(expose_errors: true)
     server.expose_method("level", params_schema: { n: { "type" => "integer", "enum" => [1, 2, 3] } }) { |n| n }
     response = call(server, "level", [99])
 
@@ -168,7 +168,7 @@ end
 
 class TestParamValidationKeywordParams < Minitest::Test
   def test_keyword_params_pass
-    server = Reclamo::Server.new
+    server = Reclamo::Server.new(expose_errors: true)
     server.expose_method("greet", params_schema: { name: { "type" => "string" } }) { |name:| "Hi #{name}" }
     response = call(server, "greet", { "name" => "Alice" })
 
@@ -176,7 +176,7 @@ class TestParamValidationKeywordParams < Minitest::Test
   end
 
   def test_keyword_params_fail
-    server = Reclamo::Server.new
+    server = Reclamo::Server.new(expose_errors: true)
     server.expose_method("greet", params_schema: { name: { "type" => "string" } }) { |name:| "Hi #{name}" }
     response = call(server, "greet", { "name" => 123 })
 
@@ -194,7 +194,7 @@ end
 
 class TestParamValidationExpose < Minitest::Test
   def test_expose_with_params_schema
-    server = Reclamo::Server.new
+    server = Reclamo::Server.new(expose_errors: true)
     server.expose(Calculator, params_schema: {
                     add: { left: { "type" => "number" }, right: { "type" => "number" } }
                   })
