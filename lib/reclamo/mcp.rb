@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require_relative "stdio"
+require_relative "transport/stdio"
 
 module Reclamo
   class MCP
@@ -19,7 +19,7 @@ module Reclamo
     end
 
     def run
-      @stdio = Stdio.new(@mcp_server, input: @input, output: @output)
+      @stdio = Transport::Stdio.new(@mcp_server, input: @input, output: @output)
       @stdio.run
     end
 

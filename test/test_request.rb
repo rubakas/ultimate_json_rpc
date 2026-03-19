@@ -262,3 +262,11 @@ class TestRequestContext < Minitest::Test
     refute_predicate request.context, :frozen?
   end
 end
+
+class TestRequestIdFalse < Minitest::Test
+  def test_false_id_rejected
+    assert_raises(Reclamo::InvalidRequest) do
+      Reclamo::Request.new({ "jsonrpc" => "2.0", "method" => "test", "id" => false })
+    end
+  end
+end

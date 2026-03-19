@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 require "test_helper"
-require "reclamo/stdio"
+require "reclamo/transport/stdio"
 require "json"
 require "stringio"
 
@@ -13,7 +13,7 @@ class TestStdio < Minitest::Test
 
   def test_processes_single_request
     input, output = io_for(rpc_json("add", [2, 3]))
-    Reclamo::Stdio.new(@server, input: input, output: output).run
+    Reclamo::Transport::Stdio.new(@server, input: input, output: output).run
 
     response = parse_output(output)
     assert_equal 5, response["result"]
@@ -22,7 +22,7 @@ class TestStdio < Minitest::Test
   def test_processes_multiple_requests
     lines = [rpc_json("add", [1, 2]), rpc_json("add", [3, 4])].join("\n")
     input, output = io_for(lines)
-    Reclamo::Stdio.new(@server, input: input, output: output).run
+    Reclamo::Transport::Stdio.new(@server, input: input, output: output).run
 
     responses = parse_all_output(output)
     assert_equal 2, responses.size
@@ -33,14 +33,14 @@ class TestStdio < Minitest::Test
   def test_notification_produces_no_output
     request = JSON.generate({ "jsonrpc" => "2.0", "method" => "add", "params" => [1, 2] })
     input, output = io_for(request)
-    Reclamo::Stdio.new(@server, input: input, output: output).run
+    Reclamo::Transport::Stdio.new(@server, input: input, output: output).run
 
     assert_empty output_lines(output)
   end
 
   def test_invalid_json_returns_parse_error
     input, output = io_for("not json")
-    Reclamo::Stdio.new(@server, input: input, output: output).run
+    Reclamo::Transport::Stdio.new(@server, input: input, output: output).run
 
     response = parse_output(output)
     assert_equal(-32_700, response["error"]["code"])
@@ -49,7 +49,7 @@ class TestStdio < Minitest::Test
   def test_skips_empty_lines
     lines = "\n\n#{rpc_json("add", [1, 2])}\n\n"
     input, output = io_for(lines)
-    Reclamo::Stdio.new(@server, input: input, output: output).run
+    Reclamo::Transport::Stdio.new(@server, input: input, output: output).run
 
     responses = parse_all_output(output)
     assert_equal 1, responses.size
@@ -58,14 +58,14 @@ class TestStdio < Minitest::Test
 
   def test_method_not_found
     input, output = io_for(rpc_json("nonexistent"))
-    Reclamo::Stdio.new(@server, input: input, output: output).run
+    Reclamo::Transport::Stdio.new(@server, input: input, output: output).run
 
     response = parse_output(output)
     assert_equal(-32_601, response["error"]["code"])
   end
 
   def test_stop_on_unstarted_adapter_is_noop
-    adapter = Reclamo::Stdio.new(@server, input: StringIO.new(""), output: StringIO.new)
+    adapter = Reclamo::Transport::Stdio.new(@server, input: StringIO.new(""), output: StringIO.new)
 
     refute_predicate adapter, :running?
     adapter.stop
@@ -74,7 +74,7 @@ class TestStdio < Minitest::Test
 
   def test_running_is_false_after_run_completes
     input, output = io_for(rpc_json("add", [1, 2]))
-    adapter = Reclamo::Stdio.new(@server, input: input, output: output)
+    adapter = Reclamo::Transport::Stdio.new(@server, input: input, output: output)
     adapter.run
 
     refute_predicate adapter, :running?
@@ -90,7 +90,7 @@ class TestStdio < Minitest::Test
 
     lines = [rpc_json("add", [2, 3]), rpc_json("add", [4, 5])].join("\n")
     input = StringIO.new(lines)
-    adapter = Reclamo::Stdio.new(@server, input: input, output: broken_output)
+    adapter = Reclamo::Transport::Stdio.new(@server, input: input, output: broken_output)
 
     assert_nil adapter.run
     refute_predicate adapter, :running?
@@ -104,7 +104,7 @@ class TestStdio < Minitest::Test
       ]
     )
     input, output = io_for(batch)
-    Reclamo::Stdio.new(@server, input: input, output: output).run
+    Reclamo::Transport::Stdio.new(@server, input: input, output: output).run
 
     responses = JSON.parse(parse_output_raw(output))
     assert_equal 2, responses.size

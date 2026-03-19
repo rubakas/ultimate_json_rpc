@@ -153,3 +153,56 @@ class TestRateLimit < Minitest::Test
     JSON.parse(server.handle(JSON.generate(request)))
   end
 end
+
+class TestRateLimiterEviction < Minitest::Test
+  def test_stale_windows_evicted
+    limiter = Reclamo::RateLimiter.new(max: 1, period: 0.001, key: ->(req) { req.method_name }) # rubocop:disable Style/SymbolProc
+
+    server = Reclamo::Server.new
+    server.expose(Calculator)
+
+    110.times do |i|
+      server.expose_method("m#{i}") { i }
+    end
+    server.use { |req, nxt| limiter.call(req, nxt) }
+
+    110.times do |i|
+      request = { "jsonrpc" => "2.0", "method" => "m#{i}", "id" => i }
+      server.handle(JSON.generate(request))
+    end
+
+    sleep(0.01)
+
+    request = { "jsonrpc" => "2.0", "method" => "m0", "id" => 999 }
+    response = JSON.parse(server.handle(JSON.generate(request)))
+    assert_equal 0, response["result"]
+  end
+end
+
+class TestRateLimiterCodeValidation < Minitest::Test
+  def test_reserved_code_raises
+    assert_raises(ArgumentError) do
+      Reclamo::RateLimiter.new(max: 10, period: 60, code: -32_000)
+    end
+  end
+
+  def test_non_integer_code_raises
+    assert_raises(ArgumentError) do
+      Reclamo::RateLimiter.new(max: 10, period: 60, code: "429")
+    end
+  end
+
+  def test_valid_code_succeeds
+    limiter = Reclamo::RateLimiter.new(max: 10, period: 60, code: 429)
+    assert_instance_of Reclamo::RateLimiter, limiter
+  end
+
+  def test_server_rate_limit_reserved_code_raises
+    server = Reclamo::Server.new
+    server.expose(Calculator)
+
+    assert_raises(ArgumentError) do
+      server.rate_limit(max: 10, period: 60, code: -32_600)
+    end
+  end
+end

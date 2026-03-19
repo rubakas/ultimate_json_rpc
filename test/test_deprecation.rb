@@ -88,3 +88,45 @@ class TestMethodDeprecation < Minitest::Test
     assert_equal "Use new", method_info["deprecated"]
   end
 end
+
+class TestStoreMetadataScalarGuard < Minitest::Test
+  def test_expose_with_scalar_deprecated_does_not_crash
+    server = Reclamo::Server.new
+    server.expose(Calculator, deprecated: true)
+
+    assert server.method?("add")
+  end
+
+  def test_expose_with_string_deprecated_does_not_crash
+    server = Reclamo::Server.new
+    server.expose(Calculator, deprecated: "use v2")
+
+    assert server.method?("add")
+  end
+end
+
+class TestDeprecatedNormalizationViaExpose < Minitest::Test
+  include DiscoverHelper
+
+  def test_deprecated_hash_string_values_normalized
+    mod = Module.new do
+      def self.alpha
+        "a"
+      end
+
+      def self.beta
+        "b"
+      end
+    end
+
+    server = Reclamo::Server.new
+    server.expose(mod, deprecated: { alpha: true, beta: :use_gamma })
+
+    methods = discover_methods(server)
+    alpha = methods.find { |m| m["name"] == "alpha" }
+    beta = methods.find { |m| m["name"] == "beta" }
+
+    assert_equal true, alpha["deprecated"]
+    assert_equal "use_gamma", beta["deprecated"]
+  end
+end

@@ -148,3 +148,56 @@ class TestProfiler < Minitest::Test
     server.handle(JSON.generate(request))
   end
 end
+
+class TestProfilerMaxSamples < Minitest::Test
+  def test_durations_capped_at_max_samples
+    server = Reclamo::Server.new
+    server.expose(Calculator)
+    profiler = Reclamo::Profiler.new(server, max_samples: 5)
+
+    10.times do |i|
+      request = { "jsonrpc" => "2.0", "method" => "add", "params" => [i, 1], "id" => i }
+      server.handle(JSON.generate(request))
+    end
+
+    stats = profiler["add"]
+    assert_equal 10, stats[:count]
+    assert_operator stats[:p50], :>, 0
+  end
+
+  def test_default_max_samples
+    assert_equal 10_000, Reclamo::Profiler::DEFAULT_MAX_SAMPLES
+  end
+end
+
+class TestProfilerSamplesField < Minitest::Test
+  def test_samples_equals_count_within_max
+    server = Reclamo::Server.new
+    server.expose(Calculator)
+    profiler = Reclamo::Profiler.new(server, max_samples: 100)
+
+    5.times do |i|
+      request = { "jsonrpc" => "2.0", "method" => "add", "params" => [i, 1], "id" => i }
+      server.handle(JSON.generate(request))
+    end
+
+    stats = profiler["add"]
+    assert_equal 5, stats[:count]
+    assert_equal 5, stats[:samples]
+  end
+
+  def test_samples_capped_at_max_samples
+    server = Reclamo::Server.new
+    server.expose(Calculator)
+    profiler = Reclamo::Profiler.new(server, max_samples: 3)
+
+    10.times do |i|
+      request = { "jsonrpc" => "2.0", "method" => "add", "params" => [i, 1], "id" => i }
+      server.handle(JSON.generate(request))
+    end
+
+    stats = profiler["add"]
+    assert_equal 10, stats[:count]
+    assert_equal 3, stats[:samples]
+  end
+end

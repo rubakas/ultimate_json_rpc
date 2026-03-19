@@ -528,3 +528,53 @@ class TestExposeErrorsOption < Minitest::Test
     assert_equal "Invalid method parameters", response["error"]["data"]
   end
 end
+
+class TestInvalidRequestFromMiddleware < Minitest::Test
+  def test_middleware_raising_invalid_request_returns_invalid_request_code
+    server = Reclamo::Server.new(expose_errors: true)
+    server.expose(Calculator)
+    server.use { |_req, _nxt| raise Reclamo::InvalidRequest, "bad request from middleware" }
+
+    request = '{"jsonrpc":"2.0","method":"add","params":[1,2],"id":1}'
+    response = JSON.parse(server.handle(request))
+
+    assert_equal(-32_600, response["error"]["code"])
+    assert_equal "bad request from middleware", response["error"]["data"]
+  end
+
+  def test_middleware_raising_invalid_request_without_expose_errors
+    server = Reclamo::Server.new(expose_errors: false)
+    server.expose(Calculator)
+    server.use { |_req, _nxt| raise Reclamo::InvalidRequest, "secret details" }
+
+    request = '{"jsonrpc":"2.0","method":"add","params":[1,2],"id":1}'
+    response = JSON.parse(server.handle(request))
+
+    assert_equal(-32_600, response["error"]["code"])
+    assert_equal "Internal server error", response["error"]["data"]
+  end
+end
+
+class TestArgumentErrorGenericData < Minitest::Test
+  def test_argument_error_uses_generic_params_data_when_hidden
+    server = Reclamo::Server.new(expose_errors: false)
+    server.expose(Calculator)
+
+    request = { "jsonrpc" => "2.0", "method" => "add", "params" => [1, 2, 3], "id" => 1 }
+    response = JSON.parse(server.handle(JSON.generate(request)))
+
+    assert_equal(-32_602, response["error"]["code"])
+    assert_equal "Invalid method parameters", response["error"]["data"]
+  end
+
+  def test_argument_error_exposes_message_when_enabled
+    server = Reclamo::Server.new(expose_errors: true)
+    server.expose(Calculator)
+
+    request = { "jsonrpc" => "2.0", "method" => "add", "params" => [1, 2, 3], "id" => 1 }
+    response = JSON.parse(server.handle(JSON.generate(request)))
+
+    assert_equal(-32_602, response["error"]["code"])
+    assert_includes response["error"]["data"], "wrong number of arguments"
+  end
+end

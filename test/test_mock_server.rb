@@ -189,3 +189,37 @@ class TestMockServer < Minitest::Test
     JSON.parse(mock.handle(JSON.generate(request)))
   end
 end
+
+class TestMockServerNonSerializableStub < Minitest::Test
+  def test_non_serializable_stub_returns_internal_error
+    mock = Reclamo::MockServer.new
+    circular = {}
+    circular["self"] = circular
+    mock.stub("broken", params: nil, result: circular)
+
+    request = { "jsonrpc" => "2.0", "method" => "broken", "id" => 1 }
+    response = JSON.parse(mock.handle(JSON.generate(request)))
+
+    assert_equal(-32_603, response["error"]["code"])
+  end
+
+  def test_non_serializable_stub_does_not_abort_batch
+    mock = Reclamo::MockServer.new
+    circular = {}
+    circular["self"] = circular
+    mock.stub("broken", params: nil, result: circular)
+    mock.stub("ok", params: nil, result: "fine")
+
+    requests = [
+      { "jsonrpc" => "2.0", "method" => "ok", "params" => nil, "id" => 1 },
+      { "jsonrpc" => "2.0", "method" => "broken", "params" => nil, "id" => 2 },
+      { "jsonrpc" => "2.0", "method" => "ok", "params" => nil, "id" => 3 }
+    ]
+    responses = JSON.parse(mock.handle(JSON.generate(requests)))
+
+    assert_equal 3, responses.size
+    assert_equal "fine", responses[0]["result"]
+    assert_equal(-32_603, responses[1]["error"]["code"])
+    assert_equal "fine", responses[2]["result"]
+  end
+end

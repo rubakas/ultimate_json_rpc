@@ -352,3 +352,27 @@ class TestServerDiscoverServiceInfo < Minitest::Test
     assert_includes result["methods"].map { |m| m["name"] }, "add"
   end
 end
+
+class TestBuildResultElseBranch < Minitest::Test
+  include DiscoverHelper
+
+  def test_returns_non_hash_non_string_wrapped_in_schema
+    server = Reclamo::Server.new
+    server.expose_method("tags", returns: [{ "type" => "string" }]) { %w[a b] }
+    method_info = discover_methods(server).find { |m| m["name"] == "tags" }
+
+    assert_equal({ "name" => "result", "schema" => [{ "type" => "string" }] }, method_info["result"])
+  end
+end
+
+class TestStoreMetadataSymKeyPriority < Minitest::Test
+  include DiscoverHelper
+
+  def test_store_metadata_sym_key_takes_priority
+    server = Reclamo::Server.new
+    server.expose(Calculator, deprecated: { add: "via sym", "add" => "via str" })
+    method_info = discover_methods(server).find { |m| m["name"] == "add" }
+
+    assert_equal "via sym", method_info["deprecated"]
+  end
+end

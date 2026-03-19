@@ -181,3 +181,41 @@ class TestServerMethodFiltering < Minitest::Test
     refute_includes server.methods_list, "divide"
   end
 end
+
+class TestCallableMethodsNameOverride < Minitest::Test
+  def test_module_with_self_name_is_exposed
+    mod = Module.new do
+      def self.name
+        "CustomModule"
+      end
+
+      def self.greet
+        "hello"
+      end
+    end
+
+    server = Reclamo::Server.new
+    server.expose(mod)
+
+    assert server.method?("name"), "Module.name should be exposed"
+    assert server.method?("greet"), "Module.greet should be exposed"
+  end
+
+  def test_class_with_self_name_is_exposed
+    klass = Class.new do
+      def self.name
+        "CustomClass"
+      end
+
+      def self.compute
+        42
+      end
+    end
+
+    server = Reclamo::Server.new
+    server.expose(klass)
+
+    assert server.method?("name"), "Class.name should be exposed"
+    assert server.method?("compute"), "Class.compute should be exposed"
+  end
+end

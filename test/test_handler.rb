@@ -284,4 +284,21 @@ class TestHandlerDangerousMethods < Minitest::Test
     handler.expose_method("evaluate") { "ok" }
     assert handler.method?("evaluate")
   end
+
+  %w[instance_variable_get instance_variable_set const_get const_set method].each do |dangerous|
+    define_method("test_expose_method_#{dangerous}_is_blocked") do
+      handler = Reclamo::Handler.new
+      assert_raises(ArgumentError) { handler.expose_method(dangerous) { nil } }
+    end
+  end
+end
+
+class TestHandlerFreezeTargetArrays < Minitest::Test
+  def test_target_arrays_frozen_after_freeze
+    handler = Reclamo::Handler.new
+    handler.expose(Calculator)
+    handler.freeze
+
+    assert_predicate handler, :frozen?
+  end
 end

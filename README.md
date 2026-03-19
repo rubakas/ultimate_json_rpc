@@ -317,9 +317,9 @@ server.handle(request)  # still works
 - **Security** — dangerous methods (eval, system, exec, etc.) are automatically blocked
 - **Chainable API** — all setup methods return `self`
 - **Callable** — `to_proc` enables `requests.map(&server)`
-- **Rack adapter** — `Reclamo::Rack.new(server)` for instant HTTP deployment
+- **Rack adapter** — `Reclamo::Transport::Rack.new(server)` for instant HTTP deployment
 - **MCP adapter** — `Reclamo::MCP.new(server).run` for AI tool integration (Claude, Cursor, etc.)
-- **stdio adapter** — `Reclamo::Stdio.new(server).run` for CLI/MCP-style integrations
+- **stdio adapter** — `Reclamo::Transport::Stdio.new(server).run` for CLI/MCP-style integrations
 - **Test helpers** — `rpc_call`, `assert_rpc_success`, `assert_rpc_error` for cleaner tests
 - **Concurrent batches** — `concurrent_batches: true` processes batch items in parallel
 - **Custom JSON** — `json: Oj` to swap the JSON encoder/decoder
@@ -337,15 +337,15 @@ Use the built-in Rack adapter:
 ```ruby
 # config.ru
 require "reclamo"
-require "reclamo/rack"
+require "reclamo/transport/rack"
 
 server = Reclamo::Server.new(name: "My API")
 server.expose(Calculator)
 
-run Reclamo::Rack.new(server)
+run Reclamo::Transport::Rack.new(server)
 ```
 
-`Reclamo::Rack` handles Content-Type, returns 200 for responses, 204 for notifications, and 405 for non-POST requests.
+`Reclamo::Transport::Rack` handles Content-Type, returns 200 for responses, 204 for notifications, and 405 for non-POST requests.
 
 #### MCP (Model Context Protocol)
 
@@ -367,9 +367,9 @@ Reclamo::MCP.new(server).run
 Use the WebSocket adapter with any Rack-compatible library (e.g., `faye-websocket`):
 
 ```ruby
-require "reclamo/websocket"
+require "reclamo/transport/websocket"
 
-ws_handler = Reclamo::WebSocket.new(server)
+ws_handler = Reclamo::Transport::WebSocket.new(server)
 
 # In your Rack app:
 ws = Faye::WebSocket.new(env)
@@ -383,15 +383,15 @@ See `examples/websocket_server.ru` for a complete runnable example.
 Use the built-in TCP adapter for internal microservices:
 
 ```ruby
-require "reclamo/tcp"
+require "reclamo/transport/tcp"
 
 server = Reclamo::Server.new
 server.expose(Calculator)
 
-Reclamo::TCP.new(server, port: 4000).run
+Reclamo::Transport::TCP.new(server, port: 4000).run
 ```
 
-`Reclamo::TCP` accepts newline-delimited JSON-RPC over TCP, handles multiple concurrent clients via threads, and supports `SIGINT`/`SIGTERM` for graceful shutdown.
+`Reclamo::Transport::TCP` accepts newline-delimited JSON-RPC over TCP, handles multiple concurrent clients via threads, and supports `SIGINT`/`SIGTERM` for graceful shutdown.
 
 #### stdio
 
@@ -399,15 +399,15 @@ Use the built-in stdio adapter:
 
 ```ruby
 require "reclamo"
-require "reclamo/stdio"
+require "reclamo/transport/stdio"
 
 server = Reclamo::Server.new
 server.expose(Calculator)
 
-Reclamo::Stdio.new(server).run
+Reclamo::Transport::Stdio.new(server).run
 ```
 
-`Reclamo::Stdio` reads newline-delimited JSON-RPC from stdin, writes responses to stdout, skips empty lines, and handles `SIGINT`/`SIGTERM` for graceful shutdown.
+`Reclamo::Transport::Stdio` reads newline-delimited JSON-RPC from stdin, writes responses to stdout, skips empty lines, and handles `SIGINT`/`SIGTERM` for graceful shutdown.
 
 ### Pre-parsed input
 

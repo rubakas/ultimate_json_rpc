@@ -15,7 +15,7 @@ Style/Documentation:
   Enabled: false
 
 Metrics/ClassLength:
-  Max: 155
+  Max: 200
   Exclude:
     - "test/**/*"
 

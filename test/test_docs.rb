@@ -168,3 +168,14 @@ class TestDocs < Minitest::Test
     assert_match(/42.*Overflow/, md)
   end
 end
+
+class TestDocsDiscoverGuard < Minitest::Test
+  def test_docs_raises_when_discover_blocked_by_middleware
+    server = Reclamo::Server.new
+    server.expose(Calculator)
+    server.use(only: "rpc.discover") { |_req, _nxt| raise Reclamo::InvalidRequest, "blocked" }
+
+    error = assert_raises(RuntimeError) { Reclamo::Docs.new(server).to_markdown }
+    assert_match(/rpc\.discover returned an error/, error.message)
+  end
+end

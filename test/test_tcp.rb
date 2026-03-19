@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 require "test_helper"
-require "reclamo/tcp"
+require "reclamo/transport/tcp"
 require "json"
 require "socket"
 
@@ -70,7 +70,7 @@ class TestTCP < Minitest::Test
   def test_rejects_connections_beyond_max
     server = Reclamo::Server.new
     server.expose(Calculator)
-    tcp = Reclamo::TCP.new(server, port: 0, max_connections: 1)
+    tcp = Reclamo::Transport::TCP.new(server, port: 0, max_connections: 1)
 
     thread = Thread.new { tcp.run }
     deadline = Time.now + 5
@@ -104,7 +104,7 @@ class TestTCP < Minitest::Test
   def test_stop
     server = Reclamo::Server.new
     server.expose(Calculator)
-    tcp = Reclamo::TCP.new(server, port: 0)
+    tcp = Reclamo::Transport::TCP.new(server, port: 0)
 
     thread = Thread.new { tcp.run }
     deadline = Time.now + 5
@@ -123,7 +123,7 @@ class TestTCP < Minitest::Test
     server = Reclamo::Server.new
     server.expose(Calculator)
     # Port 0 lets the OS assign a free port
-    tcp = Reclamo::TCP.new(server, port: 0)
+    tcp = Reclamo::Transport::TCP.new(server, port: 0)
 
     thread = Thread.new { tcp.run }
     deadline = Time.now + 5
@@ -143,5 +143,32 @@ class TestTCP < Minitest::Test
       sock.puts(request_json)
       JSON.parse(sock.gets.chomp)
     end
+  end
+end
+
+class TestTCPConnectionLimit < Minitest::Test
+  def test_default_max_connections
+    assert_equal 64, Reclamo::Transport::TCP::DEFAULT_MAX_CONNECTIONS
+  end
+end
+
+class TestTCPStopRace < Minitest::Test
+  def test_stop_during_accept_loop_does_not_crash
+    server = Reclamo::Server.new
+    server.expose(Calculator)
+    tcp = Reclamo::Transport::TCP.new(server, port: 0, host: "127.0.0.1")
+
+    thread = Thread.new { tcp.run }
+    sleep(0.05)
+    tcp.stop
+    thread.join(5)
+
+    refute thread.alive?, "TCP thread should have exited cleanly"
+  end
+end
+
+class TestTCPMaxLineBytes < Minitest::Test
+  def test_max_line_bytes_constant
+    assert_equal 4 * 1024 * 1024, Reclamo::Transport::TCP::MAX_LINE_BYTES
   end
 end

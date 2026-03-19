@@ -40,18 +40,18 @@ bin/console            # Interactive console with gem loaded
 - `lib/reclamo/response.rb` — JSON-RPC response building
 - `lib/reclamo/handler.rb` — method registry, dispatch, introspection, callable support, dangerous method denylist, param validation, freeze
 - `lib/reclamo/server.rb` — public API: expose, handle/call, middleware, rpc.discover, service metadata, max_batch_size, expose_errors, timeout, concurrent_batches, instrumentation hooks, freeze
-- `lib/reclamo/rack.rb` — optional Rack adapter (Reclamo::Rack), NOT auto-required
-- `lib/reclamo/stdio.rb` — optional stdio adapter (Reclamo::Stdio), NOT auto-required
+- `lib/reclamo/transport/rack.rb` — optional Rack adapter (Reclamo::Transport::Rack), NOT auto-required
+- `lib/reclamo/transport/stdio.rb` — optional stdio adapter (Reclamo::Transport::Stdio), NOT auto-required
+- `lib/reclamo/transport/tcp.rb` — optional TCP adapter (Reclamo::Transport::TCP), NOT auto-required
+- `lib/reclamo/transport/websocket.rb` — optional WebSocket adapter (Reclamo::Transport::WebSocket), NOT auto-required
 - `lib/reclamo/docs.rb` — optional Markdown doc generator (Reclamo::Docs), NOT auto-required
 - `lib/reclamo/logging.rb` — optional structured logging (Reclamo::Logging), NOT auto-required
-- `lib/reclamo/mcp.rb` — optional MCP adapter (Reclamo::MCP), NOT auto-required; internally requires `lib/reclamo/stdio.rb`
+- `lib/reclamo/mcp.rb` — optional MCP protocol adapter (Reclamo::MCP), NOT auto-required; internally requires transport/stdio
 - `lib/reclamo/mock_server.rb` — optional mock server (Reclamo::MockServer), NOT auto-required
 - `lib/reclamo/profiler.rb` — optional per-method profiler (Reclamo::Profiler), NOT auto-required
 - `lib/reclamo/rate_limit.rb` — optional rate limiter (Reclamo::RateLimiter), NOT auto-required
 - `lib/reclamo/recorder.rb` — optional exchange recorder (Reclamo::Recorder), NOT auto-required
-- `lib/reclamo/tcp.rb` — optional TCP adapter (Reclamo::TCP), NOT auto-required
 - `lib/reclamo/test_helpers.rb` — optional test helpers (rpc_call, rpc_notify, rpc_batch), NOT auto-required
-- `lib/reclamo/websocket.rb` — optional WebSocket adapter (Reclamo::WebSocket), NOT auto-required
 - `sig/reclamo.rbs` — RBS type signatures
 
 ### Tests
@@ -59,7 +59,6 @@ bin/console            # Interactive console with gem loaded
 - `test/test_helper.rb` — test setup, loads support fixtures
 - `test/support/fixtures.rb` — shared test fixtures (Calculator, Greeter)
 - `test/support/discover_helper.rb` — shared discover test helper
-- `test/test_fixes.rb` — regression tests for bug fixes
 - `test/test_reclamo.rb` — version, constants, error class hierarchy
 - `test/test_request.rb` — Request unit tests: validation, notification?, freezing, edge cases
 - `test/test_response.rb` — Response module unit tests: success/error structure, data handling

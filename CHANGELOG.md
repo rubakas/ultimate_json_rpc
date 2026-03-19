@@ -11,9 +11,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - Method-level middleware: `server.use(only: ["admin.*"])` and `server.use(except: ["ping"])` to scope middleware to specific methods or namespaces, with glob pattern support
-- `Reclamo::Rack` built-in Rack adapter: Content-Type handling, 200/204/405 responses, `require "reclamo/rack"` to opt in
+- `Reclamo::Transport::Rack` built-in Rack adapter: Content-Type handling, 200/204/405 responses, `require "reclamo/transport/rack"` to opt in
 - Test assertion helpers: `assert_rpc_success`, `assert_rpc_error`, `assert_rpc_notification` in `reclamo/test_helpers`
-- `Reclamo::Stdio` adapter: newline-delimited JSON-RPC over stdin/stdout with signal handling, `require "reclamo/stdio"`
+- `Reclamo::Transport::Stdio` adapter: newline-delimited JSON-RPC over stdin/stdout with signal handling, `require "reclamo/transport/stdio"`
 - Return type annotations: `returns:` keyword on `expose_method` and `returns:` hash on `expose`, appears in `rpc.discover`
 - OpenRPC 1.3.2 schema: `rpc.discover` now returns a full OpenRPC document with `openrpc` version, `info` object, and `result` contentDescriptors
 - Instrumentation hooks: `server.on(:request)`, `on(:response)`, `on(:error)` for read-only lifecycle observability with duration timing
@@ -31,10 +31,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Rate limiting: `require "reclamo/rate_limit"` adds `server.rate_limit(max:, period:)` with sliding window, per-caller keying, and per-method scoping
 - Per-method profiling: `require "reclamo/profiler"` provides `Reclamo::Profiler.new(server)` collecting count, min/max/avg, and p50/p95/p99 per method
 - Mock server: `require "reclamo/mock_server"` provides `Reclamo::MockServer` with `stub`/`stub_any` for consumer-driven contract testing
-- TCP server adapter: `require "reclamo/tcp"` provides `Reclamo::TCP.new(server, port: 4000)` for newline-delimited JSON-RPC over TCP with multi-client threading
+- TCP server adapter: `require "reclamo/transport/tcp"` provides `Reclamo::Transport::TCP.new(server, port: 4000)` for newline-delimited JSON-RPC over TCP with multi-client threading
 - API documentation generation: `require "reclamo/docs"` provides `Reclamo::Docs.new(server).to_markdown` generating Markdown from OpenRPC schema
 - Usage examples: `examples/` directory with runnable patterns for Rack, MCP, multi-namespace/versioning, error handling, and testing
-- WebSocket adapter: `require "reclamo/websocket"` provides `Reclamo::WebSocket` for JSON-RPC over WebSockets with any Rack-compatible library
+- WebSocket adapter: `require "reclamo/transport/websocket"` provides `Reclamo::Transport::WebSocket` for JSON-RPC over WebSockets with any Rack-compatible library
 
 ### Fixed
 - MCP `inputSchema` now always included for zero-parameter tools (MCP spec compliance)

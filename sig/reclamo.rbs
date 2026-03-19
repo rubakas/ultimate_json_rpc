@@ -119,35 +119,37 @@ module Reclamo
     def freeze: () -> self
   end
 
-  class Stdio
-    def initialize: (Server, ?input: IO, ?output: IO) -> void
-    def run: () -> void
-    def stop: () -> void
-    def running?: () -> bool
-  end
+  module Transport
+    class Stdio
+      def initialize: (Server, ?input: IO, ?output: IO) -> void
+      def run: () -> void
+      def stop: () -> void
+      def running?: () -> bool
+    end
 
-  class Rack
-    def initialize: (Server) -> void
-    def call: (Hash[String, untyped]) -> [Integer, Hash[String, String], Array[String]]
-    def freeze: () -> self
-  end
+    class Rack
+      def initialize: (Server) -> void
+      def call: (Hash[String, untyped]) -> [Integer, Hash[String, String], Array[String]]
+      def freeze: () -> self
+    end
 
-  class TCP
-    DEFAULT_MAX_CONNECTIONS: Integer
+    class TCP
+      DEFAULT_MAX_CONNECTIONS: Integer
 
-    def initialize: (Server, port: Integer, ?host: String, ?max_connections: Integer) -> void
-    def run: () -> void
-    def stop: () -> void
-    def running?: () -> bool
-  end
+      def initialize: (Server, port: Integer, ?host: String, ?max_connections: Integer) -> void
+      def run: () -> void
+      def stop: () -> void
+      def running?: () -> bool
+    end
 
-  class WebSocket
-    attr_reader server: Server
+    class WebSocket
+      attr_reader server: Server
 
-    def initialize: (Server) -> void
-    def on_message: (untyped) -> String?
-    def call: (untyped, untyped) -> void
-    def freeze: () -> self
+      def initialize: (Server) -> void
+      def on_message: (untyped) -> String?
+      def call: (untyped, untyped) -> void
+      def freeze: () -> self
+    end
   end
 
   class MCP

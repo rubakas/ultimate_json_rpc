@@ -541,3 +541,103 @@ class TestServerFreeze < Minitest::Test
     threads.map(&:value).each_with_index { |r, i| assert_equal i + 1, r["result"] }
   end
 end
+
+class TestHandleRescueScope < Minitest::Test
+  def test_handle_returns_parse_error_for_invalid_json
+    server = Reclamo::Server.new
+    server.expose(Calculator)
+    response = JSON.parse(server.handle("not json"))
+
+    assert_equal(-32_700, response["error"]["code"])
+  end
+
+  def test_handle_does_not_mask_dispatch_errors_as_parse_error
+    server = Reclamo::Server.new(expose_errors: true)
+    server.expose_method("boom") { raise "handler error" }
+
+    request = '{"jsonrpc":"2.0","method":"boom","id":1}'
+    response = JSON.parse(server.handle(request))
+
+    assert_equal(-32_603, response["error"]["code"])
+    assert_equal "handler error", response["error"]["data"]
+  end
+
+  def test_internal_error_not_reported_as_parse_error
+    bad_json = Class.new do
+      def parse(str) = JSON.parse(str)
+
+      def generate(obj)
+        raise "serialize failed" if obj.is_a?(Hash) && obj.key?("result") && obj["result"] == :unserializable
+
+        JSON.generate(obj)
+      end
+    end.new
+
+    server = Reclamo::Server.new(json: bad_json)
+    server.expose_method("bad") { :unserializable }
+
+    request = '{"jsonrpc":"2.0","method":"bad","id":1}'
+    response = JSON.parse(server.handle(request))
+
+    assert_equal(-32_603, response["error"]["code"])
+  end
+end
+
+class TestSerializeSingleIdRecovery < Minitest::Test
+  def test_error_response_preserves_request_id
+    server = Reclamo::Server.new(expose_errors: true)
+    server.expose_method("fail") { raise "unexpected" }
+
+    request = { "jsonrpc" => "2.0", "method" => "fail", "id" => 42 }
+    response = JSON.parse(server.handle(JSON.generate(request)))
+
+    assert_equal 42, response["id"]
+    assert_equal(-32_603, response["error"]["code"])
+  end
+end
+
+class TestHandleParsedDoesNotFreezeCaller < Minitest::Test
+  def test_handle_parsed_does_not_freeze_callers_method_string
+    server = Reclamo::Server.new
+    server.expose_method("ping") { "pong" }
+
+    method_str = +"ping"
+    request = { "jsonrpc" => "2.0", "method" => method_str, "id" => 1 }
+    server.handle_parsed(request)
+
+    refute_predicate method_str, :frozen?, "handle_parsed should not freeze caller's method string"
+  end
+
+  def test_handle_parsed_does_not_freeze_callers_param_strings
+    server = Reclamo::Server.new
+    server.expose_method("echo") { |value:| value }
+
+    param_value = +"hello"
+    request = { "jsonrpc" => "2.0", "method" => "echo", "params" => { "value" => param_value }, "id" => 1 }
+    server.handle_parsed(request)
+
+    refute_predicate param_value, :frozen?, "handle_parsed should not freeze caller's param strings"
+  end
+end
+
+class TestDeepDupFrozenKeys < Minitest::Test
+  def test_handle_parsed_with_frozen_string_keys
+    server = Reclamo::Server.new
+    server.expose_method("ping") { "pong" }
+
+    request = { "jsonrpc" => "2.0", "method" => "ping", "params" => { "key" => "val" }, "id" => 1 }
+    response = JSON.parse(server.handle_parsed(request))
+
+    assert_equal "pong", response["result"]
+  end
+
+  def test_handle_parsed_with_symbol_keyed_params
+    server = Reclamo::Server.new
+    server.expose_method("echo") { |value:| value }
+
+    request = { "jsonrpc" => "2.0", "method" => "echo", "params" => { value: "hello" }, "id" => 1 }
+    response = JSON.parse(server.handle_parsed(request))
+
+    assert_equal "hello", response["result"]
+  end
+end

@@ -205,3 +205,50 @@ class TestConcurrentBatch < Minitest::Test
     server
   end
 end
+
+class TestConcurrentBatchSafety < Minitest::Test
+  def test_thread_exception_does_not_corrupt_batch
+    bad_json = Class.new do
+      def parse(str) = JSON.parse(str)
+
+      def generate(obj)
+        raise "serialize boom" if obj.is_a?(Hash) && obj.key?("result") && obj["result"] == :boom
+
+        JSON.generate(obj)
+      end
+    end.new
+
+    server = Reclamo::Server.new(concurrent_batches: true, json: bad_json)
+    server.expose_method("boom") { :boom }
+    server.expose_method("ok") { "ok" }
+
+    requests = [
+      { "jsonrpc" => "2.0", "method" => "ok", "id" => 1 },
+      { "jsonrpc" => "2.0", "method" => "boom", "id" => 2 },
+      { "jsonrpc" => "2.0", "method" => "ok", "id" => 3 }
+    ]
+    responses = JSON.parse(server.handle(JSON.generate(requests)))
+
+    assert_equal 3, responses.size
+    assert_equal "ok", responses[0]["result"]
+    assert_equal(-32_603, responses[1]["error"]["code"])
+    assert_equal "ok", responses[2]["result"]
+  end
+
+  def test_max_concurrency_limits_threads
+    server = Reclamo::Server.new(concurrent_batches: true, max_concurrency: 2)
+    thread_ids = Queue.new
+    server.expose_method("track") do
+      thread_ids << Thread.current.object_id
+      sleep(0.01)
+      "ok"
+    end
+
+    requests = 4.times.map { |i| { "jsonrpc" => "2.0", "method" => "track", "id" => i } }
+    responses = JSON.parse(server.handle(JSON.generate(requests)))
+
+    assert_equal 4, responses.size
+    unique_threads = thread_ids.size.times.map { thread_ids.pop }.uniq
+    assert_operator unique_threads.size, :<=, 2
+  end
+end

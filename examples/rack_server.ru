@@ -8,7 +8,7 @@
 #         -d '{"jsonrpc":"2.0","method":"add","params":[2,3],"id":1}'
 
 require "reclamo"
-require "reclamo/rack"
+require "reclamo/transport/rack"
 
 module Calculator
   def self.add(a, b) = a + b
@@ -21,4 +21,4 @@ server.expose(Calculator, descriptions: {
   multiply: "Multiply two numbers"
 })
 
-run Reclamo::Rack.new(server)
+run Reclamo::Transport::Rack.new(server)

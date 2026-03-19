@@ -16,7 +16,7 @@
 #   ws.onopen = () => ws.send('{"jsonrpc":"2.0","method":"add","params":[2,3],"id":1}');
 
 require "reclamo"
-require "reclamo/websocket"
+require "reclamo/transport/websocket"
 require "faye/websocket"
 
 module Calculator
@@ -26,7 +26,7 @@ end
 
 server = Reclamo::Server.new(name: "Calculator WS", version: "1.0")
 server.expose(Calculator)
-ws_handler = Reclamo::WebSocket.new(server)
+ws_handler = Reclamo::Transport::WebSocket.new(server)
 
 app = lambda do |env|
   if Faye::WebSocket.websocket?(env)

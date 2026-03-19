@@ -247,3 +247,62 @@ class TestRecorderParseError < Minitest::Test
     assert_equal 0, recorder.size
   end
 end
+
+class TestRecorderThreadSafety < Minitest::Test
+  def test_exchanges_returns_snapshot
+    server = Reclamo::Server.new
+    server.expose(Calculator)
+    recorder = Reclamo::Recorder.new(server)
+
+    request = { "jsonrpc" => "2.0", "method" => "add", "params" => [1, 2], "id" => 1 }
+    server.handle(JSON.generate(request))
+
+    snapshot = recorder.exchanges
+    assert_equal 1, snapshot.size
+
+    snapshot.clear
+    assert_equal 1, recorder.size
+  end
+
+  def test_size_is_synchronized
+    server = Reclamo::Server.new
+    server.expose(Calculator)
+    recorder = Reclamo::Recorder.new(server)
+
+    request = { "jsonrpc" => "2.0", "method" => "add", "params" => [1, 2], "id" => 1 }
+    server.handle(JSON.generate(request))
+
+    assert_equal 1, recorder.size
+  end
+end
+
+class TestRecorderCustomJson < Minitest::Test
+  def test_recorder_uses_custom_json_adapter
+    output = StringIO.new
+    server = Reclamo::Server.new
+    server.expose(Calculator)
+    recorder = Reclamo::Recorder.new(server, output: output, json: JSON)
+
+    request = { "jsonrpc" => "2.0", "method" => "add", "params" => [1, 2], "id" => 1 }
+    server.handle(JSON.generate(request))
+
+    assert_equal 1, recorder.size
+    assert_includes output.string, '"method":"add"'
+  end
+end
+
+class TestRecorderConcurrentOutput < Minitest::Test
+  def test_concurrent_output_produces_valid_jsonl
+    output = StringIO.new
+    server = Reclamo::Server.new(concurrent_batches: true)
+    server.expose(Calculator)
+    Reclamo::Recorder.new(server, output: output)
+
+    requests = 10.times.map { |i| { "jsonrpc" => "2.0", "method" => "add", "params" => [i, 1], "id" => i } }
+    server.handle(JSON.generate(requests))
+
+    lines = output.string.split("\n").reject(&:empty?)
+    assert_equal 10, lines.size
+    lines.each { |line| assert JSON.parse(line), "Each line must be valid JSON" }
+  end
+end

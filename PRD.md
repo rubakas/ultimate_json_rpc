@@ -40,7 +40,7 @@ Items within each tier are ordered by dependency (no-dependency items first, the
   *Depends on: nothing (extends existing middleware chain).*
 
 - [x] **Built-in Rack adapter**
-  Ship `Reclamo::Rack` — a thin Rack app handling Content-Type, HTTP status codes (200/204), and error responses for non-POST requests. Eliminates the boilerplate lambda currently shown in the README.
+  Ship `Reclamo::Transport::Rack` — a thin Rack app handling Content-Type, HTTP status codes (200/204), and error responses for non-POST requests. Eliminates the boilerplate lambda currently shown in the README.
   *Depends on: nothing.*
 
 ---
@@ -78,7 +78,7 @@ Adoption & integration:
   *Depends on: nothing.*
 
 - [x] **stdio adapter**
-  Ship `Reclamo::Stdio` — a run loop reading JSON-RPC from `$stdin`, writing responses to `$stdout`. Adds signal handling, graceful shutdown, and proper buffering over the manual loop in the README. Critical path for MCP compatibility.
+  Ship `Reclamo::Transport::Stdio` — a run loop reading JSON-RPC from `$stdin`, writing responses to `$stdout`. Adds signal handling, graceful shutdown, and proper buffering over the manual loop in the README. Critical path for MCP compatibility.
   *Depends on: nothing.*
 
 - [ ] **Rails integration (Railtie)**
@@ -146,7 +146,7 @@ Testing:
 ## P3 — Low Priority / Future
 
 - [x] **TCP server adapter**
-  Simple TCP listener (`Reclamo::TCP.new(server, port: 4000).start`) for internal microservices using newline-delimited JSON.
+  Simple TCP listener (`Reclamo::Transport::TCP.new(server, port: 4000).start`) for internal microservices using newline-delimited JSON.
   *Depends on: nothing.*
 
 - [x] **Mock server for consumer-driven testing**
