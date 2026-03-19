@@ -16,6 +16,7 @@ module Reclamo
       @input = input
       @output = output
       @stdio = nil
+      @call_id = 0
     end
 
     def run
@@ -93,7 +94,8 @@ module Reclamo
     end
 
     def build_call_request(name, arguments)
-      request = { "jsonrpc" => "2.0", "method" => name, "id" => "mcp" }
+      @call_id += 1
+      request = { "jsonrpc" => "2.0", "method" => name, "id" => "mcp-#{@call_id}" }
       return request if arguments.nil? || arguments.empty?
 
       method_info = @methods_index[name]

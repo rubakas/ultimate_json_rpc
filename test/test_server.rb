@@ -583,6 +583,31 @@ class TestHandleRescueScope < Minitest::Test
   end
 end
 
+class TestSerializeSingleLastResort < Minitest::Test
+  def test_returns_valid_json_when_generate_raises_on_error_response
+    always_fail_json = Class.new do
+      def parse(str) = JSON.parse(str)
+
+      def generate(obj)
+        raise "generate exploded" if obj.is_a?(Hash) && obj.key?("error")
+
+        JSON.generate(obj)
+      end
+    end.new
+
+    server = Reclamo::Server.new(json: always_fail_json)
+    server.expose_method("boom") { raise "handler error" }
+
+    request = '{"jsonrpc":"2.0","method":"boom","id":1}'
+    raw = server.handle(request)
+    response = JSON.parse(raw)
+
+    assert_equal "2.0", response["jsonrpc"]
+    assert_equal(-32_603, response["error"]["code"])
+    assert_equal "Internal error", response["error"]["message"]
+  end
+end
+
 class TestSerializeSingleIdRecovery < Minitest::Test
   def test_error_response_preserves_request_id
     server = Reclamo::Server.new(expose_errors: true)

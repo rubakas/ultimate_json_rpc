@@ -206,6 +206,28 @@ class TestConcurrentBatch < Minitest::Test
   end
 end
 
+class TestConcurrentBatchWorkerResilience < Minitest::Test
+  def test_error_in_one_item_does_not_kill_other_items
+    server = Reclamo::Server.new(concurrent_batches: true)
+    server.expose_method("boom") { raise "kaboom" }
+    server.expose_method("ok") { "fine" }
+
+    requests = [
+      { "jsonrpc" => "2.0", "method" => "ok", "id" => 1 },
+      { "jsonrpc" => "2.0", "method" => "boom", "id" => 2 },
+      { "jsonrpc" => "2.0", "method" => "ok", "id" => 3 },
+      { "jsonrpc" => "2.0", "method" => "ok", "id" => 4 }
+    ]
+    responses = JSON.parse(server.handle(JSON.generate(requests)))
+
+    assert_equal 4, responses.size
+    assert_equal "fine", responses[0]["result"]
+    assert_equal(-32_603, responses[1]["error"]["code"])
+    assert_equal "fine", responses[2]["result"]
+    assert_equal "fine", responses[3]["result"]
+  end
+end
+
 class TestConcurrentBatchSafety < Minitest::Test
   def test_thread_exception_does_not_corrupt_batch
     bad_json = Class.new do

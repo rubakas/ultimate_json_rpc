@@ -44,7 +44,7 @@ module Reclamo
             req, i = queue.pop(true)
             result = safe_serialize(req)
             mutex.synchronize { results[i] = result }
-          rescue StandardError
+          rescue ThreadError
             break
           end
         end
@@ -222,7 +222,11 @@ module Reclamo
 
       @json.generate(response)
     rescue StandardError
-      @json.generate(Response.error(INTERNAL_ERROR, request.is_a?(Request) ? request.id : nil))
+      begin
+        @json.generate(Response.error(INTERNAL_ERROR, request.is_a?(Request) ? request.id : nil))
+      rescue StandardError
+        '{"jsonrpc":"2.0","error":{"code":-32603,"message":"Internal error"},"id":null}'
+      end
     end
 
     def parse_request(data)

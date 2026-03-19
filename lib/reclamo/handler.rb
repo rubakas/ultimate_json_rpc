@@ -245,11 +245,16 @@ module Reclamo
       raise ArgumentError, "method name must not be empty" if name.empty?
       raise ArgumentError, "method names starting with 'rpc.' are reserved" if name.start_with?("rpc.")
 
-      segments = name.include?(".") ? name.split(".") : [name]
+      validate_segments!(name)
+      raise ArgumentError, "method '#{name}' is already registered" if @targets.key?(name)
+    end
+
+    def validate_segments!(name)
+      segments = name.include?(".") ? name.split(".", -1) : [name]
       segments.each do |segment|
+        raise ArgumentError, "method name contains empty segment" if segment.empty?
         raise ArgumentError, "method name '#{segment}' is dangerous" if DANGEROUS_METHODS.include?(segment)
       end
-      raise ArgumentError, "method '#{name}' is already registered" if @targets.key?(name)
     end
 
     def resolve_callable(callable, block)

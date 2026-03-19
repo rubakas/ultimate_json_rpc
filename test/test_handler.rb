@@ -141,6 +141,48 @@ class TestHandler < Minitest::Test
   end
 end
 
+class TestHandlerCallableMethods < Minitest::Test
+  def test_expose_instance_excludes_object_methods
+    target = Object.new
+    target.define_singleton_method(:foo) { "foo" }
+
+    handler = Reclamo::Handler.new
+    handler.expose(target)
+
+    assert handler.method?("foo")
+    refute handler.method?("class")
+    refute handler.method?("object_id")
+    refute handler.method?("to_s")
+    assert_equal 1, handler.size
+  end
+end
+
+class TestHandlerMethodNameValidation < Minitest::Test
+  def test_trailing_dot_rejected
+    handler = Reclamo::Handler.new
+    err = assert_raises(ArgumentError) { handler.expose_method("foo.") { nil } }
+    assert_match(/empty segment/, err.message)
+  end
+
+  def test_leading_dot_rejected
+    handler = Reclamo::Handler.new
+    err = assert_raises(ArgumentError) { handler.expose_method(".foo") { nil } }
+    assert_match(/empty segment/, err.message)
+  end
+
+  def test_double_dot_rejected
+    handler = Reclamo::Handler.new
+    err = assert_raises(ArgumentError) { handler.expose_method("a..b") { nil } }
+    assert_match(/empty segment/, err.message)
+  end
+
+  def test_single_dot_rejected
+    handler = Reclamo::Handler.new
+    err = assert_raises(ArgumentError) { handler.expose_method(".") { nil } }
+    assert_match(/empty segment/, err.message)
+  end
+end
+
 class TestHandlerEdgeCases < Minitest::Test
   def test_method_not_found_exposes_method_name
     handler = Reclamo::Handler.new

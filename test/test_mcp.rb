@@ -277,6 +277,26 @@ class TestMCPToolsCall < Minitest::Test
   end
 end
 
+class TestMCPUniqueCallIds < Minitest::Test
+  include MCPTestHelper
+
+  def test_sequential_tool_calls_produce_different_ids
+    server = Reclamo::Server.new
+    server.expose(Calculator)
+    mcp = Reclamo::MCP.new(server)
+    mcp_server = mcp.instance_variable_get(:@mcp_server)
+
+    ids = 2.times.map do
+      request = { "jsonrpc" => "2.0", "method" => "tools/call",
+                  "params" => { "name" => "add", "arguments" => { "left" => 1, "right" => 2 } }, "id" => 1 }
+      mcp_server.handle(JSON.generate(request))
+      mcp.instance_variable_get(:@call_id)
+    end
+
+    assert_equal 2, ids.uniq.size, "Expected sequential tool calls to produce different IDs"
+  end
+end
+
 class TestMCPFreezes < Minitest::Test
   include MCPTestHelper
 
