@@ -86,7 +86,7 @@ module Reclamo
       end
 
       def escape_cell(text)
-        text.to_s.gsub("|", "\\|")
+        text.to_s.gsub("|", "\\|").gsub(/\r?\n/, " ")
       end
 
       def errors_section

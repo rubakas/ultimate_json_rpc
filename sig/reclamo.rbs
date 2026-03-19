@@ -91,8 +91,9 @@ module Reclamo
   type callable = Proc | Method | _Callable
 
   class Server
-    include Extras::Logging
-    include Extras::RateLimitSupport
+    # Extras::Logging and Extras::RateLimitSupport are conditionally included
+    # at load time when their respective files are required. Their method
+    # signatures are defined in their own module blocks below.
 
     attr_reader name: String?
     attr_reader version: String?

@@ -303,6 +303,6 @@ class TestRecorderConcurrentOutput < Minitest::Test
 
     lines = output.string.split("\n").reject(&:empty?)
     assert_equal 10, lines.size
-    lines.each { |line| assert JSON.parse(line), "Each line must be valid JSON" }
+    lines.each { |line| assert_kind_of Hash, JSON.parse(line), "Each JSONL line must be a JSON object" }
   end
 end
