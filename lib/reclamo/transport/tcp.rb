@@ -49,6 +49,11 @@ module Reclamo
 
       def running? = @mutex.synchronize { @running }
 
+      def port
+        server = @mutex.synchronize { @tcp_server }
+        server&.addr&.[](1)
+      end
+
       private
 
       def accept_loop

@@ -75,7 +75,7 @@ class TestTCP < Minitest::Test
     thread = Thread.new { tcp.run }
     deadline = Time.now + 5
     sleep(0.05) until tcp.running? || Time.now > deadline
-    port = tcp.instance_variable_get(:@tcp_server).addr[1]
+    port = tcp.port
 
     # First connection should work
     sock1 = TCPSocket.open("127.0.0.1", port)
@@ -130,7 +130,7 @@ class TestTCP < Minitest::Test
     sleep(0.05) until tcp.running? || Time.now > deadline
 
     # Get the actual assigned port
-    port = tcp.instance_variable_get(:@tcp_server).addr[1]
+    port = tcp.port
 
     yield port
   ensure
@@ -170,5 +170,30 @@ end
 class TestTCPMaxLineBytes < Minitest::Test
   def test_max_line_bytes_constant
     assert_equal 4 * 1024 * 1024, Reclamo::Transport::TCP::MAX_LINE_BYTES
+  end
+end
+
+class TestTCPPort < Minitest::Test
+  def test_port_returns_nil_before_run
+    server = Reclamo::Server.new
+    tcp = Reclamo::Transport::TCP.new(server, port: 0)
+
+    assert_nil tcp.port
+  end
+
+  def test_port_returns_bound_port_while_running
+    server = Reclamo::Server.new
+    server.expose(Calculator)
+    tcp = Reclamo::Transport::TCP.new(server, port: 0)
+
+    thread = Thread.new { tcp.run }
+    deadline = Time.now + 5
+    sleep(0.05) until tcp.running? || Time.now > deadline
+
+    assert_kind_of Integer, tcp.port
+    assert_operator tcp.port, :>, 0
+  ensure
+    tcp.stop
+    thread&.join(2)
   end
 end
