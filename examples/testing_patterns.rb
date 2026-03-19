@@ -7,7 +7,6 @@
 
 require "reclamo"
 require "reclamo/extras/test_helpers"
-require "reclamo/extras/mock_server"
 require "reclamo/extras/recorder"
 require "reclamo/extras/profiler"
 require "json"
@@ -30,18 +29,7 @@ puts "rpc_call result: #{response["result"]}"
 error_response = rpc_call(server, "nonexistent")
 puts "rpc_call error: #{error_response["error"]["code"]}"
 
-# === 2. Mock Server ===
-puts "\n=== Mock Server ==="
-
-mock = Reclamo::Extras::MockServer.new
-mock.stub("users.list", params: nil, result: [{ "id" => 1, "name" => "Alice" }])
-mock.stub("users.get", params: { "id" => 1 }, result: { "id" => 1, "name" => "Alice" })
-mock.stub_any("health", "ok")
-
-puts "Mock list: #{mock.handle('{"jsonrpc":"2.0","method":"users.list","id":1}')}"
-puts "Mock get:  #{mock.handle('{"jsonrpc":"2.0","method":"users.get","params":{"id":1},"id":2}')}"
-
-# === 3. Recorder ===
+# === 2. Recorder ===
 puts "\n=== Recorder ==="
 
 recorder = Reclamo::Extras::Recorder.new(server)
@@ -51,7 +39,7 @@ server.handle('{"jsonrpc":"2.0","method":"add","params":[5,5],"id":2}')
 puts "Recorded #{recorder.size} exchanges:"
 recorder.exchanges.each { |e| puts "  #{e["method"]}(#{e["params"]}) => #{e["result"]} (#{e["duration"]}s)" }
 
-# === 4. Profiler ===
+# === 3. Profiler ===
 puts "\n=== Profiler ==="
 
 profiler = Reclamo::Extras::Profiler.new(server)

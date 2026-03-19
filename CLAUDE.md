@@ -47,7 +47,6 @@ bin/console            # Interactive console with gem loaded
 - `lib/reclamo/extras/docs.rb` — optional Markdown doc generator (Reclamo::Extras::Docs), NOT auto-required
 - `lib/reclamo/extras/logging.rb` — optional structured logging (Reclamo::Extras::Logging), NOT auto-required
 - `lib/reclamo/extras/mcp.rb` — optional MCP protocol adapter (Reclamo::Extras::MCP), NOT auto-required; internally requires transport/stdio
-- `lib/reclamo/extras/mock_server.rb` — optional mock server (Reclamo::Extras::MockServer), NOT auto-required
 - `lib/reclamo/extras/profiler.rb` — optional per-method profiler (Reclamo::Extras::Profiler), NOT auto-required
 - `lib/reclamo/extras/rate_limit.rb` — optional rate limiter (Reclamo::Extras::RateLimiter), NOT auto-required
 - `lib/reclamo/extras/recorder.rb` — optional exchange recorder (Reclamo::Extras::Recorder), NOT auto-required
@@ -86,7 +85,6 @@ bin/console            # Interactive console with gem loaded
 - `test/extras/test_docs.rb` — API doc generation: title, methods, params, returns, deprecation, errors
 - `test/extras/test_logging.rb` — structured logging: levels, duration, method names, errors, chaining
 - `test/extras/test_mcp.rb` — MCP adapter: initialize, tools/list, tools/call, schemas, namespaces, errors
-- `test/extras/test_mock_server.rb` — mock server: stub, stub_any, batch, notifications, parse errors
 - `test/extras/test_profiler.rb` — per-method profiling: count, min/max/avg, percentiles, reset, thread safety
 - `test/extras/test_rate_limit.rb` — rate limiting: sliding window, per-caller, scoping, thread safety
 - `test/extras/test_recorder.rb` — exchange recorder: capture, clear, JSONL output, thread safety, batch

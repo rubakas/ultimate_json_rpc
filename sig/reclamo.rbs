@@ -199,14 +199,6 @@ module Reclamo
       def size: () -> Integer
     end
 
-    class MockServer
-      def initialize: (?json: _JsonAdapter) -> void
-      def stub: (String | Symbol, params: untyped, result: untyped) -> self
-      def stub_any: (String | Symbol, untyped) -> self
-      def handle: (String) -> String?
-      def handle_parsed: (untyped) -> String?
-    end
-
     class Docs
       def initialize: (Server, ?json: _JsonAdapter) -> void
       def to_markdown: () -> String

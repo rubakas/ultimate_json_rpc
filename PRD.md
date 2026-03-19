@@ -149,10 +149,6 @@ Testing:
   Simple TCP listener (`Reclamo::Transport::TCP.new(server, port: 4000).start`) for internal microservices using newline-delimited JSON.
   *Depends on: nothing.*
 
-- [x] **Mock server for consumer-driven testing**
-  `Reclamo::Extras::MockServer` responding with canned responses based on method+params matching. Pairs with OpenRPC for contract testing.
-  *Depends on: OpenRPC schema generation (P0).*
-
 - [x] **Per-method profiling**
   Measure and expose per-method dispatch duration. Opt-in profiling hook that collects timing data with aggregation (min/max/avg/p99) for long-running services. Zero overhead when disabled.
   *Depends on: instrumentation hooks (P1).*

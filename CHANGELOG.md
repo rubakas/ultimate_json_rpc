@@ -44,7 +44,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - MCP (Model Context Protocol) adapter: `require "reclamo/extras/mcp"` provides `Reclamo::Extras::MCP.new(server)` for AI tool integration over stdio, mapping methods to MCP tools with schema support
 - Rate limiting: `require "reclamo/extras/rate_limit"` adds `server.rate_limit(max:, period:)` with sliding window, per-caller keying, and per-method scoping
 - Per-method profiling: `require "reclamo/extras/profiler"` provides `Reclamo::Extras::Profiler.new(server)` collecting count, min/max/avg, and p50/p95/p99 per method
-- Mock server: `require "reclamo/extras/mock_server"` provides `Reclamo::Extras::MockServer` with `stub`/`stub_any` for consumer-driven contract testing
 - TCP server adapter: `require "reclamo/transport/tcp"` provides `Reclamo::Transport::TCP.new(server, port: 4000)` for newline-delimited JSON-RPC over TCP with multi-client threading
 - API documentation generation: `require "reclamo/extras/docs"` provides `Reclamo::Extras::Docs.new(server).to_markdown` generating Markdown from OpenRPC schema
 - Usage examples: `examples/` directory with runnable patterns for Rack, MCP, multi-namespace/versioning, error handling, and testing
