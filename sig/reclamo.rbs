@@ -1,66 +1,82 @@
 module Reclamo
   VERSION: String
 
-  class Error < StandardError
-  end
+  module Core
+    class Error < StandardError
+    end
 
-  class InvalidRequest < Error
-  end
+    class InvalidRequest < Error
+    end
 
-  class InvalidParams < Error
-  end
+    class InvalidParams < Error
+    end
 
-  class MethodNotFound < Error
-    attr_reader method_name: String
+    class MethodNotFound < Error
+      attr_reader method_name: String
 
-    def initialize: (String) -> void
-  end
+      def initialize: (String) -> void
+    end
 
-  class ApplicationError < Error
-    attr_reader code: Integer
-    attr_reader rpc_data: untyped
+    class ApplicationError < Error
+      attr_reader code: Integer
+      attr_reader rpc_data: untyped
 
-    def initialize: (code: Integer, message: String, ?data: untyped) -> void
-  end
+      def initialize: (code: Integer, message: String, ?data: untyped) -> void
+    end
 
-  class ServerError < Error
-    attr_reader code: Integer
-    attr_reader rpc_data: untyped
+    class ServerError < Error
+      attr_reader code: Integer
+      attr_reader rpc_data: untyped
 
-    def initialize: (code: Integer, message: String, ?data: untyped) -> void
-  end
+      def initialize: (code: Integer, message: String, ?data: untyped) -> void
+    end
 
-  REQUEST_TIMEOUT: Integer
+    REQUEST_TIMEOUT: Integer
 
-  class RequestTimeout < ServerError
-    def initialize: (?untyped) -> void
-  end
+    class RequestTimeout < ServerError
+      def initialize: (?untyped) -> void
+    end
 
-  PARSE_ERROR: Integer
-  INVALID_REQUEST: Integer
-  METHOD_NOT_FOUND: Integer
-  INVALID_PARAMS: Integer
-  INTERNAL_ERROR: Integer
-  SERVER_ERROR_MIN: Integer
-  SERVER_ERROR_MAX: Integer
-  RESERVED_ERROR_MIN: Integer
-  RESERVED_ERROR_MAX: Integer
-  ERROR_MESSAGES: Hash[Integer, String]
-  class Request
-    MAX_NESTING: Integer
+    PARSE_ERROR: Integer
+    INVALID_REQUEST: Integer
+    METHOD_NOT_FOUND: Integer
+    INVALID_PARAMS: Integer
+    INTERNAL_ERROR: Integer
+    SERVER_ERROR_MIN: Integer
+    SERVER_ERROR_MAX: Integer
+    RESERVED_ERROR_MIN: Integer
+    RESERVED_ERROR_MAX: Integer
+    ERROR_MESSAGES: Hash[Integer, String]
 
-    attr_reader method_name: String
-    attr_reader params: Array[untyped] | Hash[String, untyped] | nil
-    attr_reader id: String | Numeric | nil
-    attr_reader context: Hash[Symbol, untyped]
+    class Request
+      MAX_NESTING: Integer
 
-    def initialize: (Hash[String, untyped]) -> void
-    def notification?: () -> bool
-  end
+      attr_reader method_name: String
+      attr_reader params: Array[untyped] | Hash[String, untyped] | nil
+      attr_reader id: String | Numeric | nil
+      attr_reader context: Hash[Symbol, untyped]
 
-  module Response
-    def self.success: (untyped, untyped) -> Hash[String, untyped]
-    def self.error: (Integer, untyped, ?data: untyped, ?message: String?) -> Hash[String, untyped]
+      def initialize: (Hash[String, untyped]) -> void
+      def notification?: () -> bool
+    end
+
+    module Response
+      def self.success: (untyped, untyped) -> Hash[String, untyped]
+      def self.error: (Integer, untyped, ?data: untyped, ?message: String?) -> Hash[String, untyped]
+    end
+
+    class Handler
+      def initialize: () -> void
+      def expose: (Module | Object, ?namespace: String | Symbol | nil, ?only: Array[Symbol | String] | Symbol | String | nil, ?except: Array[Symbol | String] | Symbol | String | nil, ?descriptions: Hash[Symbol | String, String]?, ?returns: Hash[Symbol | String, untyped]?, ?deprecated: Hash[Symbol | String, untyped]?, ?params_schema: Hash[Symbol | String, untyped]?) -> void
+      def expose_method: (String | Symbol, ?callable, ?description: String?, ?returns: untyped, ?deprecated: (bool | String)?, ?params_schema: Hash[String | Symbol, untyped]?) ?{ (*untyped) -> untyped } -> void
+      def call: (String, Array[untyped] | Hash[String, untyped] | nil) -> untyped
+      def method?: (String) -> bool
+      def methods_list: () -> Array[String]
+      def methods_info: () -> Array[Hash[String, untyped]]
+      def size: () -> Integer
+      def empty?: () -> bool
+      def freeze: () -> self
+    end
   end
 
   interface _Callable
@@ -74,22 +90,9 @@ module Reclamo
 
   type callable = Proc | Method | _Callable
 
-  class Handler
-    def initialize: () -> void
-    def expose: (Module | Object, ?namespace: String | Symbol | nil, ?only: Array[Symbol | String] | Symbol | String | nil, ?except: Array[Symbol | String] | Symbol | String | nil, ?descriptions: Hash[Symbol | String, String]?, ?returns: Hash[Symbol | String, untyped]?, ?deprecated: Hash[Symbol | String, untyped]?, ?params_schema: Hash[Symbol | String, untyped]?) -> void
-    def expose_method: (String | Symbol, ?callable, ?description: String?, ?returns: untyped, ?deprecated: (bool | String)?, ?params_schema: Hash[String | Symbol, untyped]?) ?{ (*untyped) -> untyped } -> void
-    def call: (String, Array[untyped] | Hash[String, untyped] | nil) -> untyped
-    def method?: (String) -> bool
-    def methods_list: () -> Array[String]
-    def methods_info: () -> Array[Hash[String, untyped]]
-    def size: () -> Integer
-    def empty?: () -> bool
-    def freeze: () -> self
-  end
-
   class Server
-    include Logging
-    include RateLimitSupport
+    include Extras::Logging
+    include Extras::RateLimitSupport
 
     attr_reader name: String?
     attr_reader version: String?
@@ -100,10 +103,10 @@ module Reclamo
     def initialize: (?name: String?, ?version: String?, ?description: String?, ?max_batch_size: Integer?, ?expose_errors: bool, ?timeout: Numeric?, ?concurrent_batches: bool, ?max_concurrency: Integer, ?json: _JsonAdapter) -> void
     def expose: (Module | Object, ?namespace: String | Symbol | nil, ?only: Array[Symbol | String] | Symbol | String | nil, ?except: Array[Symbol | String] | Symbol | String | nil, ?descriptions: Hash[Symbol | String, String]?, ?returns: Hash[Symbol | String, untyped]?, ?deprecated: Hash[Symbol | String, untyped]?, ?params_schema: Hash[Symbol | String, untyped]?) -> self
     def expose_method: (String | Symbol, ?callable, ?description: String?, ?returns: untyped, ?deprecated: (bool | String)?, ?params_schema: Hash[String | Symbol, untyped]?) ?{ (*untyped) -> untyped } -> self
-    def use: (?only: Array[String | Symbol] | String | Symbol | nil, ?except: Array[String | Symbol] | String | Symbol | nil) { (Request, Proc) -> untyped } -> self
+    def use: (?only: Array[String | Symbol] | String | Symbol | nil, ?except: Array[String | Symbol] | String | Symbol | nil) { (Core::Request, Proc) -> untyped } -> self
     def on: (Symbol) { (*untyped) -> void } -> self
     def register_error: (code: Integer, message: String, ?description: String?) -> self
-    def authorize: (*String, ?code: Integer, ?message: String) { (Request) -> boolish } -> self
+    def authorize: (*String, ?code: Integer, ?message: String) { (Core::Request) -> boolish } -> self
     def to_proc: () -> Proc
     def inspect: () -> String
     def expose_errors?: () -> bool
@@ -154,65 +157,67 @@ module Reclamo
     end
   end
 
-  class MCP
-    PROTOCOL_VERSION: String
+  module Extras
+    class MCP
+      PROTOCOL_VERSION: String
 
-    def initialize: (Server, ?input: IO, ?output: IO, ?json: _JsonAdapter) -> void
-    def run: () -> void
-    def stop: () -> void
-    def running?: () -> bool
-  end
+      def initialize: (Server, ?input: IO, ?output: IO, ?json: _JsonAdapter) -> void
+      def run: () -> void
+      def stop: () -> void
+      def running?: () -> bool
+    end
 
-  class Profiler
-    DEFAULT_MAX_SAMPLES: Integer
+    class Profiler
+      DEFAULT_MAX_SAMPLES: Integer
 
-    def initialize: (Server, ?max_samples: Integer) -> void
-    def []: (String) -> Hash[Symbol, untyped]?
-    def tracked_methods: () -> Array[String]
-    alias method_names tracked_methods
-    def stats: () -> Hash[String, Hash[Symbol, untyped]]
-    def reset: () -> void
-  end
+      def initialize: (Server, ?max_samples: Integer) -> void
+      def []: (String) -> Hash[Symbol, untyped]?
+      def tracked_methods: () -> Array[String]
+      alias method_names tracked_methods
+      def stats: () -> Hash[String, Hash[Symbol, untyped]]
+      def reset: () -> void
+    end
 
-  class RateLimiter
-    def initialize: (max: Integer, period: Numeric, ?key: (Symbol | Proc)?, ?code: Integer, ?message: String) -> void
-    def call: (Request, Proc) -> untyped
-  end
+    class RateLimiter
+      def initialize: (max: Integer, period: Numeric, ?key: (Symbol | Proc)?, ?code: Integer, ?message: String) -> void
+      def call: (Core::Request, Proc) -> untyped
+    end
 
-  module RateLimitSupport
-    def rate_limit: (max: Integer, period: Numeric, ?key: (Symbol | Proc)?, ?code: Integer, ?message: String, ?only: Array[String | Symbol] | String | Symbol | nil, ?except: Array[String | Symbol] | String | Symbol | nil) -> self
-  end
+    module RateLimitSupport
+      def rate_limit: (max: Integer, period: Numeric, ?key: (Symbol | Proc)?, ?code: Integer, ?message: String, ?only: Array[String | Symbol] | String | Symbol | nil, ?except: Array[String | Symbol] | String | Symbol | nil) -> self
+    end
 
-  module Logging
-    def log_to: (untyped, ?level: Symbol) -> self
-  end
+    module Logging
+      def log_to: (untyped, ?level: Symbol) -> self
+    end
 
-  class Recorder
-    def initialize: (Server, ?output: IO?, ?max_exchanges: Integer?, ?json: _JsonAdapter) -> void
-    def exchanges: () -> Array[Hash[String, untyped]]
-    def clear: () -> void
-    def size: () -> Integer
-  end
+    class Recorder
+      def initialize: (Server, ?output: IO?, ?max_exchanges: Integer?, ?json: _JsonAdapter) -> void
+      def exchanges: () -> Array[Hash[String, untyped]]
+      def clear: () -> void
+      def size: () -> Integer
+    end
 
-  class MockServer
-    def initialize: (?json: _JsonAdapter) -> void
-    def stub: (String | Symbol, params: untyped, result: untyped) -> self
-    def stub_any: (String | Symbol, untyped) -> self
-    def handle: (String) -> String?
-    def handle_parsed: (untyped) -> String?
-  end
+    class MockServer
+      def initialize: (?json: _JsonAdapter) -> void
+      def stub: (String | Symbol, params: untyped, result: untyped) -> self
+      def stub_any: (String | Symbol, untyped) -> self
+      def handle: (String) -> String?
+      def handle_parsed: (untyped) -> String?
+    end
 
-  class Docs
-    def initialize: (Server, ?json: _JsonAdapter) -> void
-    def to_markdown: () -> String
-  end
+    class Docs
+      def initialize: (Server, ?json: _JsonAdapter) -> void
+      def to_markdown: () -> String
+    end
 
-  module TestHelpers
-    def rpc_call: (Server, String, ?params: untyped, ?id: String | Integer) -> Hash[String, untyped]
-    def rpc_notify: (Server, String, ?params: untyped) -> String?
-    def rpc_batch: (Server, *Hash[String, untyped]) -> Array[Hash[String, untyped]]?
-    def assert_rpc_success: (Hash[String, untyped], ?expected: untyped, ?msg: String?) -> void
-    def assert_rpc_error: (Hash[String, untyped], ?code: Integer?, ?message: String?, ?msg: String?) -> void
-    def assert_rpc_notification: (Server, String, ?params: untyped, ?msg: String?) -> void
+    module TestHelpers
+      def rpc_call: (Server, String, ?params: untyped, ?id: String | Integer) -> Hash[String, untyped]
+      def rpc_notify: (Server, String, ?params: untyped) -> String?
+      def rpc_batch: (Server, *Hash[String, untyped]) -> Array[Hash[String, untyped]]?
+      def assert_rpc_success: (Hash[String, untyped], ?expected: untyped, ?msg: String?) -> void
+      def assert_rpc_error: (Hash[String, untyped], ?code: Integer?, ?message: String?, ?msg: String?) -> void
+      def assert_rpc_notification: (Server, String, ?params: untyped, ?msg: String?) -> void
+    end
   end
 end
