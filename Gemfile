@@ -15,3 +15,5 @@ gem "rubocop", "~> 1.85"
 gem "logger"
 
 gem "rbs"
+
+gem "ruby-lsp"
