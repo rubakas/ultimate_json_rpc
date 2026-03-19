@@ -233,6 +233,8 @@ module Reclamo
 
       @json.generate(response)
     rescue StandardError
+      return nil if request.is_a?(Core::Request) && request.notification?
+
       id = request.is_a?(Core::Request) ? request.id : extract_id(data)
       begin
         @json.generate(Core::Response.error(Core::INTERNAL_ERROR, id))

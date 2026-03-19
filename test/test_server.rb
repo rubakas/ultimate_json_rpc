@@ -690,6 +690,32 @@ class TestSerializeSingleIdRecovery < Minitest::Test
   end
 end
 
+class TestSerializeSingleNotificationRescue < Minitest::Test
+  def test_notification_returns_nil_even_when_json_generate_raises
+    # Scar tissue: serialize_single's rescue block used to return a JSON error
+    # string for notifications, violating the JSON-RPC spec (notifications MUST
+    # NOT produce a response). This adapter triggers that path by raising only
+    # when generating the success response hash.
+    fail_on_success_json = Class.new do
+      def parse(str) = JSON.parse(str)
+
+      def generate(obj)
+        raise "generate exploded" if obj.is_a?(Hash) && obj.key?("result")
+
+        JSON.generate(obj)
+      end
+    end.new
+
+    server = Reclamo::Server.new(json: fail_on_success_json)
+    server.expose_method("boom") { "ok" }
+
+    notification = '{"jsonrpc":"2.0","method":"boom"}'
+    result = server.handle(notification)
+
+    assert_nil result, "notification must return nil even when json adapter raises"
+  end
+end
+
 class TestHandleParsedDoesNotFreezeCaller < Minitest::Test
   def test_handle_parsed_does_not_freeze_callers_method_string
     server = Reclamo::Server.new
