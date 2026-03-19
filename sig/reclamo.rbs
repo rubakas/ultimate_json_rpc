@@ -188,7 +188,7 @@ module Reclamo
   end
 
   class Recorder
-    def initialize: (Server, ?output: IO?, ?json: _JsonAdapter) -> void
+    def initialize: (Server, ?output: IO?, ?max_exchanges: Integer?, ?json: _JsonAdapter) -> void
     def exchanges: () -> Array[Hash[String, untyped]]
     def clear: () -> void
     def size: () -> Integer

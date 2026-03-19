@@ -162,7 +162,7 @@ class TestProfilerMaxSamples < Minitest::Test
 
     stats = profiler["add"]
     assert_equal 10, stats[:count]
-    assert_operator stats[:p50], :>, 0
+    assert_equal 5, stats[:samples]
   end
 
   def test_default_max_samples
