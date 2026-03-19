@@ -12,7 +12,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - RBS type signatures now correctly reflect Core/Extras/Transport namespace structure
+- RBS `Server` class no longer declares conditional `include` for `Extras::Logging` and `Extras::RateLimitSupport`
 - Recorder `max_exchanges:` and TCP `MAX_LINE_BYTES` added to RBS type signatures
+- `Docs#escape_cell` now escapes newlines in Markdown table cells
 - Flaky profiler test with timing-dependent percentile assertion
 
 ## [0.3.0] - 2026-03-18

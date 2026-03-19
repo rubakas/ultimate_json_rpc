@@ -121,6 +121,16 @@ class TestDocs < Minitest::Test
     assert_match(/Contains \\| chars/, md)
   end
 
+  def test_newline_in_table_cell_is_escaped
+    server = Reclamo::Server.new
+    server.expose_method("ping") { "pong" }
+    server.register_error(code: 99, message: "Multi\nLine", description: "Desc\r\nHere")
+    md = Reclamo::Extras::Docs.new(server).to_markdown
+
+    assert_match(/Multi Line/, md)
+    assert_match(/Desc Here/, md)
+  end
+
   def test_no_errors_section_when_empty
     server = Reclamo::Server.new
     server.expose(Calculator)
