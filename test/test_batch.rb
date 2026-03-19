@@ -155,7 +155,8 @@ class TestServerBatchSizeLimit < Minitest::Test
     response = JSON.parse(server.handle(JSON.generate(requests)))
 
     assert_equal(-32_600, response["error"]["code"])
-    assert_equal "Batch too large", response["error"]["message"]
+    assert_equal "Invalid Request", response["error"]["message"]
+    assert_equal "Batch too large", response["error"]["data"]
   end
 
   def test_default_max_batch_size

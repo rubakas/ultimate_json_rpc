@@ -13,7 +13,7 @@ module Reclamo
     def handle_batch(requests)
       return @json.generate(Core::Response.error(Core::INVALID_REQUEST, nil)) if requests.empty?
       if batch_too_large?(requests)
-        return @json.generate(Core::Response.error(Core::INVALID_REQUEST, nil, message: "Batch too large"))
+        return @json.generate(Core::Response.error(Core::INVALID_REQUEST, nil, data: "Batch too large"))
       end
 
       json_parts = process_batch_items(requests)

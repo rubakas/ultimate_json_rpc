@@ -95,7 +95,8 @@ class TestConcurrentBatch < Minitest::Test
     requests = 3.times.map { |i| { "jsonrpc" => "2.0", "method" => "add", "params" => [i, 1], "id" => i } }
     response = JSON.parse(server.handle(JSON.generate(requests)))
 
-    assert_equal "Batch too large", response["error"]["message"]
+    assert_equal "Invalid Request", response["error"]["message"]
+    assert_equal "Batch too large", response["error"]["data"]
   end
 
   def test_concurrent_batch_with_timeout
