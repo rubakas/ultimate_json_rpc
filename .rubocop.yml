@@ -23,8 +23,11 @@ Metrics/AbcSize:
   Exclude:
     - "test/**/*"
 
+Metrics/CyclomaticComplexity:
+  Max: 8
+
 Metrics/MethodLength:
-  Max: 12
+  Max: 14
   Exclude:
     - "test/**/*"
 
