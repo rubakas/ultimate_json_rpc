@@ -16,7 +16,7 @@ end
 
 class TestCustomJSONSerializer < Minitest::Test
   def test_default_uses_stdlib_json
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     server.expose(Calculator)
     response = JSON.parse(server.handle('{"jsonrpc":"2.0","method":"add","params":[2,3],"id":1}'))
 
@@ -24,7 +24,7 @@ class TestCustomJSONSerializer < Minitest::Test
   end
 
   def test_custom_serializer_for_requests
-    server = Reclamo::Server.new(json: CustomJSON)
+    server = UltimateJsonRpc::Server.new(json: CustomJSON)
     server.expose(Calculator)
     response = JSON.parse(server.handle('{"jsonrpc":"2.0","method":"add","params":[2,3],"id":1}'))
 
@@ -32,7 +32,7 @@ class TestCustomJSONSerializer < Minitest::Test
   end
 
   def test_custom_serializer_parse_error
-    server = Reclamo::Server.new(json: CustomJSON)
+    server = UltimateJsonRpc::Server.new(json: CustomJSON)
     server.expose(Calculator)
     response = JSON.parse(server.handle("not json"))
 
@@ -40,14 +40,14 @@ class TestCustomJSONSerializer < Minitest::Test
   end
 
   def test_custom_serializer_with_notifications
-    server = Reclamo::Server.new(json: CustomJSON)
+    server = UltimateJsonRpc::Server.new(json: CustomJSON)
     server.expose(Calculator)
 
     assert_nil server.handle('{"jsonrpc":"2.0","method":"add","params":[1,2]}')
   end
 
   def test_custom_serializer_with_batch
-    server = Reclamo::Server.new(json: CustomJSON)
+    server = UltimateJsonRpc::Server.new(json: CustomJSON)
     server.expose(Calculator)
     batch = '[{"jsonrpc":"2.0","method":"add","params":[1,2],"id":1},' \
             '{"jsonrpc":"2.0","method":"add","params":[3,4],"id":2}]'
@@ -58,7 +58,7 @@ class TestCustomJSONSerializer < Minitest::Test
   end
 
   def test_custom_serializer_with_discover
-    server = Reclamo::Server.new(json: CustomJSON)
+    server = UltimateJsonRpc::Server.new(json: CustomJSON)
     server.expose(Calculator)
     response = JSON.parse(server.handle('{"jsonrpc":"2.0","method":"rpc.discover","id":1}'))
 
@@ -66,14 +66,14 @@ class TestCustomJSONSerializer < Minitest::Test
   end
 
   def test_custom_serializer_with_invalid_request
-    server = Reclamo::Server.new(json: CustomJSON)
+    server = UltimateJsonRpc::Server.new(json: CustomJSON)
     response = JSON.parse(server.handle('"just a string"'))
 
     assert_equal(-32_600, response["error"]["code"])
   end
 
   def test_custom_serializer_with_handle_parsed
-    server = Reclamo::Server.new(json: CustomJSON)
+    server = UltimateJsonRpc::Server.new(json: CustomJSON)
     server.expose(Calculator)
     data = { "jsonrpc" => "2.0", "method" => "add", "params" => [1, 2], "id" => 1 }
     response = JSON.parse(server.handle_parsed(data))
@@ -99,7 +99,7 @@ end
 
 class TestCustomSerializerParseErrors < Minitest::Test
   def test_catches_custom_parse_errors
-    server = Reclamo::Server.new(json: StrictSerializer)
+    server = UltimateJsonRpc::Server.new(json: StrictSerializer)
     server.expose(Calculator)
     response = JSON.parse(server.handle(""))
 
@@ -107,7 +107,7 @@ class TestCustomSerializerParseErrors < Minitest::Test
   end
 
   def test_catches_custom_parse_errors_for_whitespace
-    server = Reclamo::Server.new(json: StrictSerializer)
+    server = UltimateJsonRpc::Server.new(json: StrictSerializer)
     server.expose(Calculator)
     response = JSON.parse(server.handle("   "))
 

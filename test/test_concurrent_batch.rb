@@ -20,7 +20,7 @@ class TestConcurrentBatch < Minitest::Test
   end
 
   def test_concurrent_batch_preserves_order
-    server = Reclamo::Server.new(concurrent_batches: true)
+    server = UltimateJsonRpc::Server.new(concurrent_batches: true)
     server.expose_method("slow") do |n|
       sleep(0.01 * n)
       n
@@ -37,7 +37,7 @@ class TestConcurrentBatch < Minitest::Test
   end
 
   def test_concurrent_batch_actually_runs_concurrently
-    server = Reclamo::Server.new(concurrent_batches: true)
+    server = UltimateJsonRpc::Server.new(concurrent_batches: true)
     server.expose_method("sleep_then") do |ms|
       sleep(ms / 1000.0)
       ms
@@ -90,7 +90,7 @@ class TestConcurrentBatch < Minitest::Test
   end
 
   def test_concurrent_batch_respects_max_batch_size
-    server = Reclamo::Server.new(concurrent_batches: true, max_batch_size: 2)
+    server = UltimateJsonRpc::Server.new(concurrent_batches: true, max_batch_size: 2)
     server.expose(Calculator)
     requests = 3.times.map { |i| { "jsonrpc" => "2.0", "method" => "add", "params" => [i, 1], "id" => i } }
     response = JSON.parse(server.handle(JSON.generate(requests)))
@@ -100,7 +100,7 @@ class TestConcurrentBatch < Minitest::Test
   end
 
   def test_concurrent_batch_with_timeout
-    server = Reclamo::Server.new(concurrent_batches: true, timeout: 0.05)
+    server = UltimateJsonRpc::Server.new(concurrent_batches: true, timeout: 0.05)
     server.expose_method("fast") { "ok" }
     server.expose_method("slow") do
       sleep(1)
@@ -137,19 +137,19 @@ class TestConcurrentBatch < Minitest::Test
   end
 
   def test_default_is_sequential
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
 
     refute server.concurrent_batches?
   end
 
   def test_concurrent_batches_predicate
-    server = Reclamo::Server.new(concurrent_batches: true)
+    server = UltimateJsonRpc::Server.new(concurrent_batches: true)
 
     assert server.concurrent_batches?
   end
 
   def test_concurrent_batch_error_preserves_id
-    server = Reclamo::Server.new(concurrent_batches: true)
+    server = UltimateJsonRpc::Server.new(concurrent_batches: true)
     circ = {}
     circ["self"] = circ
     server.expose_method("bad") { circ }
@@ -166,7 +166,7 @@ class TestConcurrentBatch < Minitest::Test
   end
 
   def test_concurrent_batch_with_middleware
-    server = Reclamo::Server.new(concurrent_batches: true)
+    server = UltimateJsonRpc::Server.new(concurrent_batches: true)
     server.expose(Calculator)
     calls = Queue.new # thread-safe
     server.use do |req, nxt|
@@ -184,7 +184,7 @@ class TestConcurrentBatch < Minitest::Test
   end
 
   def test_concurrent_batch_with_hooks
-    server = Reclamo::Server.new(concurrent_batches: true)
+    server = UltimateJsonRpc::Server.new(concurrent_batches: true)
     server.expose(Calculator)
     methods = Queue.new # thread-safe
     server.on(:request) { |req| methods << req.method_name }
@@ -201,7 +201,7 @@ class TestConcurrentBatch < Minitest::Test
   private
 
   def build_server(concurrent_batches: false)
-    server = Reclamo::Server.new(concurrent_batches:)
+    server = UltimateJsonRpc::Server.new(concurrent_batches:)
     server.expose(Calculator)
     server
   end
@@ -209,7 +209,7 @@ end
 
 class TestConcurrentBatchWorkerResilience < Minitest::Test
   def test_error_in_one_item_does_not_kill_other_items
-    server = Reclamo::Server.new(concurrent_batches: true)
+    server = UltimateJsonRpc::Server.new(concurrent_batches: true)
     server.expose_method("boom") { raise "kaboom" }
     server.expose_method("ok") { "fine" }
 
@@ -231,7 +231,7 @@ end
 
 class TestConcurrentBatchExceptionResilience < Minitest::Test
   def test_exception_in_worker_thread_returns_internal_error
-    server = Reclamo::Server.new(concurrent_batches: true)
+    server = UltimateJsonRpc::Server.new(concurrent_batches: true)
     server.expose_method("fatal") { raise NoMemoryError, "simulated" }
     server.expose_method("ok") { "fine" }
 
@@ -250,7 +250,7 @@ class TestConcurrentBatchExceptionResilience < Minitest::Test
   end
 
   def test_system_stack_error_in_worker_returns_internal_error
-    server = Reclamo::Server.new(concurrent_batches: true)
+    server = UltimateJsonRpc::Server.new(concurrent_batches: true)
     server.expose_method("overflow") { raise SystemStackError, "stack level too deep" }
     server.expose_method("ok") { "fine" }
 
@@ -266,7 +266,7 @@ class TestConcurrentBatchExceptionResilience < Minitest::Test
   end
 
   def test_exception_in_worker_preserves_request_id
-    server = Reclamo::Server.new(concurrent_batches: true)
+    server = UltimateJsonRpc::Server.new(concurrent_batches: true)
     server.expose_method("fatal") { raise NoMemoryError, "simulated" }
 
     requests = [
@@ -292,7 +292,7 @@ class TestConcurrentBatchSafety < Minitest::Test
       end
     end.new
 
-    server = Reclamo::Server.new(concurrent_batches: true, json: bad_json)
+    server = UltimateJsonRpc::Server.new(concurrent_batches: true, json: bad_json)
     server.expose_method("boom") { :boom }
     server.expose_method("ok") { "ok" }
 
@@ -310,7 +310,7 @@ class TestConcurrentBatchSafety < Minitest::Test
   end
 
   def test_max_concurrency_limits_threads
-    server = Reclamo::Server.new(concurrent_batches: true, max_concurrency: 2)
+    server = UltimateJsonRpc::Server.new(concurrent_batches: true, max_concurrency: 2)
     thread_ids = Queue.new
     server.expose_method("track") do
       thread_ids << Thread.current.object_id

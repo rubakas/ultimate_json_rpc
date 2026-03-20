@@ -7,18 +7,18 @@
 #         -H "Content-Type: application/json" \
 #         -d '{"jsonrpc":"2.0","method":"add","params":[2,3],"id":1}'
 
-require "reclamo"
-require "reclamo/transport/rack"
+require "ultimate_json_rpc"
+require "ultimate_json_rpc/transport/rack"
 
 module Calculator
   def self.add(a, b) = a + b
   def self.multiply(a, b) = a * b
 end
 
-server = Reclamo::Server.new(name: "Calculator API", version: "1.0")
+server = UltimateJsonRpc::Server.new(name: "Calculator API", version: "1.0")
 server.expose(Calculator, descriptions: {
   add: "Add two numbers",
   multiply: "Multiply two numbers"
 })
 
-run Reclamo::Transport::Rack.new(server)
+run UltimateJsonRpc::Transport::Rack.new(server)

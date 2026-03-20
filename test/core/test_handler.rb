@@ -5,7 +5,7 @@ require "json"
 
 class TestHandler < Minitest::Test
   def test_method_query
-    handler = Reclamo::Core::Handler.new
+    handler = UltimateJsonRpc::Core::Handler.new
     handler.expose(Calculator)
 
     assert handler.method?("add")
@@ -13,7 +13,7 @@ class TestHandler < Minitest::Test
   end
 
   def test_handler_size
-    handler = Reclamo::Core::Handler.new
+    handler = UltimateJsonRpc::Core::Handler.new
     assert_equal 0, handler.size
 
     handler.expose(Calculator)
@@ -24,13 +24,13 @@ class TestHandler < Minitest::Test
   end
 
   def test_expose_rejects_rpc_namespace
-    handler = Reclamo::Core::Handler.new
+    handler = UltimateJsonRpc::Core::Handler.new
 
     assert_raises(ArgumentError) { handler.expose(Calculator, namespace: "rpc") }
   end
 
   def test_does_not_expose_inherited_object_methods
-    handler = Reclamo::Core::Handler.new
+    handler = UltimateJsonRpc::Core::Handler.new
     handler.expose(Greeter.new("Hi"))
 
     refute handler.method?("class")
@@ -38,28 +38,28 @@ class TestHandler < Minitest::Test
   end
 
   def test_duplicate_expose_raises
-    handler = Reclamo::Core::Handler.new
+    handler = UltimateJsonRpc::Core::Handler.new
     handler.expose(Calculator)
 
     assert_raises(ArgumentError) { handler.expose(Calculator) }
   end
 
   def test_duplicate_expose_method_raises
-    handler = Reclamo::Core::Handler.new
+    handler = UltimateJsonRpc::Core::Handler.new
     handler.expose_method("foo") { "bar" }
 
     assert_raises(ArgumentError) { handler.expose_method("foo") { "baz" } }
   end
 
   def test_duplicate_across_expose_and_expose_method
-    handler = Reclamo::Core::Handler.new
+    handler = UltimateJsonRpc::Core::Handler.new
     handler.expose(Calculator)
 
     assert_raises(ArgumentError) { handler.expose_method("add") { 1 } }
   end
 
   def test_same_method_name_different_namespace_ok
-    handler = Reclamo::Core::Handler.new
+    handler = UltimateJsonRpc::Core::Handler.new
     handler.expose(Calculator, namespace: "a")
     handler.expose(Calculator, namespace: "b")
 
@@ -68,7 +68,7 @@ class TestHandler < Minitest::Test
   end
 
   def test_empty_string_namespace_treated_as_no_namespace
-    handler = Reclamo::Core::Handler.new
+    handler = UltimateJsonRpc::Core::Handler.new
     handler.expose(Calculator, namespace: "")
 
     assert handler.method?("add")
@@ -76,7 +76,7 @@ class TestHandler < Minitest::Test
   end
 
   def test_symbol_namespace
-    handler = Reclamo::Core::Handler.new
+    handler = UltimateJsonRpc::Core::Handler.new
     handler.expose(Calculator, namespace: :math)
 
     assert handler.method?("math.add")
@@ -84,7 +84,7 @@ class TestHandler < Minitest::Test
   end
 
   def test_expose_target_with_no_methods
-    handler = Reclamo::Core::Handler.new
+    handler = UltimateJsonRpc::Core::Handler.new
     _, err = capture_io { handler.expose(Object.new) }
 
     assert_equal 0, handler.size
@@ -93,13 +93,13 @@ class TestHandler < Minitest::Test
   end
 
   def test_expose_nil_raises
-    handler = Reclamo::Core::Handler.new
+    handler = UltimateJsonRpc::Core::Handler.new
 
     assert_raises(ArgumentError) { handler.expose(nil) }
   end
 
   def test_methods_list_is_sorted
-    handler = Reclamo::Core::Handler.new
+    handler = UltimateJsonRpc::Core::Handler.new
     handler.expose_method("zebra") { nil }
     handler.expose_method("alpha") { nil }
     handler.expose_method("middle") { nil }
@@ -108,7 +108,7 @@ class TestHandler < Minitest::Test
   end
 
   def test_methods_info_for_required_positional_params
-    handler = Reclamo::Core::Handler.new
+    handler = UltimateJsonRpc::Core::Handler.new
     handler.expose(Calculator)
     add_info = handler.methods_info.find { |m| m["name"] == "add" }
 
@@ -117,7 +117,7 @@ class TestHandler < Minitest::Test
   end
 
   def test_methods_info_marks_keyword_params
-    handler = Reclamo::Core::Handler.new
+    handler = UltimateJsonRpc::Core::Handler.new
     handler.expose(Greeter.new("Hi"))
     greet_info = handler.methods_info.find { |m| m["name"] == "greet" }
 
@@ -125,14 +125,14 @@ class TestHandler < Minitest::Test
   end
 
   def test_methods_info_omits_params_when_none
-    handler = Reclamo::Core::Handler.new
+    handler = UltimateJsonRpc::Core::Handler.new
     handler.expose_method("ping") { "pong" }
 
     refute handler.methods_info[0].key?("params")
   end
 
   def test_methods_info_block_params_are_optional
-    handler = Reclamo::Core::Handler.new
+    handler = UltimateJsonRpc::Core::Handler.new
     handler.expose_method("greet") { |name, greeting| "#{greeting}, #{name}!" }
     greet_info = handler.methods_info[0]
 
@@ -146,7 +146,7 @@ class TestHandlerCallableMethods < Minitest::Test
     target = Object.new
     target.define_singleton_method(:foo) { "foo" }
 
-    handler = Reclamo::Core::Handler.new
+    handler = UltimateJsonRpc::Core::Handler.new
     handler.expose(target)
 
     assert handler.method?("foo")
@@ -164,7 +164,7 @@ class TestHandlerCallableMethodsExtend < Minitest::Test
     service.extend(helper)
     service.define_singleton_method(:work) { "working" }
 
-    handler = Reclamo::Core::Handler.new
+    handler = UltimateJsonRpc::Core::Handler.new
     handler.expose(service)
 
     assert handler.method?("work"), "directly defined singleton method should be exposed"
@@ -177,7 +177,7 @@ class TestHandlerCallableMethodsExtend < Minitest::Test
     klass.extend(helper)
     klass.define_singleton_method(:work) { "working" }
 
-    handler = Reclamo::Core::Handler.new
+    handler = UltimateJsonRpc::Core::Handler.new
     handler.expose(klass)
 
     assert handler.method?("work"), "directly defined singleton method should be exposed"
@@ -191,7 +191,7 @@ class TestHandlerCallableMethodsExtend < Minitest::Test
     service.extend(helper)
     service.define_singleton_method(:work) { "working" }
 
-    handler = Reclamo::Core::Handler.new
+    handler = UltimateJsonRpc::Core::Handler.new
     handler.expose(service)
     handler.expose_method("help", service.method(:help))
 
@@ -204,7 +204,7 @@ class TestHandlerCallableMethodsExtend < Minitest::Test
     service.extend(Comparable)
     service.define_singleton_method(:work) { "working" }
 
-    handler = Reclamo::Core::Handler.new
+    handler = UltimateJsonRpc::Core::Handler.new
     handler.expose(service)
 
     assert handler.method?("work")
@@ -218,7 +218,7 @@ class TestHandlerCallableMethodsExtend < Minitest::Test
     obj.extend(helper)
     obj.define_singleton_method(:work) { "done" }
 
-    handler = Reclamo::Core::Handler.new
+    handler = UltimateJsonRpc::Core::Handler.new
     handler.expose(obj)
 
     assert handler.method?("work")
@@ -228,25 +228,25 @@ end
 
 class TestHandlerMethodNameValidation < Minitest::Test
   def test_trailing_dot_rejected
-    handler = Reclamo::Core::Handler.new
+    handler = UltimateJsonRpc::Core::Handler.new
     err = assert_raises(ArgumentError) { handler.expose_method("foo.") { nil } }
     assert_match(/empty segment/, err.message)
   end
 
   def test_leading_dot_rejected
-    handler = Reclamo::Core::Handler.new
+    handler = UltimateJsonRpc::Core::Handler.new
     err = assert_raises(ArgumentError) { handler.expose_method(".foo") { nil } }
     assert_match(/empty segment/, err.message)
   end
 
   def test_double_dot_rejected
-    handler = Reclamo::Core::Handler.new
+    handler = UltimateJsonRpc::Core::Handler.new
     err = assert_raises(ArgumentError) { handler.expose_method("a..b") { nil } }
     assert_match(/empty segment/, err.message)
   end
 
   def test_single_dot_rejected
-    handler = Reclamo::Core::Handler.new
+    handler = UltimateJsonRpc::Core::Handler.new
     err = assert_raises(ArgumentError) { handler.expose_method(".") { nil } }
     assert_match(/empty segment/, err.message)
   end
@@ -254,22 +254,22 @@ end
 
 class TestHandlerEdgeCases < Minitest::Test
   def test_method_not_found_exposes_method_name
-    handler = Reclamo::Core::Handler.new
-    err = assert_raises(Reclamo::Core::MethodNotFound) { handler.call("missing", nil) }
+    handler = UltimateJsonRpc::Core::Handler.new
+    err = assert_raises(UltimateJsonRpc::Core::MethodNotFound) { handler.call("missing", nil) }
 
     assert_equal "missing", err.method_name
     assert_equal "Method not found: missing", err.message
   end
 
   def test_invoke_with_invalid_params_type_raises
-    handler = Reclamo::Core::Handler.new
+    handler = UltimateJsonRpc::Core::Handler.new
     handler.expose(Calculator)
 
-    assert_raises(Reclamo::Core::InvalidParams) { handler.call("add", "not valid") }
+    assert_raises(UltimateJsonRpc::Core::InvalidParams) { handler.call("add", "not valid") }
   end
 
   def test_call_with_hash_params_converts_keys_to_symbols
-    handler = Reclamo::Core::Handler.new
+    handler = UltimateJsonRpc::Core::Handler.new
     handler.expose(Greeter.new("Hi"))
     result = handler.call("greet", { "name" => "World" })
 
@@ -277,7 +277,7 @@ class TestHandlerEdgeCases < Minitest::Test
   end
 
   def test_call_with_nil_params
-    handler = Reclamo::Core::Handler.new
+    handler = UltimateJsonRpc::Core::Handler.new
     handler.expose(Greeter.new("Hi"))
     result = handler.call("hello", nil)
 
@@ -287,21 +287,21 @@ end
 
 class TestHandlerFreeze < Minitest::Test
   def test_frozen_handler_rejects_expose
-    handler = Reclamo::Core::Handler.new
+    handler = UltimateJsonRpc::Core::Handler.new
     handler.freeze
 
     assert_raises(FrozenError) { handler.expose(Calculator) }
   end
 
   def test_frozen_handler_rejects_expose_method
-    handler = Reclamo::Core::Handler.new
+    handler = UltimateJsonRpc::Core::Handler.new
     handler.freeze
 
     assert_raises(FrozenError) { handler.expose_method("foo") { "bar" } }
   end
 
   def test_frozen_handler_allows_calls
-    handler = Reclamo::Core::Handler.new
+    handler = UltimateJsonRpc::Core::Handler.new
     handler.expose(Calculator)
     handler.freeze
 
@@ -309,7 +309,7 @@ class TestHandlerFreeze < Minitest::Test
   end
 
   def test_frozen_handler_allows_queries
-    handler = Reclamo::Core::Handler.new
+    handler = UltimateJsonRpc::Core::Handler.new
     handler.expose(Calculator)
     handler.freeze
 
@@ -322,7 +322,7 @@ end
 
 class TestHandlerParamDescriptors < Minitest::Test
   def test_variadic_keyword_params
-    handler = Reclamo::Core::Handler.new
+    handler = UltimateJsonRpc::Core::Handler.new
     handler.expose_method("flexible") { |**opts| opts }
     info = handler.methods_info.find { |m| m["name"] == "flexible" }
 
@@ -333,7 +333,7 @@ class TestHandlerParamDescriptors < Minitest::Test
   end
 
   def test_mixed_positional_and_keyword_params
-    handler = Reclamo::Core::Handler.new
+    handler = UltimateJsonRpc::Core::Handler.new
     handler.expose_method("mixed") { |a, b:, c: nil| [a, b, c] }
     info = handler.methods_info.find { |m| m["name"] == "mixed" }
 
@@ -346,7 +346,7 @@ class TestHandlerParamDescriptors < Minitest::Test
   end
 
   def test_variadic_positional_params
-    handler = Reclamo::Core::Handler.new
+    handler = UltimateJsonRpc::Core::Handler.new
     handler.expose_method("varargs") { |*args| args }
     info = handler.methods_info.find { |m| m["name"] == "varargs" }
 
@@ -365,14 +365,14 @@ class TestHandlerDangerousMethods < Minitest::Test
      public private protected].each do |name|
     safe_name = name.tr("?", "_q")
     define_method("test_expose_rejects_#{safe_name}") do
-      handler = Reclamo::Core::Handler.new
+      handler = UltimateJsonRpc::Core::Handler.new
       err = assert_raises(ArgumentError) { handler.expose_method(name) { nil } }
       assert_match(/dangerous/, err.message)
     end
   end
 
   def test_expose_rejects_namespaced_dangerous_method
-    handler = Reclamo::Core::Handler.new
+    handler = UltimateJsonRpc::Core::Handler.new
     err = assert_raises(ArgumentError) { handler.expose_method("ns.eval") { nil } }
     assert_match(/dangerous/, err.message)
   end
@@ -380,12 +380,12 @@ class TestHandlerDangerousMethods < Minitest::Test
   def test_expose_rejects_dangerous_from_target
     target = Object.new
     target.define_singleton_method(:eval) { "nope" }
-    handler = Reclamo::Core::Handler.new
+    handler = UltimateJsonRpc::Core::Handler.new
     assert_raises(ArgumentError) { handler.expose(target) }
   end
 
   def test_expose_rejects_dangerous_namespace
-    handler = Reclamo::Core::Handler.new
+    handler = UltimateJsonRpc::Core::Handler.new
     target = Object.new
     target.define_singleton_method(:safe) { "ok" }
     err = assert_raises(ArgumentError) { handler.expose(target, namespace: "eval") }
@@ -393,13 +393,13 @@ class TestHandlerDangerousMethods < Minitest::Test
   end
 
   def test_expose_allows_safe_name_evaluate
-    handler = Reclamo::Core::Handler.new
+    handler = UltimateJsonRpc::Core::Handler.new
     handler.expose_method("evaluate") { "ok" }
     assert handler.method?("evaluate")
   end
 
   def test_expose_allows_safe_names_similar_to_dangerous
-    handler = Reclamo::Core::Handler.new
+    handler = UltimateJsonRpc::Core::Handler.new
     %w[including extended prepending publicly privately].each do |safe_name|
       handler.expose_method(safe_name) { "ok" }
       assert handler.method?(safe_name)
@@ -409,7 +409,7 @@ class TestHandlerDangerousMethods < Minitest::Test
   %w[instance_variable_get instance_variable_set class_variable_get class_variable_set
      const_get const_set remove_const method].each do |dangerous|
     define_method("test_expose_method_#{dangerous}_is_blocked") do
-      handler = Reclamo::Core::Handler.new
+      handler = UltimateJsonRpc::Core::Handler.new
       assert_raises(ArgumentError) { handler.expose_method(dangerous) { nil } }
     end
   end

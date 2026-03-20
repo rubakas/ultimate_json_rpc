@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-module Reclamo
+module UltimateJsonRpc
   module Extras
     class Recorder
       UNSET = Object.new.freeze

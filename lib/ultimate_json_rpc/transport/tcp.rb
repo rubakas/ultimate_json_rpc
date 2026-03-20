@@ -2,9 +2,9 @@
 
 require "socket"
 
-module Reclamo
+module UltimateJsonRpc
   module Transport
-    # TCP adapter for Reclamo servers.
+    # TCP adapter for UltimateJsonRpc servers.
     # Thread-safety: each client gets its own thread. The @connection_count counter is protected
     # by a Mutex. Under CRuby's GVL, Array/Hash reads are safe, but the Mutex ensures correctness
     # on alternative Ruby implementations as well.

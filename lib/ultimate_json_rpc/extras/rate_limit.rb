@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-module Reclamo
+module UltimateJsonRpc
   module Extras
     class RateLimiter
       def initialize(server, max:, period:, key: nil, code: 429, message: "Rate limit exceeded", only: nil, except: nil)

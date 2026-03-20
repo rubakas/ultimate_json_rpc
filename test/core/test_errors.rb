@@ -5,7 +5,7 @@ require "json"
 
 class TestServerErrors < Minitest::Test
   def setup
-    @server = Reclamo::Server.new(expose_errors: true)
+    @server = UltimateJsonRpc::Server.new(expose_errors: true)
     @server.expose(Calculator)
   end
 
@@ -73,7 +73,7 @@ class TestServerErrors < Minitest::Test
   end
 
   def test_non_serializable_result_returns_internal_error
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     circ = {}
     circ["self"] = circ
     server.expose_method("bad") { circ }
@@ -110,14 +110,14 @@ end
 
 class TestServerApplicationError < Minitest::Test
   def setup
-    @server = Reclamo::Server.new
+    @server = UltimateJsonRpc::Server.new
     @server.expose_method("fail_custom") do
-      raise Reclamo::Core::ApplicationError.new(
+      raise UltimateJsonRpc::Core::ApplicationError.new(
         code: 42, message: "Custom error", data: { "detail" => "something went wrong" }
       )
     end
     @server.expose_method("fail_simple") do
-      raise Reclamo::Core::ApplicationError.new(code: 100, message: "Simple failure")
+      raise UltimateJsonRpc::Core::ApplicationError.new(code: 100, message: "Simple failure")
     end
   end
 
@@ -146,9 +146,9 @@ class TestServerApplicationError < Minitest::Test
   end
 
   def test_application_error_with_false_data
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     server.expose_method("fail_false") do
-      raise Reclamo::Core::ApplicationError.new(code: 42, message: "Boolean error", data: false)
+      raise UltimateJsonRpc::Core::ApplicationError.new(code: 42, message: "Boolean error", data: false)
     end
 
     request = { "jsonrpc" => "2.0", "method" => "fail_false", "id" => 1 }
@@ -158,9 +158,9 @@ class TestServerApplicationError < Minitest::Test
   end
 
   def test_application_error_with_zero_data
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     server.expose_method("fail_zero") do
-      raise Reclamo::Core::ApplicationError.new(code: 42, message: "Zero error", data: 0)
+      raise UltimateJsonRpc::Core::ApplicationError.new(code: 42, message: "Zero error", data: 0)
     end
 
     request = { "jsonrpc" => "2.0", "method" => "fail_zero", "id" => 1 }
@@ -170,40 +170,40 @@ class TestServerApplicationError < Minitest::Test
   end
 
   def test_application_error_rejects_reserved_codes
-    assert_raises(ArgumentError) { Reclamo::Core::ApplicationError.new(code: -32_700, message: "Parse error") }
-    assert_raises(ArgumentError) { Reclamo::Core::ApplicationError.new(code: -32_600, message: "Invalid") }
-    assert_raises(ArgumentError) { Reclamo::Core::ApplicationError.new(code: -32_000, message: "Server error") }
-    assert_raises(ArgumentError) { Reclamo::Core::ApplicationError.new(code: -32_768, message: "Edge of range") }
+    assert_raises(ArgumentError) { UltimateJsonRpc::Core::ApplicationError.new(code: -32_700, message: "Parse error") }
+    assert_raises(ArgumentError) { UltimateJsonRpc::Core::ApplicationError.new(code: -32_600, message: "Invalid") }
+    assert_raises(ArgumentError) { UltimateJsonRpc::Core::ApplicationError.new(code: -32_000, message: "Server error") }
+    assert_raises(ArgumentError) { UltimateJsonRpc::Core::ApplicationError.new(code: -32_768, message: "Edge of range") }
   end
 
   def test_application_error_server_range_mentions_server_error
-    err = assert_raises(ArgumentError) { Reclamo::Core::ApplicationError.new(code: -32_050, message: "In range") }
+    err = assert_raises(ArgumentError) { UltimateJsonRpc::Core::ApplicationError.new(code: -32_050, message: "In range") }
     assert_match(/ServerError/, err.message)
   end
 
   def test_application_error_allows_non_reserved_codes
-    err = Reclamo::Core::ApplicationError.new(code: -31_999, message: "Just outside range")
+    err = UltimateJsonRpc::Core::ApplicationError.new(code: -31_999, message: "Just outside range")
     assert_equal(-31_999, err.code)
 
-    err2 = Reclamo::Core::ApplicationError.new(code: -32_769, message: "Below range")
+    err2 = UltimateJsonRpc::Core::ApplicationError.new(code: -32_769, message: "Below range")
     assert_equal(-32_769, err2.code)
 
-    err3 = Reclamo::Core::ApplicationError.new(code: 1, message: "Positive code")
+    err3 = UltimateJsonRpc::Core::ApplicationError.new(code: 1, message: "Positive code")
     assert_equal 1, err3.code
   end
 
   def test_application_error_rejects_non_integer_code
-    assert_raises(ArgumentError) { Reclamo::Core::ApplicationError.new(code: "42", message: "String code") }
-    assert_raises(ArgumentError) { Reclamo::Core::ApplicationError.new(code: 1.5, message: "Float code") }
-    assert_raises(ArgumentError) { Reclamo::Core::ApplicationError.new(code: nil, message: "Nil code") }
+    assert_raises(ArgumentError) { UltimateJsonRpc::Core::ApplicationError.new(code: "42", message: "String code") }
+    assert_raises(ArgumentError) { UltimateJsonRpc::Core::ApplicationError.new(code: 1.5, message: "Float code") }
+    assert_raises(ArgumentError) { UltimateJsonRpc::Core::ApplicationError.new(code: nil, message: "Nil code") }
   end
 end
 
 class TestInvalidParams < Minitest::Test
   def test_invalid_params_gated_by_expose_errors
-    server = Reclamo::Server.new(expose_errors: false)
+    server = UltimateJsonRpc::Server.new(expose_errors: false)
     server.expose_method("validate") do |age:|
-      raise Reclamo::Core::InvalidParams, "age must be positive" unless age.positive?
+      raise UltimateJsonRpc::Core::InvalidParams, "age must be positive" unless age.positive?
 
       age
     end
@@ -218,9 +218,9 @@ class TestInvalidParams < Minitest::Test
   end
 
   def test_invalid_params_exposed_when_enabled
-    server = Reclamo::Server.new(expose_errors: true)
+    server = UltimateJsonRpc::Server.new(expose_errors: true)
     server.expose_method("validate") do |age:|
-      raise Reclamo::Core::InvalidParams, "age must be positive" unless age.positive?
+      raise UltimateJsonRpc::Core::InvalidParams, "age must be positive" unless age.positive?
 
       age
     end
@@ -235,9 +235,9 @@ class TestInvalidParams < Minitest::Test
   end
 
   def test_invalid_params_notification_returns_nil
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     server.expose_method("validate") do |age:|
-      raise Reclamo::Core::InvalidParams, "age must be positive" unless age.positive?
+      raise UltimateJsonRpc::Core::InvalidParams, "age must be positive" unless age.positive?
 
       age
     end
@@ -249,29 +249,29 @@ end
 
 class TestServerError < Minitest::Test
   def test_server_error_allows_server_error_range
-    err = Reclamo::Core::ServerError.new(code: -32_000, message: "Server busy")
+    err = UltimateJsonRpc::Core::ServerError.new(code: -32_000, message: "Server busy")
     assert_equal(-32_000, err.code)
     assert_equal "Server busy", err.message
 
-    err2 = Reclamo::Core::ServerError.new(code: -32_099, message: "Edge of range")
+    err2 = UltimateJsonRpc::Core::ServerError.new(code: -32_099, message: "Edge of range")
     assert_equal(-32_099, err2.code)
   end
 
   def test_server_error_rejects_codes_outside_range
-    assert_raises(ArgumentError) { Reclamo::Core::ServerError.new(code: -32_100, message: "Too low") }
-    assert_raises(ArgumentError) { Reclamo::Core::ServerError.new(code: -31_999, message: "Too high") }
-    assert_raises(ArgumentError) { Reclamo::Core::ServerError.new(code: 1, message: "Positive") }
+    assert_raises(ArgumentError) { UltimateJsonRpc::Core::ServerError.new(code: -32_100, message: "Too low") }
+    assert_raises(ArgumentError) { UltimateJsonRpc::Core::ServerError.new(code: -31_999, message: "Too high") }
+    assert_raises(ArgumentError) { UltimateJsonRpc::Core::ServerError.new(code: 1, message: "Positive") }
   end
 
   def test_server_error_with_data
-    err = Reclamo::Core::ServerError.new(code: -32_000, message: "Busy", data: { "retry_after" => 5 })
+    err = UltimateJsonRpc::Core::ServerError.new(code: -32_000, message: "Busy", data: { "retry_after" => 5 })
     assert_equal({ "retry_after" => 5 }, err.rpc_data)
   end
 
   def test_server_error_in_handler
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     server.expose_method("shutdown") do
-      raise Reclamo::Core::ServerError.new(code: -32_001, message: "Server shutting down")
+      raise UltimateJsonRpc::Core::ServerError.new(code: -32_001, message: "Server shutting down")
     end
 
     request = { "jsonrpc" => "2.0", "method" => "shutdown", "id" => 1 }
@@ -282,9 +282,9 @@ class TestServerError < Minitest::Test
   end
 
   def test_server_error_notification_returns_nil
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     server.expose_method("shutdown") do
-      raise Reclamo::Core::ServerError.new(code: -32_001, message: "Shutting down")
+      raise UltimateJsonRpc::Core::ServerError.new(code: -32_001, message: "Shutting down")
     end
 
     request = { "jsonrpc" => "2.0", "method" => "shutdown" }
@@ -294,14 +294,14 @@ end
 
 class TestExposeErrorsPredicate < Minitest::Test
   def test_expose_errors_predicate
-    refute Reclamo::Server.new.expose_errors?
-    assert Reclamo::Server.new(expose_errors: true).expose_errors?
+    refute UltimateJsonRpc::Server.new.expose_errors?
+    assert UltimateJsonRpc::Server.new(expose_errors: true).expose_errors?
   end
 end
 
 class TestRequestIdValidation < Minitest::Test
   def test_empty_method_name_is_invalid
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     request = { "jsonrpc" => "2.0", "method" => "", "id" => 1 }
     response = JSON.parse(server.handle(JSON.generate(request)))
 
@@ -309,7 +309,7 @@ class TestRequestIdValidation < Minitest::Test
   end
 
   def test_id_as_array_is_invalid
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     server.expose(Calculator)
     request = { "jsonrpc" => "2.0", "method" => "add", "params" => [1, 2], "id" => [1] }
     response = JSON.parse(server.handle(JSON.generate(request)))
@@ -319,7 +319,7 @@ class TestRequestIdValidation < Minitest::Test
   end
 
   def test_id_as_object_is_invalid
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     server.expose(Calculator)
     request = { "jsonrpc" => "2.0", "method" => "add", "params" => [1, 2], "id" => { "x" => 1 } }
     response = JSON.parse(server.handle(JSON.generate(request)))
@@ -328,7 +328,7 @@ class TestRequestIdValidation < Minitest::Test
   end
 
   def test_id_as_boolean_is_invalid
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     server.expose(Calculator)
     request = { "jsonrpc" => "2.0", "method" => "add", "params" => [1, 2], "id" => true }
     response = JSON.parse(server.handle(JSON.generate(request)))
@@ -337,7 +337,7 @@ class TestRequestIdValidation < Minitest::Test
   end
 
   def test_id_as_integer_is_valid
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     server.expose(Calculator)
     request = { "jsonrpc" => "2.0", "method" => "add", "params" => [1, 2], "id" => 42 }
     response = JSON.parse(server.handle(JSON.generate(request)))
@@ -347,7 +347,7 @@ class TestRequestIdValidation < Minitest::Test
   end
 
   def test_id_as_float_is_valid
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     server.expose(Calculator)
     request = { "jsonrpc" => "2.0", "method" => "add", "params" => [1, 2], "id" => 1.0 }
     response = JSON.parse(server.handle(JSON.generate(request)))
@@ -356,7 +356,7 @@ class TestRequestIdValidation < Minitest::Test
   end
 
   def test_id_zero_is_valid
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     server.expose(Calculator)
     request = { "jsonrpc" => "2.0", "method" => "add", "params" => [1, 2], "id" => 0 }
     response = JSON.parse(server.handle(JSON.generate(request)))
@@ -366,7 +366,7 @@ class TestRequestIdValidation < Minitest::Test
   end
 
   def test_boolean_id_returns_null_in_error
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     server.expose(Calculator)
     request = { "jsonrpc" => "2.0", "method" => "add", "params" => [1, 2], "id" => true }
     response = JSON.parse(server.handle(JSON.generate(request)))
@@ -376,7 +376,7 @@ class TestRequestIdValidation < Minitest::Test
   end
 
   def test_invalid_request_preserves_valid_id
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     request = { "jsonrpc" => "1.0", "method" => "add", "id" => 99 }
     response = JSON.parse(server.handle(JSON.generate(request)))
 
@@ -385,7 +385,7 @@ class TestRequestIdValidation < Minitest::Test
   end
 
   def test_invalid_request_nullifies_bad_id_type
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     request = { "jsonrpc" => "2.0", "method" => "", "id" => [1, 2, 3] }
     response = JSON.parse(server.handle(JSON.generate(request)))
 
@@ -396,7 +396,7 @@ end
 
 class TestServerParamErrors < Minitest::Test
   def setup
-    @server = Reclamo::Server.new
+    @server = UltimateJsonRpc::Server.new
     @server.expose(Calculator)
     @server.expose(Greeter.new("Hi"), namespace: "greeter")
   end
@@ -485,7 +485,7 @@ end
 
 class TestExposeErrorsOption < Minitest::Test
   def test_default_hides_internal_error_messages
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     server.expose(Calculator)
 
     request = { "jsonrpc" => "2.0", "method" => "divide", "params" => [1, 0], "id" => 1 }
@@ -496,7 +496,7 @@ class TestExposeErrorsOption < Minitest::Test
   end
 
   def test_expose_errors_shows_internal_error_messages
-    server = Reclamo::Server.new(expose_errors: true)
+    server = UltimateJsonRpc::Server.new(expose_errors: true)
     server.expose(Calculator)
 
     request = { "jsonrpc" => "2.0", "method" => "divide", "params" => [1, 0], "id" => 1 }
@@ -507,8 +507,8 @@ class TestExposeErrorsOption < Minitest::Test
   end
 
   def test_application_error_always_exposed
-    server = Reclamo::Server.new
-    server.expose_method("fail") { raise Reclamo::Core::ApplicationError.new(code: 42, message: "Custom", data: "detail") }
+    server = UltimateJsonRpc::Server.new
+    server.expose_method("fail") { raise UltimateJsonRpc::Core::ApplicationError.new(code: 42, message: "Custom", data: "detail") }
 
     request = { "jsonrpc" => "2.0", "method" => "fail", "id" => 1 }
     response = JSON.parse(server.handle(JSON.generate(request)))
@@ -518,8 +518,8 @@ class TestExposeErrorsOption < Minitest::Test
   end
 
   def test_server_error_always_exposed
-    server = Reclamo::Server.new
-    server.expose_method("fail") { raise Reclamo::Core::ServerError.new(code: -32_001, message: "Shutting down", data: "retry") }
+    server = UltimateJsonRpc::Server.new
+    server.expose_method("fail") { raise UltimateJsonRpc::Core::ServerError.new(code: -32_001, message: "Shutting down", data: "retry") }
 
     request = { "jsonrpc" => "2.0", "method" => "fail", "id" => 1 }
     response = JSON.parse(server.handle(JSON.generate(request)))
@@ -529,7 +529,7 @@ class TestExposeErrorsOption < Minitest::Test
   end
 
   def test_invalid_params_respects_expose_errors
-    server = Reclamo::Server.new(expose_errors: false)
+    server = UltimateJsonRpc::Server.new(expose_errors: false)
     server.expose_method("validate", params_schema: { "age" => { "type" => "integer" } }) do |age:|
       age
     end
@@ -542,7 +542,7 @@ class TestExposeErrorsOption < Minitest::Test
   end
 
   def test_invalid_params_exposed_when_expose_errors_enabled
-    server = Reclamo::Server.new(expose_errors: true)
+    server = UltimateJsonRpc::Server.new(expose_errors: true)
     server.expose_method("validate", params_schema: { "age" => { "type" => "integer" } }) do |age:|
       age
     end
@@ -555,7 +555,7 @@ class TestExposeErrorsOption < Minitest::Test
   end
 
   def test_method_not_found_hidden_by_default
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
 
     request = { "jsonrpc" => "2.0", "method" => "missing", "id" => 1 }
     response = JSON.parse(server.handle(JSON.generate(request)))
@@ -565,7 +565,7 @@ class TestExposeErrorsOption < Minitest::Test
   end
 
   def test_method_not_found_exposed_when_enabled
-    server = Reclamo::Server.new(expose_errors: true)
+    server = UltimateJsonRpc::Server.new(expose_errors: true)
 
     request = { "jsonrpc" => "2.0", "method" => "missing", "id" => 1 }
     response = JSON.parse(server.handle(JSON.generate(request)))
@@ -575,7 +575,7 @@ class TestExposeErrorsOption < Minitest::Test
   end
 
   def test_argument_error_hidden_by_default
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     server.expose(Calculator)
 
     request = { "jsonrpc" => "2.0", "method" => "add", "params" => [1, 2, 3], "id" => 1 }
@@ -588,9 +588,9 @@ end
 
 class TestInvalidRequestFromMiddleware < Minitest::Test
   def test_middleware_raising_invalid_request_returns_invalid_request_code
-    server = Reclamo::Server.new(expose_errors: true)
+    server = UltimateJsonRpc::Server.new(expose_errors: true)
     server.expose(Calculator)
-    server.use { |_req, _nxt| raise Reclamo::Core::InvalidRequest, "bad request from middleware" }
+    server.use { |_req, _nxt| raise UltimateJsonRpc::Core::InvalidRequest, "bad request from middleware" }
 
     request = '{"jsonrpc":"2.0","method":"add","params":[1,2],"id":1}'
     response = JSON.parse(server.handle(request))
@@ -600,9 +600,9 @@ class TestInvalidRequestFromMiddleware < Minitest::Test
   end
 
   def test_middleware_raising_invalid_request_without_expose_errors
-    server = Reclamo::Server.new(expose_errors: false)
+    server = UltimateJsonRpc::Server.new(expose_errors: false)
     server.expose(Calculator)
-    server.use { |_req, _nxt| raise Reclamo::Core::InvalidRequest, "secret details" }
+    server.use { |_req, _nxt| raise UltimateJsonRpc::Core::InvalidRequest, "secret details" }
 
     request = '{"jsonrpc":"2.0","method":"add","params":[1,2],"id":1}'
     response = JSON.parse(server.handle(request))
@@ -614,7 +614,7 @@ end
 
 class TestArgumentErrorGenericData < Minitest::Test
   def test_argument_error_uses_generic_params_data_when_hidden
-    server = Reclamo::Server.new(expose_errors: false)
+    server = UltimateJsonRpc::Server.new(expose_errors: false)
     server.expose(Calculator)
 
     request = { "jsonrpc" => "2.0", "method" => "add", "params" => [1, 2, 3], "id" => 1 }
@@ -625,7 +625,7 @@ class TestArgumentErrorGenericData < Minitest::Test
   end
 
   def test_argument_error_exposes_message_when_enabled
-    server = Reclamo::Server.new(expose_errors: true)
+    server = UltimateJsonRpc::Server.new(expose_errors: true)
     server.expose(Calculator)
 
     request = { "jsonrpc" => "2.0", "method" => "add", "params" => [1, 2, 3], "id" => 1 }
@@ -638,7 +638,7 @@ end
 
 class TestApplicationArgumentError < Minitest::Test
   def test_application_argument_error_maps_to_internal_error
-    server = Reclamo::Server.new(expose_errors: true)
+    server = UltimateJsonRpc::Server.new(expose_errors: true)
     server.expose_method("validate") do |age:|
       raise ArgumentError, "age must be positive" unless age.positive?
 
@@ -653,7 +653,7 @@ class TestApplicationArgumentError < Minitest::Test
   end
 
   def test_application_argument_error_hidden_by_default
-    server = Reclamo::Server.new(expose_errors: false)
+    server = UltimateJsonRpc::Server.new(expose_errors: false)
     server.expose_method("validate") do |age:|
       raise ArgumentError, "age must be positive" unless age.positive?
 
@@ -668,7 +668,7 @@ class TestApplicationArgumentError < Minitest::Test
   end
 
   def test_framework_arity_mismatch_still_maps_to_invalid_params
-    server = Reclamo::Server.new(expose_errors: true)
+    server = UltimateJsonRpc::Server.new(expose_errors: true)
     server.expose(Calculator)
 
     request = { "jsonrpc" => "2.0", "method" => "add", "params" => [1, 2, 3], "id" => 1 }
@@ -678,7 +678,7 @@ class TestApplicationArgumentError < Minitest::Test
   end
 
   def test_framework_unknown_keyword_still_maps_to_invalid_params
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     server.expose_method("greet") { |name:| "Hello, #{name}" }
 
     request = { "jsonrpc" => "2.0", "method" => "greet",
@@ -689,7 +689,7 @@ class TestApplicationArgumentError < Minitest::Test
   end
 
   def test_framework_missing_keyword_maps_to_invalid_params
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     server.expose_method("greet") { |name:| "Hello, #{name}" }
 
     request = { "jsonrpc" => "2.0", "method" => "greet", "params" => {}, "id" => 1 }

@@ -38,7 +38,7 @@ class TestAuthorize < Minitest::Test
   end
 
   def test_glob_pattern
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     server.expose(Calculator, namespace: "math")
     server.authorize("math.*") { |req| req.context[:admin] }
     response = call(server, "math.add", [1, 2])
@@ -47,7 +47,7 @@ class TestAuthorize < Minitest::Test
   end
 
   def test_glob_pattern_allows_with_context
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     server.expose(Calculator, namespace: "math")
     server.authorize("math.*") do |req|
       req.context[:admin] = true # set by earlier middleware in real use
@@ -94,26 +94,26 @@ class TestAuthorize < Minitest::Test
   end
 
   def test_chainable
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     result = server.authorize { |_req| true }
 
     assert_equal server, result
   end
 
   def test_requires_block
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
 
     assert_raises(ArgumentError) { server.authorize("add") }
   end
 
   def test_rejects_reserved_code_at_setup
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
 
     assert_raises(ArgumentError) { server.authorize(code: -32_000) { |_req| false } }
   end
 
   def test_rejects_non_integer_code_at_setup
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
 
     assert_raises(ArgumentError) { server.authorize(code: "403") { |_req| false } }
   end
@@ -129,7 +129,7 @@ class TestAuthorize < Minitest::Test
   private
 
   def build_server
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     server.expose(Calculator)
     server
   end

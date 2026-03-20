@@ -5,7 +5,7 @@ require "json"
 
 class TestServerBatch < Minitest::Test
   def setup
-    @server = Reclamo::Server.new
+    @server = UltimateJsonRpc::Server.new
     @server.expose(Calculator)
   end
 
@@ -115,7 +115,7 @@ class TestServerBatch < Minitest::Test
   private
 
   def batch_with_bad_and_good_responses
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     circ = {}
     circ["self"] = circ
     server.expose_method("bad") { circ }
@@ -131,7 +131,7 @@ end
 
 class TestServerBatchSizeLimit < Minitest::Test
   def test_batch_within_limit_succeeds
-    server = Reclamo::Server.new(max_batch_size: 2)
+    server = UltimateJsonRpc::Server.new(max_batch_size: 2)
     server.expose(Calculator)
 
     requests = [
@@ -144,7 +144,7 @@ class TestServerBatchSizeLimit < Minitest::Test
   end
 
   def test_batch_exceeding_limit_returns_error
-    server = Reclamo::Server.new(max_batch_size: 2)
+    server = UltimateJsonRpc::Server.new(max_batch_size: 2)
     server.expose(Calculator)
 
     requests = [
@@ -160,13 +160,13 @@ class TestServerBatchSizeLimit < Minitest::Test
   end
 
   def test_default_max_batch_size
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
 
     assert_equal 100, server.max_batch_size
   end
 
   def test_nil_disables_batch_limit
-    server = Reclamo::Server.new(max_batch_size: nil)
+    server = UltimateJsonRpc::Server.new(max_batch_size: nil)
     server.expose(Calculator)
 
     requests = 150.times.map do |i|

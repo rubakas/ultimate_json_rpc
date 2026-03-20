@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 require "test_helper"
-require "reclamo/transport/tcp"
+require "ultimate_json_rpc/transport/tcp"
 require "json"
 require "socket"
 
@@ -68,9 +68,9 @@ class TestTCP < Minitest::Test
   end
 
   def test_rejects_connections_beyond_max
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     server.expose(Calculator)
-    tcp = Reclamo::Transport::TCP.new(server, port: 0, max_connections: 1)
+    tcp = UltimateJsonRpc::Transport::TCP.new(server, port: 0, max_connections: 1)
 
     thread = Thread.new { tcp.run }
     deadline = Time.now + 5
@@ -121,9 +121,9 @@ class TestTCP < Minitest::Test
   end
 
   def test_stop
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     server.expose(Calculator)
-    tcp = Reclamo::Transport::TCP.new(server, port: 0)
+    tcp = UltimateJsonRpc::Transport::TCP.new(server, port: 0)
 
     thread = Thread.new { tcp.run }
     deadline = Time.now + 5
@@ -139,10 +139,10 @@ class TestTCP < Minitest::Test
   private
 
   def with_tcp_server
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     server.expose(Calculator)
     # Port 0 lets the OS assign a free port
-    tcp = Reclamo::Transport::TCP.new(server, port: 0)
+    tcp = UltimateJsonRpc::Transport::TCP.new(server, port: 0)
 
     thread = Thread.new { tcp.run }
     deadline = Time.now + 5
@@ -167,15 +167,15 @@ end
 
 class TestTCPConnectionLimit < Minitest::Test
   def test_default_max_connections
-    assert_equal 64, Reclamo::Transport::TCP::DEFAULT_MAX_CONNECTIONS
+    assert_equal 64, UltimateJsonRpc::Transport::TCP::DEFAULT_MAX_CONNECTIONS
   end
 end
 
 class TestTCPStopRace < Minitest::Test
   def test_stop_during_accept_loop_does_not_crash
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     server.expose(Calculator)
-    tcp = Reclamo::Transport::TCP.new(server, port: 0, host: "127.0.0.1")
+    tcp = UltimateJsonRpc::Transport::TCP.new(server, port: 0, host: "127.0.0.1")
 
     thread = Thread.new { tcp.run }
     sleep(0.05)
@@ -188,22 +188,22 @@ end
 
 class TestTCPMaxLineBytes < Minitest::Test
   def test_max_line_bytes_constant
-    assert_equal 4 * 1024 * 1024, Reclamo::Transport::TCP::MAX_LINE_BYTES
+    assert_equal 4 * 1024 * 1024, UltimateJsonRpc::Transport::TCP::MAX_LINE_BYTES
   end
 end
 
 class TestTCPPort < Minitest::Test
   def test_port_returns_nil_before_run
-    server = Reclamo::Server.new
-    tcp = Reclamo::Transport::TCP.new(server, port: 0)
+    server = UltimateJsonRpc::Server.new
+    tcp = UltimateJsonRpc::Transport::TCP.new(server, port: 0)
 
     assert_nil tcp.port
   end
 
   def test_port_returns_bound_port_while_running
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     server.expose(Calculator)
-    tcp = Reclamo::Transport::TCP.new(server, port: 0)
+    tcp = UltimateJsonRpc::Transport::TCP.new(server, port: 0)
 
     thread = Thread.new { tcp.run }
     deadline = Time.now + 5

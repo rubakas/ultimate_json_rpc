@@ -15,8 +15,8 @@
 #   ws.onmessage = (e) => console.log(e.data);
 #   ws.onopen = () => ws.send('{"jsonrpc":"2.0","method":"add","params":[2,3],"id":1}');
 
-require "reclamo"
-require "reclamo/transport/websocket"
+require "ultimate_json_rpc"
+require "ultimate_json_rpc/transport/websocket"
 require "faye/websocket"
 
 module Calculator
@@ -24,9 +24,9 @@ module Calculator
   def self.multiply(a, b) = a * b
 end
 
-server = Reclamo::Server.new(name: "Calculator WS", version: "1.0")
+server = UltimateJsonRpc::Server.new(name: "Calculator WS", version: "1.0")
 server.expose(Calculator)
-ws_handler = Reclamo::Transport::WebSocket.new(server)
+ws_handler = UltimateJsonRpc::Transport::WebSocket.new(server)
 
 app = lambda do |env|
   if Faye::WebSocket.websocket?(env)

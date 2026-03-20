@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-module Reclamo
+module UltimateJsonRpc
   module Core
     PARSE_ERROR = -32_700
     INVALID_REQUEST = -32_600

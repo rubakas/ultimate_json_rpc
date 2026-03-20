@@ -20,7 +20,7 @@ class TestServerDiscover < Minitest::Test
   end
 
   def test_rpc_discover_includes_custom_methods
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     server.expose_method("ping") { "pong" }
     method_names = discover(server).map { |m| m["name"] }
 
@@ -28,7 +28,7 @@ class TestServerDiscover < Minitest::Test
   end
 
   def test_rpc_discover_keyword_params_required
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     server.expose(Greeter.new("Hi"), namespace: "greeter")
     greet_method = discover(server).find { |m| m["name"] == "greeter.greet" }
     name_param = greet_method["params"][0]
@@ -38,7 +38,7 @@ class TestServerDiscover < Minitest::Test
   end
 
   def test_rpc_discover_no_params_omits_key
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     server.expose_method("ping") { "pong" }
     ping_method = discover(server).find { |m| m["name"] == "ping" }
 
@@ -46,7 +46,7 @@ class TestServerDiscover < Minitest::Test
   end
 
   def test_rpc_discover_variadic_params
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     server.expose_method("sum") { |*nums| nums.sum }
     sum_method = discover(server).find { |m| m["name"] == "sum" }
 
@@ -54,21 +54,21 @@ class TestServerDiscover < Minitest::Test
   end
 
   def test_rpc_discover_as_notification
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     server.expose(Calculator)
 
     assert_nil server.handle(JSON.generate({ "jsonrpc" => "2.0", "method" => "rpc.discover" }))
   end
 
   def test_rpc_discover_not_in_methods_list
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     server.expose(Calculator)
 
     refute_includes server.methods_list, "rpc.discover"
   end
 
   def test_rpc_discover_callable_methods
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     server.expose_method("double", ->(n) { n * 2 })
     methods = discover(server)
     double_method = methods.find { |m| m["name"] == "double" }
@@ -78,14 +78,14 @@ class TestServerDiscover < Minitest::Test
   end
 
   def test_rpc_discover_on_empty_server
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     methods = discover(server)
 
     assert_empty methods
   end
 
   def test_rpc_discover_response_has_no_error_key
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     server.expose(Calculator)
     request = { "jsonrpc" => "2.0", "method" => "rpc.discover", "id" => 1 }
     response = JSON.parse(server.handle(JSON.generate(request)))
@@ -97,7 +97,7 @@ class TestServerDiscover < Minitest::Test
   private
 
   def discover_methods_for(target)
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     server.expose(target)
     discover(server)
   end
@@ -112,14 +112,14 @@ class TestServerDiscoverOpenRPC < Minitest::Test
   include DiscoverHelper
 
   def test_includes_openrpc_version
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     server.expose(Calculator)
 
     assert_equal "1.3.2", discover_result(server)["openrpc"]
   end
 
   def test_info_object_structure
-    server = Reclamo::Server.new(name: "My API", version: "2.0", description: "A JSON-RPC server")
+    server = UltimateJsonRpc::Server.new(name: "My API", version: "2.0", description: "A JSON-RPC server")
     server.expose(Calculator)
     info = discover_result(server)["info"]
 
@@ -129,7 +129,7 @@ class TestServerDiscoverOpenRPC < Minitest::Test
   end
 
   def test_methods_array_present
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     server.expose(Calculator)
     result = discover_result(server)
 
@@ -138,7 +138,7 @@ class TestServerDiscoverOpenRPC < Minitest::Test
   end
 
   def test_full_document_structure
-    server = Reclamo::Server.new(name: "Test", version: "1.0")
+    server = UltimateJsonRpc::Server.new(name: "Test", version: "1.0")
     server.expose_method("add", description: "Sum", returns: { "type" => "number" }) { |a, b| a + b }
     result = discover_result(server)
 
@@ -155,14 +155,14 @@ class TestServerDiscoverDescriptions < Minitest::Test
   include DiscoverHelper
 
   def test_expose_method_description
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     server.expose_method("ping", description: "Health check") { "pong" }
 
     assert_equal "Health check", discover_methods(server).find { |m| m["name"] == "ping" }["description"]
   end
 
   def test_expose_descriptions
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     server.expose(Calculator, descriptions: { add: "Add two numbers", divide: "Divide two numbers" })
     methods = discover_methods(server)
 
@@ -171,14 +171,14 @@ class TestServerDiscoverDescriptions < Minitest::Test
   end
 
   def test_omits_description_when_not_provided
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     server.expose_method("ping") { "pong" }
 
     refute discover_methods(server).find { |m| m["name"] == "ping" }.key?("description")
   end
 
   def test_expose_method_lambda_with_description
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     server.expose_method("double", ->(n) { n * 2 }, description: "Double a number")
     method_info = discover_methods(server).find { |m| m["name"] == "double" }
 
@@ -187,14 +187,14 @@ class TestServerDiscoverDescriptions < Minitest::Test
   end
 
   def test_descriptions_with_string_keys
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     server.expose(Calculator, descriptions: { "add" => "Sum values" })
 
     assert_equal "Sum values", discover_methods(server).find { |m| m["name"] == "add" }["description"]
   end
 
   def test_descriptions_with_namespace
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     server.expose(Calculator, namespace: "math", descriptions: { add: "Sum", divide: "Quotient" })
     methods = discover_methods(server)
 
@@ -207,7 +207,7 @@ class TestServerDiscoverReturns < Minitest::Test
   include DiscoverHelper
 
   def test_expose_method_with_returns
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     server.expose_method("add", returns: { "type" => "number" }) { |a, b| a + b }
     result = discover_methods(server).find { |m| m["name"] == "add" }["result"]
 
@@ -216,7 +216,7 @@ class TestServerDiscoverReturns < Minitest::Test
   end
 
   def test_expose_with_returns_hash
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     server.expose(Calculator, returns: { add: { "type" => "number" }, divide: { "type" => "number" } })
     methods = discover_methods(server)
 
@@ -225,14 +225,14 @@ class TestServerDiscoverReturns < Minitest::Test
   end
 
   def test_expose_with_returns_string_keys
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     server.expose(Calculator, returns: { "add" => { "type" => "integer" } })
 
     assert_equal "integer", discover_methods(server).find { |m| m["name"] == "add" }["result"]["type"]
   end
 
   def test_expose_with_returns_and_namespace
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     server.expose(Calculator, namespace: "math", returns: { add: { "type" => "number" } })
     result = discover_methods(server).find { |m| m["name"] == "math.add" }["result"]
 
@@ -240,14 +240,14 @@ class TestServerDiscoverReturns < Minitest::Test
   end
 
   def test_omits_result_when_not_provided
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     server.expose_method("ping") { "pong" }
 
     refute discover_methods(server).find { |m| m["name"] == "ping" }.key?("result")
   end
 
   def test_returns_with_description
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     server.expose_method("add", description: "Sum", returns: { "type" => "number" }) { |a, b| a + b }
     method_info = discover_methods(server).find { |m| m["name"] == "add" }
 
@@ -256,14 +256,14 @@ class TestServerDiscoverReturns < Minitest::Test
   end
 
   def test_returns_with_callable
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     server.expose_method("double", ->(n) { n * 2 }, returns: { "type" => "number" })
 
     assert_equal "number", discover_methods(server).find { |m| m["name"] == "double" }["result"]["type"]
   end
 
   def test_returns_survives_freeze
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     server.expose_method("add", returns: { "type" => "number" }) { |a, b| a + b }
     server.freeze
 
@@ -271,7 +271,7 @@ class TestServerDiscoverReturns < Minitest::Test
   end
 
   def test_returns_string_value_wrapped_in_schema
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     server.expose_method("greet", returns: "string") { |name| "Hi #{name}" }
     result = discover_methods(server).find { |m| m["name"] == "greet" }["result"]
 
@@ -284,7 +284,7 @@ class TestServerDiscoverServiceInfo < Minitest::Test
   include DiscoverHelper
 
   def test_includes_name_and_version_in_info
-    server = Reclamo::Server.new(name: "Calculator API", version: "1.0.0")
+    server = UltimateJsonRpc::Server.new(name: "Calculator API", version: "1.0.0")
     server.expose(Calculator)
     info = discover_result(server)["info"]
 
@@ -293,7 +293,7 @@ class TestServerDiscoverServiceInfo < Minitest::Test
   end
 
   def test_omits_info_when_nothing_set
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     server.expose(Calculator)
     result = discover_result(server)
 
@@ -301,21 +301,21 @@ class TestServerDiscoverServiceInfo < Minitest::Test
   end
 
   def test_name_and_version_readers
-    server = Reclamo::Server.new(name: "My API", version: "2.0")
+    server = UltimateJsonRpc::Server.new(name: "My API", version: "2.0")
 
     assert_equal "My API", server.name
     assert_equal "2.0", server.version
   end
 
   def test_name_and_version_default_to_nil
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
 
     assert_nil server.name
     assert_nil server.version
   end
 
   def test_includes_description_in_info
-    server = Reclamo::Server.new(name: "API", description: "A test API server")
+    server = UltimateJsonRpc::Server.new(name: "API", description: "A test API server")
     server.expose(Calculator)
     info = discover_result(server)["info"]
 
@@ -323,7 +323,7 @@ class TestServerDiscoverServiceInfo < Minitest::Test
   end
 
   def test_omits_description_when_not_set
-    server = Reclamo::Server.new(name: "API")
+    server = UltimateJsonRpc::Server.new(name: "API")
     server.expose(Calculator)
     info = discover_result(server)["info"]
 
@@ -331,19 +331,19 @@ class TestServerDiscoverServiceInfo < Minitest::Test
   end
 
   def test_description_reader
-    server = Reclamo::Server.new(description: "My service")
+    server = UltimateJsonRpc::Server.new(description: "My service")
 
     assert_equal "My service", server.description
   end
 
   def test_description_defaults_to_nil
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
 
     assert_nil server.description
   end
 
   def test_frozen_server_discover_works
-    server = Reclamo::Server.new(name: "Frozen API", version: "1.0")
+    server = UltimateJsonRpc::Server.new(name: "Frozen API", version: "1.0")
     server.expose(Calculator)
     server.freeze
     result = discover_result(server)
@@ -357,7 +357,7 @@ class TestBuildResultElseBranch < Minitest::Test
   include DiscoverHelper
 
   def test_returns_non_hash_non_string_wrapped_in_schema
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     server.expose_method("tags", returns: [{ "type" => "string" }]) { %w[a b] }
     method_info = discover_methods(server).find { |m| m["name"] == "tags" }
 
@@ -369,7 +369,7 @@ class TestStoreMetadataSymKeyPriority < Minitest::Test
   include DiscoverHelper
 
   def test_store_metadata_sym_key_takes_priority
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     server.expose(Calculator, deprecated: { add: "via sym", "add" => "via str" })
     method_info = discover_methods(server).find { |m| m["name"] == "add" }
 

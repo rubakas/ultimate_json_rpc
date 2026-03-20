@@ -1,4 +1,4 @@
-module Reclamo
+module UltimateJsonRpc
   VERSION: String
 
   module Core

@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-module Reclamo
+module UltimateJsonRpc
   module Core
     # @api private
     VARIADIC_DEFAULTS = { rest: "args", keyrest: "kwargs" }.freeze
@@ -109,7 +109,7 @@ module Reclamo
         validate_expose_args!(target, only, except)
         prefix = namespace.to_s.then { |ns| ns.empty? ? "" : "#{ns}." }
         methods = filter_methods(callable_methods(target), only: only, except: except)
-        Kernel.warn "Reclamo: expose registered 0 methods from #{target.inspect}" if methods.empty?
+        Kernel.warn "UltimateJsonRpc: expose registered 0 methods from #{target.inspect}" if methods.empty?
         methods.each do |m|
           register_exposed(prefix:, method_name: m, target:, descriptions:, returns:, deprecated:, params_schema:)
         end

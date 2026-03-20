@@ -1,6 +1,6 @@
-# PRD — Reclamo Future Requirements
+# PRD — UltimateJsonRpc Future Requirements
 
-> Product Requirements Document for Reclamo, a network-agnostic Ruby gem
+> Product Requirements Document for UltimateJsonRpc, a network-agnostic Ruby gem
 > that exposes Ruby objects through JSON-RPC 2.0.
 >
 > Current version: 0.2.0 | Ruby >= 3.2 | 26 items — 25 done, 1 pending
@@ -40,7 +40,7 @@ Items within each tier are ordered by dependency (no-dependency items first, the
   *Depends on: nothing (extends existing middleware chain).*
 
 - [x] **Built-in Rack adapter**
-  Ship `Reclamo::Transport::Rack` — a thin Rack app handling Content-Type, HTTP status codes (200/204), and error responses for non-POST requests. Eliminates the boilerplate lambda currently shown in the README.
+  Ship `UltimateJsonRpc::Transport::Rack` — a thin Rack app handling Content-Type, HTTP status codes (200/204), and error responses for non-POST requests. Eliminates the boilerplate lambda currently shown in the README.
   *Depends on: nothing.*
 
 ---
@@ -74,15 +74,15 @@ Reliability & performance:
 Adoption & integration:
 
 - [x] **Richer test helpers**
-  Add `assert_rpc_success(response, expected)`, `assert_rpc_error(response, code:)`, and `assert_rpc_notification(server, method, params:)` to the optional `reclamo/test_helpers` module.
+  Add `assert_rpc_success(response, expected)`, `assert_rpc_error(response, code:)`, and `assert_rpc_notification(server, method, params:)` to the optional `ultimate_json_rpc/test_helpers` module.
   *Depends on: nothing.*
 
 - [x] **stdio adapter**
-  Ship `Reclamo::Transport::Stdio` — a run loop reading JSON-RPC from `$stdin`, writing responses to `$stdout`. Adds signal handling, graceful shutdown, and proper buffering over the manual loop in the README. Critical path for MCP compatibility.
+  Ship `UltimateJsonRpc::Transport::Stdio` — a run loop reading JSON-RPC from `$stdin`, writing responses to `$stdout`. Adds signal handling, graceful shutdown, and proper buffering over the manual loop in the README. Critical path for MCP compatibility.
   *Depends on: nothing.*
 
 - [ ] **Rails integration (Railtie)**
-  Ship `reclamo-rails` (or built-in Railtie) that mounts a server at a configurable route, auto-discovers service objects, integrates with Rails logger, and respects code reloading in development.
+  Ship `ultimate_json_rpc-rails` (or built-in Railtie) that mounts a server at a configurable route, auto-discovers service objects, integrates with Rails logger, and respects code reloading in development.
   *Depends on: Rack adapter (P0).*
 
 ---
@@ -102,7 +102,7 @@ Discovery & metadata:
 Server configuration:
 
 - [x] **Custom JSON serializer**
-  Allow swapping the JSON encoder/decoder (e.g., `Oj`, `yajl-ruby`) via `Reclamo::Server.new(json: Oj)`. The gem currently hard-codes `JSON.parse` / `JSON.generate`.
+  Allow swapping the JSON encoder/decoder (e.g., `Oj`, `yajl-ruby`) via `UltimateJsonRpc::Server.new(json: Oj)`. The gem currently hard-codes `JSON.parse` / `JSON.generate`.
   *Depends on: nothing.*
 
 - [x] **Versioned API support**
@@ -112,11 +112,11 @@ Server configuration:
 Transport & integration:
 
 - [x] **WebSocket integration guide / adapter**
-  Reference adapter or documented pattern for running Reclamo over WebSockets (e.g., `faye-websocket`, `AnyCable`). WebSocket is the second most common JSON-RPC transport after HTTP.
+  Reference adapter or documented pattern for running UltimateJsonRpc over WebSockets (e.g., `faye-websocket`, `AnyCable`). WebSocket is the second most common JSON-RPC transport after HTTP.
   *Depends on: nothing (gem is already transport-agnostic).*
 
 - [x] **MCP (Model Context Protocol) compatibility**
-  Translation layer mapping MCP tool definitions to Reclamo methods and vice versa. JSON-RPC is already MCP's wire protocol — the gap is mainly schema mapping and the stdio transport convention.
+  Translation layer mapping MCP tool definitions to UltimateJsonRpc methods and vice versa. JSON-RPC is already MCP's wire protocol — the gap is mainly schema mapping and the stdio transport convention.
   *Depends on: stdio adapter (P1), OpenRPC schema generation (P0).*
 
 Security & middleware:
@@ -126,7 +126,7 @@ Security & middleware:
   *Depends on: method-level middleware (P0).*
 
 - [x] **Built-in rate-limiting middleware**
-  Optional `Reclamo::Middleware::RateLimit` with token-bucket or sliding-window algorithm, keyed by caller identity from `request.context`.
+  Optional `UltimateJsonRpc::Middleware::RateLimit` with token-bucket or sliding-window algorithm, keyed by caller identity from `request.context`.
   *Depends on: method-level middleware (P0) for per-method limits.*
 
 Observability:
@@ -146,7 +146,7 @@ Testing:
 ## P3 — Low Priority / Future
 
 - [x] **TCP server adapter**
-  Simple TCP listener (`Reclamo::Transport::TCP.new(server, port: 4000).start`) for internal microservices using newline-delimited JSON.
+  Simple TCP listener (`UltimateJsonRpc::Transport::TCP.new(server, port: 4000).start`) for internal microservices using newline-delimited JSON.
   *Depends on: nothing.*
 
 - [x] **Per-method profiling**
@@ -191,7 +191,7 @@ Instrumentation (P1) ──► Structured logging (P2)
 
 ## Out of Scope
 
-- **Built-in authentication** — Reclamo provides hooks and middleware; auth strategy is the caller's domain.
+- **Built-in authentication** — UltimateJsonRpc provides hooks and middleware; auth strategy is the caller's domain.
 - **Transport-layer concerns** — TLS, connection pooling, reconnection belong to the transport layer.
-- **Client library** — Reclamo is server-side only. A JSON-RPC client is a separate project.
+- **Client library** — UltimateJsonRpc is server-side only. A JSON-RPC client is a separate project.
 - **Database / ORM integration** — persistence is the handler's responsibility.

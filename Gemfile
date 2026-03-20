@@ -2,7 +2,7 @@
 
 source "https://rubygems.org"
 
-# Specify your gem's dependencies in reclamo.gemspec
+# Specify your gem's dependencies in ultimate_json_rpc.gemspec
 gemspec
 
 gem "irb"

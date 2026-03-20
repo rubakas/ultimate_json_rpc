@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 require "test_helper"
-require "reclamo/extras/mcp"
+require "ultimate_json_rpc/extras/mcp"
 require "json"
 
 # Helper used by all MCP test classes
@@ -47,16 +47,16 @@ class TestMCPInitialize < Minitest::Test
   def test_initialize_defaults_server_info
     result = mcp_call(build_mcp, "initialize")
 
-    assert_equal "Reclamo MCP Server", result["serverInfo"]["name"]
+    assert_equal "UltimateJsonRpc MCP Server", result["serverInfo"]["name"]
     assert_equal "0.0.0", result["serverInfo"]["version"]
   end
 
   private
 
   def build_mcp(name: nil, version: nil)
-    server = Reclamo::Server.new(name:, version:)
+    server = UltimateJsonRpc::Server.new(name:, version:)
     server.expose(Calculator)
-    Reclamo::Extras::MCP.new(server)
+    UltimateJsonRpc::Extras::MCP.new(server)
   end
 end
 
@@ -82,9 +82,9 @@ class TestMCPToolsList < Minitest::Test
   end
 
   def test_tool_includes_description
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     server.expose_method("ping", description: "Health check") { "pong" }
-    mcp = Reclamo::Extras::MCP.new(server)
+    mcp = UltimateJsonRpc::Extras::MCP.new(server)
     result = mcp_call(mcp, "tools/list")
     ping_tool = result["tools"].find { |t| t["name"] == "ping" }
 
@@ -101,9 +101,9 @@ class TestMCPToolsList < Minitest::Test
   end
 
   def test_tool_schema_includes_param_types
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     server.expose_method("double", params_schema: { n: { "type" => "number" } }) { |n| n * 2 }
-    mcp = Reclamo::Extras::MCP.new(server)
+    mcp = UltimateJsonRpc::Extras::MCP.new(server)
     result = mcp_call(mcp, "tools/list")
     tool = result["tools"].find { |t| t["name"] == "double" }
 
@@ -111,9 +111,9 @@ class TestMCPToolsList < Minitest::Test
   end
 
   def test_tool_with_keyword_params
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     server.expose(Greeter.new("Hi"))
-    mcp = Reclamo::Extras::MCP.new(server)
+    mcp = UltimateJsonRpc::Extras::MCP.new(server)
     result = mcp_call(mcp, "tools/list")
     greet_tool = result["tools"].find { |t| t["name"] == "greet" }
 
@@ -121,9 +121,9 @@ class TestMCPToolsList < Minitest::Test
   end
 
   def test_zero_param_tool_has_input_schema
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     server.expose_method("ping") { "pong" }
-    mcp = Reclamo::Extras::MCP.new(server)
+    mcp = UltimateJsonRpc::Extras::MCP.new(server)
     result = mcp_call(mcp, "tools/list")
     ping_tool = result["tools"].find { |t| t["name"] == "ping" }
 
@@ -141,9 +141,9 @@ class TestMCPToolsList < Minitest::Test
   end
 
   def test_namespaced_tools
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     server.expose(Calculator, namespace: "math")
-    mcp = Reclamo::Extras::MCP.new(server)
+    mcp = UltimateJsonRpc::Extras::MCP.new(server)
     result = mcp_call(mcp, "tools/list")
     names = result["tools"].map { |t| t["name"] }
 
@@ -153,9 +153,9 @@ class TestMCPToolsList < Minitest::Test
   private
 
   def build_mcp
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     server.expose(Calculator)
-    Reclamo::Extras::MCP.new(server)
+    UltimateJsonRpc::Extras::MCP.new(server)
   end
 end
 
@@ -170,27 +170,27 @@ class TestMCPToolsCall < Minitest::Test
   end
 
   def test_call_keyword_method
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     server.expose(Greeter.new("Hi"))
-    mcp = Reclamo::Extras::MCP.new(server)
+    mcp = UltimateJsonRpc::Extras::MCP.new(server)
     result = mcp_call(mcp, "tools/call", { "name" => "greet", "arguments" => { "name" => "Alice" } })
 
     assert_equal "Hi, Alice!", result["content"][0]["text"]
   end
 
   def test_call_returns_string_result
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     server.expose_method("hello") { "world" }
-    mcp = Reclamo::Extras::MCP.new(server)
+    mcp = UltimateJsonRpc::Extras::MCP.new(server)
     result = mcp_call(mcp, "tools/call", { "name" => "hello" })
 
     assert_equal "world", result["content"][0]["text"]
   end
 
   def test_call_returns_complex_result_as_json
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     server.expose_method("info") { { "status" => "ok", "count" => 42 } }
-    mcp = Reclamo::Extras::MCP.new(server)
+    mcp = UltimateJsonRpc::Extras::MCP.new(server)
     result = mcp_call(mcp, "tools/call", { "name" => "info" })
     parsed = JSON.parse(result["content"][0]["text"])
 
@@ -214,29 +214,29 @@ class TestMCPToolsCall < Minitest::Test
   end
 
   def test_call_with_empty_arguments
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     server.expose_method("ping") { "pong" }
-    mcp = Reclamo::Extras::MCP.new(server)
+    mcp = UltimateJsonRpc::Extras::MCP.new(server)
     result = mcp_call(mcp, "tools/call", { "name" => "ping" })
 
     assert_equal "pong", result["content"][0]["text"]
   end
 
   def test_call_goes_through_middleware
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     server.expose(Calculator)
     called = false
     server.use { |_req, nxt| called = true; nxt.call } # rubocop:disable Style/Semicolon
-    mcp = Reclamo::Extras::MCP.new(server)
+    mcp = UltimateJsonRpc::Extras::MCP.new(server)
     mcp_call(mcp, "tools/call", { "name" => "add", "arguments" => { "left" => 1, "right" => 2 } })
 
     assert called
   end
 
   def test_call_method_returning_nil
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     server.expose_method("void") { nil }
-    mcp = Reclamo::Extras::MCP.new(server)
+    mcp = UltimateJsonRpc::Extras::MCP.new(server)
     result = mcp_call(mcp, "tools/call", { "name" => "void" })
 
     assert_equal "null", result["content"][0]["text"]
@@ -244,9 +244,9 @@ class TestMCPToolsCall < Minitest::Test
   end
 
   def test_call_with_nil_positional_argument
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     server.expose_method("identity", &:inspect)
-    mcp = Reclamo::Extras::MCP.new(server)
+    mcp = UltimateJsonRpc::Extras::MCP.new(server)
     result = mcp_call(mcp, "tools/call", { "name" => "identity", "arguments" => { "arg" => nil } })
 
     assert_equal "nil", result["content"][0]["text"]
@@ -260,9 +260,9 @@ class TestMCPToolsCall < Minitest::Test
   end
 
   def test_call_with_namespaced_method
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     server.expose(Calculator, namespace: "math")
-    mcp = Reclamo::Extras::MCP.new(server)
+    mcp = UltimateJsonRpc::Extras::MCP.new(server)
     result = mcp_call(mcp, "tools/call", { "name" => "math.add", "arguments" => { "left" => 5, "right" => 3 } })
 
     assert_equal "8", result["content"][0]["text"]
@@ -271,9 +271,9 @@ class TestMCPToolsCall < Minitest::Test
   private
 
   def build_mcp
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     server.expose(Calculator)
-    Reclamo::Extras::MCP.new(server)
+    UltimateJsonRpc::Extras::MCP.new(server)
   end
 end
 
@@ -281,9 +281,9 @@ class TestMCPUniqueCallIds < Minitest::Test
   include MCPTestHelper
 
   def test_sequential_tool_calls_produce_different_ids
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     server.expose(Calculator)
-    mcp = Reclamo::Extras::MCP.new(server)
+    mcp = UltimateJsonRpc::Extras::MCP.new(server)
     mcp_server = mcp.instance_variable_get(:@mcp_server)
 
     ids = 2.times.map do
@@ -301,9 +301,9 @@ class TestMCPFreezes < Minitest::Test
   include MCPTestHelper
 
   def test_freezes_server_on_init
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     server.expose(Calculator)
-    Reclamo::Extras::MCP.new(server)
+    UltimateJsonRpc::Extras::MCP.new(server)
 
     assert_predicate server, :frozen?
   end
@@ -313,17 +313,17 @@ class TestMCPLifecycle < Minitest::Test
   include MCPTestHelper
 
   def test_running_returns_false_before_run
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     server.expose(Calculator)
-    mcp = Reclamo::Extras::MCP.new(server)
+    mcp = UltimateJsonRpc::Extras::MCP.new(server)
 
     refute mcp.running?
   end
 
   def test_stop_before_run_does_not_raise
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     server.expose(Calculator)
-    mcp = Reclamo::Extras::MCP.new(server)
+    mcp = UltimateJsonRpc::Extras::MCP.new(server)
 
     assert_nil mcp.stop
   end
@@ -333,9 +333,9 @@ class TestMCPNotifications < Minitest::Test
   include MCPTestHelper
 
   def test_initialized_notification
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     server.expose(Calculator)
-    mcp = Reclamo::Extras::MCP.new(server)
+    mcp = UltimateJsonRpc::Extras::MCP.new(server)
 
     assert_nil mcp_notify(mcp, "notifications/initialized")
   end

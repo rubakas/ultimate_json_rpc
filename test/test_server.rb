@@ -5,7 +5,7 @@ require "json"
 
 class TestServerCalls < Minitest::Test
   def setup
-    @server = Reclamo::Server.new
+    @server = UltimateJsonRpc::Server.new
     @server.expose(Calculator)
     @server.expose(Greeter.new("Hi"), namespace: "greeter")
   end
@@ -59,7 +59,7 @@ class TestServerCalls < Minitest::Test
   end
 
   def test_result_can_be_nil
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     target = Object.new
     def target.noop; end
     server.expose(target)
@@ -81,7 +81,7 @@ class TestServerCalls < Minitest::Test
   end
 
   def test_expose_returns_self
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
 
     assert_equal server, server.expose(Calculator)
   end
@@ -96,7 +96,7 @@ class TestServerCalls < Minitest::Test
   end
 
   def test_server_empty
-    empty_server = Reclamo::Server.new
+    empty_server = UltimateJsonRpc::Server.new
     assert_predicate empty_server, :empty?
     refute_predicate @server, :empty?
   end
@@ -113,7 +113,7 @@ end
 
 class TestServerNotifications < Minitest::Test
   def setup
-    @server = Reclamo::Server.new
+    @server = UltimateJsonRpc::Server.new
     @server.expose(Calculator)
   end
 
@@ -138,7 +138,7 @@ end
 
 class TestServerHandleParsed < Minitest::Test
   def setup
-    @server = Reclamo::Server.new
+    @server = UltimateJsonRpc::Server.new
     @server.expose(Calculator)
   end
 
@@ -200,7 +200,7 @@ end
 
 class TestServerCallable < Minitest::Test
   def test_call_is_alias_for_handle
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     server.expose(Calculator)
 
     request = JSON.generate({ "jsonrpc" => "2.0", "method" => "add", "params" => [2, 3], "id" => 1 })
@@ -208,7 +208,7 @@ class TestServerCallable < Minitest::Test
   end
 
   def test_call_with_method_object
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     server.expose(Calculator)
     callable = server.method(:call)
 
@@ -219,7 +219,7 @@ class TestServerCallable < Minitest::Test
   end
 
   def test_to_proc_enables_map
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     server.expose(Calculator)
 
     requests = [
@@ -232,7 +232,7 @@ class TestServerCallable < Minitest::Test
   end
 
   def test_to_proc_with_notifications
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     server.expose(Calculator)
 
     requests = [
@@ -246,7 +246,7 @@ class TestServerCallable < Minitest::Test
   end
 
   def test_encoding_error_returns_parse_error
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     server.expose(Calculator)
 
     bad_string = "\xFF\xFE".dup.force_encoding("UTF-8")
@@ -257,7 +257,7 @@ class TestServerCallable < Minitest::Test
   end
 
   def test_method_not_found_hides_details_by_default
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     server.expose(Calculator)
 
     request = { "jsonrpc" => "2.0", "method" => "nonexistent", "id" => 1 }
@@ -268,71 +268,71 @@ class TestServerCallable < Minitest::Test
   end
 
   def test_inspect
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     server.expose(Calculator)
     server.use { |_req, next_call| next_call.call }
 
-    assert_equal "#<Reclamo::Server methods=2 middleware=1>", server.inspect
+    assert_equal "#<UltimateJsonRpc::Server methods=2 middleware=1>", server.inspect
   end
 
   def test_inspect_empty_server
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
 
-    assert_equal "#<Reclamo::Server methods=0 middleware=0>", server.inspect
+    assert_equal "#<UltimateJsonRpc::Server methods=0 middleware=0>", server.inspect
   end
 
   def test_inspect_with_name
-    server = Reclamo::Server.new(name: "My API")
+    server = UltimateJsonRpc::Server.new(name: "My API")
     server.expose(Calculator)
 
-    assert_equal "#<Reclamo::Server name=\"My API\" methods=2 middleware=0>", server.inspect
+    assert_equal "#<UltimateJsonRpc::Server name=\"My API\" methods=2 middleware=0>", server.inspect
   end
 end
 
 class TestServerReaders < Minitest::Test
   def test_name_returns_configured_value
-    server = Reclamo::Server.new(name: "My API")
+    server = UltimateJsonRpc::Server.new(name: "My API")
     assert_equal "My API", server.name
   end
 
   def test_version_returns_configured_value
-    server = Reclamo::Server.new(version: "1.2.3")
+    server = UltimateJsonRpc::Server.new(version: "1.2.3")
     assert_equal "1.2.3", server.version
   end
 
   def test_description_returns_configured_value
-    server = Reclamo::Server.new(description: "A test service")
+    server = UltimateJsonRpc::Server.new(description: "A test service")
     assert_equal "A test service", server.description
   end
 
   def test_name_defaults_to_nil
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     assert_nil server.name
   end
 
   def test_version_defaults_to_nil
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     assert_nil server.version
   end
 
   def test_max_batch_size_returns_configured_value
-    server = Reclamo::Server.new(max_batch_size: 50)
+    server = UltimateJsonRpc::Server.new(max_batch_size: 50)
     assert_equal 50, server.max_batch_size
   end
 
   def test_timeout_returns_configured_value
-    server = Reclamo::Server.new(timeout: 5)
+    server = UltimateJsonRpc::Server.new(timeout: 5)
     assert_equal 5, server.timeout
   end
 
   def test_expose_errors_predicate
-    assert Reclamo::Server.new(expose_errors: true).expose_errors?
-    refute Reclamo::Server.new.expose_errors?
+    assert UltimateJsonRpc::Server.new(expose_errors: true).expose_errors?
+    refute UltimateJsonRpc::Server.new.expose_errors?
   end
 
   def test_concurrent_batches_predicate
-    assert Reclamo::Server.new(concurrent_batches: true).concurrent_batches?
-    refute Reclamo::Server.new.concurrent_batches?
+    assert UltimateJsonRpc::Server.new(concurrent_batches: true).concurrent_batches?
+    refute UltimateJsonRpc::Server.new.concurrent_batches?
   end
 end
 
@@ -343,7 +343,7 @@ class TestServerEdgeCases < Minitest::Test
         "from class"
       end
     end
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     server.expose(klass)
 
     request = { "jsonrpc" => "2.0", "method" => "class_method", "id" => 1 }
@@ -353,7 +353,7 @@ class TestServerEdgeCases < Minitest::Test
   end
 
   def test_method_with_default_params
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     server.expose_method("greet") { |name, greeting = "Hi"| "#{greeting}, #{name}!" }
 
     with_default = { "jsonrpc" => "2.0", "method" => "greet", "params" => ["World"], "id" => 1 }
@@ -366,7 +366,7 @@ class TestServerEdgeCases < Minitest::Test
   end
 
   def test_method_returning_complex_structure
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     server.expose_method("data") { { "users" => [{ "name" => "Alice" }], "count" => 1 } }
 
     request = { "jsonrpc" => "2.0", "method" => "data", "id" => 1 }
@@ -376,7 +376,7 @@ class TestServerEdgeCases < Minitest::Test
   end
 
   def test_chained_setup
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     result = server
              .expose(Calculator)
              .expose_method("ping") { "pong" }
@@ -388,7 +388,7 @@ class TestServerEdgeCases < Minitest::Test
   end
 
   def test_result_false_is_not_nil
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     server.expose_method("falsy") { false }
 
     request = { "jsonrpc" => "2.0", "method" => "falsy", "id" => 1 }
@@ -400,7 +400,7 @@ class TestServerEdgeCases < Minitest::Test
   end
 
   def test_result_zero_is_not_nil
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     server.expose_method("zero") { 0 }
 
     request = { "jsonrpc" => "2.0", "method" => "zero", "id" => 1 }
@@ -410,7 +410,7 @@ class TestServerEdgeCases < Minitest::Test
   end
 
   def test_result_empty_string
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     server.expose_method("blank") { "" }
 
     request = { "jsonrpc" => "2.0", "method" => "blank", "id" => 1 }
@@ -420,7 +420,7 @@ class TestServerEdgeCases < Minitest::Test
   end
 
   def test_result_empty_array
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     server.expose_method("empty") { [] }
 
     request = { "jsonrpc" => "2.0", "method" => "empty", "id" => 1 }
@@ -430,7 +430,7 @@ class TestServerEdgeCases < Minitest::Test
   end
 
   def test_unicode_in_params_and_result
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     server.expose_method("echo") { |msg| msg }
 
     request = { "jsonrpc" => "2.0", "method" => "echo", "params" => ["\u{1F600} \u{1F4A9}"], "id" => 1 }
@@ -440,7 +440,7 @@ class TestServerEdgeCases < Minitest::Test
   end
 
   def test_unicode_in_keyword_params
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     server.expose_method("greet") { |name:| "Hola, #{name}!" }
 
     request = { "jsonrpc" => "2.0", "method" => "greet",
@@ -451,7 +451,7 @@ class TestServerEdgeCases < Minitest::Test
   end
 
   def test_deeply_nested_params
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     server.expose_method("deep") { |data| data }
 
     nested = { "a" => { "b" => { "c" => [1, [2, [3]]] } } }
@@ -462,7 +462,7 @@ class TestServerEdgeCases < Minitest::Test
   end
 
   def test_unicode_method_name
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     server.expose_method("\u00e9cho") { |msg| msg }
 
     request = { "jsonrpc" => "2.0", "method" => "\u00e9cho", "params" => ["hello"], "id" => 1 }
@@ -473,7 +473,7 @@ class TestServerEdgeCases < Minitest::Test
   end
 
   def test_handler_json_error_goes_through_error_details
-    server = Reclamo::Server.new(expose_errors: true)
+    server = UltimateJsonRpc::Server.new(expose_errors: true)
     server.expose_method("bad_json") { raise JSON::GeneratorError, "handler JSON error" }
 
     request = { "jsonrpc" => "2.0", "method" => "bad_json", "id" => 1 }
@@ -489,7 +489,7 @@ class TestServerEdgeCases < Minitest::Test
         "done"
       end
     end
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     server.expose(klass)
 
     refute_includes server.methods_list, "new"
@@ -500,7 +500,7 @@ end
 
 class TestServerFreeze < Minitest::Test
   def test_frozen_server_handles_requests
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     server.expose(Calculator)
     server.freeze
 
@@ -511,28 +511,28 @@ class TestServerFreeze < Minitest::Test
   end
 
   def test_frozen_server_rejects_expose
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     server.freeze
 
     assert_raises(FrozenError) { server.expose(Calculator) }
   end
 
   def test_frozen_server_rejects_expose_method
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     server.freeze
 
     assert_raises(FrozenError) { server.expose_method("ping") { "pong" } }
   end
 
   def test_frozen_server_rejects_use
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     server.freeze
 
     assert_raises(FrozenError) { server.use { |_req, n| n.call } }
   end
 
   def test_frozen_server_is_frozen
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     server.expose(Calculator)
     server.freeze
 
@@ -540,7 +540,7 @@ class TestServerFreeze < Minitest::Test
   end
 
   def test_double_freeze_is_idempotent
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     server.expose(Calculator)
     server.freeze
 
@@ -553,7 +553,7 @@ class TestServerFreeze < Minitest::Test
   end
 
   def test_frozen_server_with_middleware_handles_requests
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     server.expose(Calculator)
     server.use { |_req, next_call| next_call.call }
     server.freeze
@@ -565,7 +565,7 @@ class TestServerFreeze < Minitest::Test
   end
 
   def test_frozen_server_handles_batches
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     server.expose(Calculator)
     server.freeze
 
@@ -580,7 +580,7 @@ class TestServerFreeze < Minitest::Test
   end
 
   def test_frozen_server_handles_errors
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     server.expose(Calculator)
     server.freeze
 
@@ -591,7 +591,7 @@ class TestServerFreeze < Minitest::Test
   end
 
   def test_frozen_server_handles_concurrent_requests
-    server = Reclamo::Server.new.tap { |s| s.expose(Calculator) }.freeze
+    server = UltimateJsonRpc::Server.new.tap { |s| s.expose(Calculator) }.freeze
     threads = 5.times.map do |i|
       Thread.new do
         req = { "jsonrpc" => "2.0", "method" => "add", "params" => [i, 1], "id" => i }
@@ -604,7 +604,7 @@ end
 
 class TestHandleRescueScope < Minitest::Test
   def test_handle_returns_parse_error_for_invalid_json
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     server.expose(Calculator)
     response = JSON.parse(server.handle("not json"))
 
@@ -612,7 +612,7 @@ class TestHandleRescueScope < Minitest::Test
   end
 
   def test_handle_does_not_mask_dispatch_errors_as_parse_error
-    server = Reclamo::Server.new(expose_errors: true)
+    server = UltimateJsonRpc::Server.new(expose_errors: true)
     server.expose_method("boom") { raise "handler error" }
 
     request = '{"jsonrpc":"2.0","method":"boom","id":1}'
@@ -633,7 +633,7 @@ class TestHandleRescueScope < Minitest::Test
       end
     end.new
 
-    server = Reclamo::Server.new(json: bad_json)
+    server = UltimateJsonRpc::Server.new(json: bad_json)
     server.expose_method("bad") { :unserializable }
 
     request = '{"jsonrpc":"2.0","method":"bad","id":1}'
@@ -655,7 +655,7 @@ class TestSerializeSingleLastResort < Minitest::Test
       end
     end.new
 
-    server = Reclamo::Server.new(json: always_fail_json)
+    server = UltimateJsonRpc::Server.new(json: always_fail_json)
     server.expose_method("boom") { raise "handler error" }
 
     request = '{"jsonrpc":"2.0","method":"boom","id":1}'
@@ -679,7 +679,7 @@ class TestSerializeSingleLastResort < Minitest::Test
       end
     end.new
 
-    server = Reclamo::Server.new(json: always_fail_json)
+    server = UltimateJsonRpc::Server.new(json: always_fail_json)
     server.expose_method("boom") { raise "handler error" }
 
     request = '{"jsonrpc":"2.0","method":"boom","id":"req-abc"}'
@@ -701,7 +701,7 @@ class TestSerializeSingleLastResort < Minitest::Test
       end
     end.new
 
-    server = Reclamo::Server.new(json: always_fail_json)
+    server = UltimateJsonRpc::Server.new(json: always_fail_json)
     server.expose_method("boom") { raise "handler error" }
 
     request = '{"jsonrpc":"2.0","method":"boom","id":null}'
@@ -715,7 +715,7 @@ end
 
 class TestSerializeSingleIdRecovery < Minitest::Test
   def test_error_response_preserves_request_id
-    server = Reclamo::Server.new(expose_errors: true)
+    server = UltimateJsonRpc::Server.new(expose_errors: true)
     server.expose_method("fail") { raise "unexpected" }
 
     request = { "jsonrpc" => "2.0", "method" => "fail", "id" => 42 }
@@ -736,7 +736,7 @@ class TestSerializeSingleIdRecovery < Minitest::Test
       end
     end.new
 
-    server = Reclamo::Server.new(json: fail_on_error_json)
+    server = UltimateJsonRpc::Server.new(json: fail_on_error_json)
     server.expose_method("boom") { raise "handler error" }
 
     request = { "jsonrpc" => "2.0", "method" => "boom", "id" => 77 }
@@ -763,7 +763,7 @@ class TestSerializeSingleNotificationRescue < Minitest::Test
       end
     end.new
 
-    server = Reclamo::Server.new(json: fail_on_success_json)
+    server = UltimateJsonRpc::Server.new(json: fail_on_success_json)
     server.expose_method("boom") { "ok" }
 
     notification = '{"jsonrpc":"2.0","method":"boom"}'
@@ -775,7 +775,7 @@ end
 
 class TestHandleParsedDoesNotFreezeCaller < Minitest::Test
   def test_handle_parsed_does_not_freeze_callers_method_string
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     server.expose_method("ping") { "pong" }
 
     method_str = +"ping"
@@ -786,7 +786,7 @@ class TestHandleParsedDoesNotFreezeCaller < Minitest::Test
   end
 
   def test_handle_parsed_does_not_freeze_callers_param_strings
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     server.expose_method("echo") { |value:| value }
 
     param_value = +"hello"
@@ -799,7 +799,7 @@ end
 
 class TestDeepDupFrozenKeys < Minitest::Test
   def test_handle_parsed_with_frozen_string_keys
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     server.expose_method("echo") { |key:| key }
 
     request = { "jsonrpc" => "2.0", "method" => "echo", "params" => { "key" => "val" }, "id" => 1 }
@@ -809,7 +809,7 @@ class TestDeepDupFrozenKeys < Minitest::Test
   end
 
   def test_handle_parsed_with_symbol_keyed_params
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     server.expose_method("echo") { |value:| value }
 
     request = { "jsonrpc" => "2.0", "method" => "echo", "params" => { value: "hello" }, "id" => 1 }

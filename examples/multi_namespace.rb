@@ -5,7 +5,7 @@
 #
 # Run: ruby examples/multi_namespace.rb
 
-require "reclamo"
+require "ultimate_json_rpc"
 require "json"
 
 module Auth
@@ -19,7 +19,7 @@ module Users
 end
 
 # Compose multiple objects into a single endpoint
-server = Reclamo::Server.new(name: "My API", version: "1.0")
+server = UltimateJsonRpc::Server.new(name: "My API", version: "1.0")
 server.expose(Auth, namespace: "auth", descriptions: { login: "Authenticate user", logout: "Revoke token" })
 server.expose(Users, namespace: "users", descriptions: { list: "List all users", get: "Get user by ID" })
 

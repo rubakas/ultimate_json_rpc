@@ -1,21 +1,21 @@
-# Reclamo
+# UltimateJsonRpc
 
-[![CI](https://github.com/rubakas/reclamo/actions/workflows/main.yml/badge.svg)](https://github.com/rubakas/reclamo/actions/workflows/main.yml)
+[![CI](https://github.com/rubakas/ultimate_json_rpc/actions/workflows/main.yml/badge.svg)](https://github.com/rubakas/ultimate_json_rpc/actions/workflows/main.yml)
 
-Network-agnostic JSON-RPC 2.0 server that exposes Ruby modules, classes, and instances as callable RPC endpoints. Reclamo handles JSON-RPC message parsing, method dispatch, and response serialization — transport (HTTP, WebSocket, stdio, TCP, etc.) is the caller's responsibility.
+Network-agnostic JSON-RPC 2.0 server that exposes Ruby modules, classes, and instances as callable RPC endpoints. UltimateJsonRpc handles JSON-RPC message parsing, method dispatch, and response serialization — transport (HTTP, WebSocket, stdio, TCP, etc.) is the caller's responsibility.
 
 ## Installation
 
 Add to your Gemfile:
 
 ```ruby
-gem "reclamo"
+gem "ultimate_json_rpc"
 ```
 
 ## Usage
 
 ```ruby
-require "reclamo"
+require "ultimate_json_rpc"
 
 # Define your service
 module Calculator
@@ -24,7 +24,7 @@ module Calculator
 end
 
 # Create a server and expose objects
-server = Reclamo::Server.new(name: "My API", version: "1.0")
+server = UltimateJsonRpc::Server.new(name: "My API", version: "1.0")
 server.expose(Calculator, descriptions: { add: "Add two numbers" })
 server.expose(some_instance, namespace: "greeter")
 
@@ -46,7 +46,7 @@ server.expose_method("greet") { |name:, greeting: "Hello"| "#{greeting}, #{name}
 All setup methods return `self`, and the server is callable via `to_proc`:
 
 ```ruby
-server = Reclamo::Server.new
+server = UltimateJsonRpc::Server.new
   .expose(Calculator, namespace: "calc")
   .expose_method("ping") { "pong" }
   .use { |req, next_call| next_call.call }
@@ -88,7 +88,7 @@ end
 
 # Reject unauthorized calls
 server.use do |request, next_call|
-  raise Reclamo::ApplicationError.new(code: 403, message: "Forbidden") unless authorized?(request)
+  raise UltimateJsonRpc::ApplicationError.new(code: 403, message: "Forbidden") unless authorized?(request)
 
   next_call.call
 end
@@ -103,7 +103,7 @@ Target specific methods or namespaces with `only:` / `except:`, supporting glob 
 ```ruby
 # Only run for admin namespace methods
 server.use(only: ["admin.*"]) do |request, next_call|
-  raise Reclamo::ApplicationError.new(code: 403, message: "Forbidden") unless admin?(request)
+  raise UltimateJsonRpc::ApplicationError.new(code: 403, message: "Forbidden") unless admin?(request)
   next_call.call
 end
 
@@ -142,7 +142,7 @@ Swap the JSON encoder/decoder (defaults to stdlib `JSON`):
 ```ruby
 require "oj"
 Oj.mimic_JSON
-server = Reclamo::Server.new(json: Oj)
+server = UltimateJsonRpc::Server.new(json: Oj)
 ```
 
 Any object responding to `parse(string)` and `generate(object)` works.
@@ -152,7 +152,7 @@ Any object responding to `parse(string)` and `generate(object)` works.
 Opt-in parallel processing for batch requests:
 
 ```ruby
-server = Reclamo::Server.new(concurrent_batches: true)
+server = UltimateJsonRpc::Server.new(concurrent_batches: true)
 # Batch items are processed in parallel using threads
 # Respects max_batch_size and request timeout
 ```
@@ -162,7 +162,7 @@ server = Reclamo::Server.new(concurrent_batches: true)
 Set a per-server timeout (in seconds) to prevent slow handlers from blocking:
 
 ```ruby
-server = Reclamo::Server.new(timeout: 5)
+server = UltimateJsonRpc::Server.new(timeout: 5)
 # Handlers exceeding 5 seconds receive a -32001 "Request timeout" error
 ```
 
@@ -200,9 +200,9 @@ Deprecated methods still work normally but appear flagged in `rpc.discover` outp
 Collect per-method timing statistics:
 
 ```ruby
-require "reclamo/extras/profiler"
+require "ultimate_json_rpc/extras/profiler"
 
-profiler = Reclamo::Extras::Profiler.new(server)
+profiler = UltimateJsonRpc::Extras::Profiler.new(server)
 # ... handle requests ...
 profiler["add"]  # => {count: 150, min: 0.0001, max: 0.05, avg: 0.002, p50: ..., p95: ..., p99: ...}
 profiler.stats   # => all methods
@@ -214,10 +214,10 @@ profiler.reset   # clear data
 Logger-agnostic observability:
 
 ```ruby
-require "reclamo/extras/logging"
+require "ultimate_json_rpc/extras/logging"
 
-Reclamo::Extras::Logging.new(server, Logger.new($stdout))           # logs at INFO by default
-Reclamo::Extras::Logging.new(server, Rails.logger, level: :debug)   # custom level
+UltimateJsonRpc::Extras::Logging.new(server, Logger.new($stdout))           # logs at INFO by default
+UltimateJsonRpc::Extras::Logging.new(server, Rails.logger, level: :debug)   # custom level
 ```
 
 Successful responses log at the specified level; errors always log at ERROR.
@@ -227,11 +227,11 @@ Successful responses log at the specified level; errors always log at ERROR.
 Sliding-window rate limiting with per-caller keying:
 
 ```ruby
-require "reclamo/extras/rate_limit"
+require "ultimate_json_rpc/extras/rate_limit"
 
-Reclamo::Extras::RateLimiter.new(server, max: 100, period: 60)                        # 100 req/min global
-Reclamo::Extras::RateLimiter.new(server, max: 10, period: 60, only: ["expensive.*"])  # per-method
-Reclamo::Extras::RateLimiter.new(server, max: 50, period: 60, key: :api_key)         # per-caller via context
+UltimateJsonRpc::Extras::RateLimiter.new(server, max: 100, period: 60)                        # 100 req/min global
+UltimateJsonRpc::Extras::RateLimiter.new(server, max: 10, period: 60, only: ["expensive.*"])  # per-method
+UltimateJsonRpc::Extras::RateLimiter.new(server, max: 50, period: 60, key: :api_key)         # per-caller via context
 ```
 
 ### Authorization
@@ -263,8 +263,8 @@ Registered errors appear in `rpc.discover` under `components.errors`, so consume
 Raise `ApplicationError` for custom error codes, or `ServerError` for implementation-defined errors:
 
 ```ruby
-raise Reclamo::ApplicationError.new(code: 42, message: "Custom error", data: { "detail" => "info" })
-raise Reclamo::ServerError.new(code: -32_001, message: "Server shutting down")
+raise UltimateJsonRpc::ApplicationError.new(code: 42, message: "Custom error", data: { "detail" => "info" })
+raise UltimateJsonRpc::ServerError.new(code: -32_001, message: "Server shutting down")
 ```
 
 Ruby's `ArgumentError` automatically maps to JSON-RPC Invalid params (`-32602`). All other exceptions become Internal error (`-32603`).
@@ -274,10 +274,10 @@ Ruby's `ArgumentError` automatically maps to JSON-RPC Invalid params (`-32602`).
 By default, internal error details (exception messages) are hidden from clients:
 
 ```ruby
-server = Reclamo::Server.new                    # expose_errors: false (default)
+server = UltimateJsonRpc::Server.new                    # expose_errors: false (default)
 # Internal errors return generic "Internal server error" in the data field
 
-server = Reclamo::Server.new(expose_errors: true)
+server = UltimateJsonRpc::Server.new(expose_errors: true)
 # Internal errors include the actual exception message in the data field
 ```
 
@@ -321,9 +321,9 @@ server.handle(request)  # still works
 - **Security** — dangerous methods (eval, system, exec, etc.) are automatically blocked
 - **Chainable API** — all setup methods return `self`
 - **Callable** — `to_proc` enables `requests.map(&server)`
-- **Rack adapter** — `Reclamo::Transport::Rack.new(server)` for instant HTTP deployment
-- **MCP adapter** — `Reclamo::Extras::MCP.new(server).run` for AI tool integration (Claude, Cursor, etc.)
-- **stdio adapter** — `Reclamo::Transport::Stdio.new(server).run` for CLI/MCP-style integrations
+- **Rack adapter** — `UltimateJsonRpc::Transport::Rack.new(server)` for instant HTTP deployment
+- **MCP adapter** — `UltimateJsonRpc::Extras::MCP.new(server).run` for AI tool integration (Claude, Cursor, etc.)
+- **stdio adapter** — `UltimateJsonRpc::Transport::Stdio.new(server).run` for CLI/MCP-style integrations
 - **Test helpers** — `rpc_call`, `assert_rpc_success`, `assert_rpc_error` for cleaner tests
 - **Concurrent batches** — `concurrent_batches: true` processes batch items in parallel
 - **Custom JSON** — `json: Oj` to swap the JSON encoder/decoder
@@ -332,7 +332,7 @@ server.handle(request)  # still works
 
 ### Transport examples
 
-Reclamo is transport-agnostic. Here are common setups:
+UltimateJsonRpc is transport-agnostic. Here are common setups:
 
 #### Rack (HTTP)
 
@@ -340,40 +340,40 @@ Use the built-in Rack adapter:
 
 ```ruby
 # config.ru
-require "reclamo"
-require "reclamo/transport/rack"
+require "ultimate_json_rpc"
+require "ultimate_json_rpc/transport/rack"
 
-server = Reclamo::Server.new(name: "My API")
+server = UltimateJsonRpc::Server.new(name: "My API")
 server.expose(Calculator)
 
-run Reclamo::Transport::Rack.new(server)
+run UltimateJsonRpc::Transport::Rack.new(server)
 ```
 
-`Reclamo::Transport::Rack` handles Content-Type, returns 200 for responses, 204 for notifications, and 405 for non-POST requests.
+`UltimateJsonRpc::Transport::Rack` handles Content-Type, returns 200 for responses, 204 for notifications, and 405 for non-POST requests.
 
 #### MCP (Model Context Protocol)
 
 Expose methods as AI tools via MCP:
 
 ```ruby
-require "reclamo/extras/mcp"
+require "ultimate_json_rpc/extras/mcp"
 
-server = Reclamo::Server.new(name: "My Tools", version: "1.0")
+server = UltimateJsonRpc::Server.new(name: "My Tools", version: "1.0")
 server.expose(Calculator, descriptions: { add: "Add two numbers" })
 
-Reclamo::Extras::MCP.new(server).run
+UltimateJsonRpc::Extras::MCP.new(server).run
 ```
 
-`Reclamo::Extras::MCP` handles the MCP lifecycle (`initialize`, `tools/list`, `tools/call`), maps methods to tool definitions with input schemas, and runs over stdio for integration with Claude, Cursor, and other AI tools.
+`UltimateJsonRpc::Extras::MCP` handles the MCP lifecycle (`initialize`, `tools/list`, `tools/call`), maps methods to tool definitions with input schemas, and runs over stdio for integration with Claude, Cursor, and other AI tools.
 
 #### WebSocket
 
 Use the WebSocket adapter with any Rack-compatible library (e.g., `faye-websocket`):
 
 ```ruby
-require "reclamo/transport/websocket"
+require "ultimate_json_rpc/transport/websocket"
 
-ws_handler = Reclamo::Transport::WebSocket.new(server)
+ws_handler = UltimateJsonRpc::Transport::WebSocket.new(server)
 
 # In your Rack app:
 ws = Faye::WebSocket.new(env)
@@ -387,31 +387,31 @@ See `examples/websocket_server.ru` for a complete runnable example.
 Use the built-in TCP adapter for internal microservices:
 
 ```ruby
-require "reclamo/transport/tcp"
+require "ultimate_json_rpc/transport/tcp"
 
-server = Reclamo::Server.new
+server = UltimateJsonRpc::Server.new
 server.expose(Calculator)
 
-Reclamo::Transport::TCP.new(server, port: 4000).run
+UltimateJsonRpc::Transport::TCP.new(server, port: 4000).run
 ```
 
-`Reclamo::Transport::TCP` accepts newline-delimited JSON-RPC over TCP, handles multiple concurrent clients via threads, and supports `SIGINT`/`SIGTERM` for graceful shutdown.
+`UltimateJsonRpc::Transport::TCP` accepts newline-delimited JSON-RPC over TCP, handles multiple concurrent clients via threads, and supports `SIGINT`/`SIGTERM` for graceful shutdown.
 
 #### stdio
 
 Use the built-in stdio adapter:
 
 ```ruby
-require "reclamo"
-require "reclamo/transport/stdio"
+require "ultimate_json_rpc"
+require "ultimate_json_rpc/transport/stdio"
 
-server = Reclamo::Server.new
+server = UltimateJsonRpc::Server.new
 server.expose(Calculator)
 
-Reclamo::Transport::Stdio.new(server).run
+UltimateJsonRpc::Transport::Stdio.new(server).run
 ```
 
-`Reclamo::Transport::Stdio` reads newline-delimited JSON-RPC from stdin, writes responses to stdout, skips empty lines, and handles `SIGINT`/`SIGTERM` for graceful shutdown.
+`UltimateJsonRpc::Transport::Stdio` reads newline-delimited JSON-RPC from stdin, writes responses to stdout, skips empty lines, and handles `SIGINT`/`SIGTERM` for graceful shutdown.
 
 ### Pre-parsed input
 
@@ -427,25 +427,25 @@ response = server.handle_parsed(data)
 Capture exchanges for replay and regression testing:
 
 ```ruby
-require "reclamo/extras/recorder"
+require "ultimate_json_rpc/extras/recorder"
 
-recorder = Reclamo::Extras::Recorder.new(server)
+recorder = UltimateJsonRpc::Extras::Recorder.new(server)
 server.handle(request_json)
 recorder.exchanges  # => [{"method" => "add", "params" => [2, 3], "result" => 5, "duration" => 0.001}]
 
 # Write JSONL to a file
-recorder = Reclamo::Extras::Recorder.new(server, output: File.open("exchanges.jsonl", "a"))
+recorder = UltimateJsonRpc::Extras::Recorder.new(server, output: File.open("exchanges.jsonl", "a"))
 ```
 
 ### Test helpers
 
-Reclamo ships with optional test helpers for cleaner assertions:
+UltimateJsonRpc ships with optional test helpers for cleaner assertions:
 
 ```ruby
-require "reclamo/extras/test_helpers"
+require "ultimate_json_rpc/extras/test_helpers"
 
 class MyTest < Minitest::Test
-  include Reclamo::Extras::TestHelpers
+  include UltimateJsonRpc::Extras::TestHelpers
 
   def test_addition
     response = rpc_call(server, "add", params: [2, 3])
@@ -475,4 +475,4 @@ bin/console     # Interactive console
 
 ## Contributing
 
-Bug reports and pull requests are welcome on GitHub at https://github.com/rubakas/reclamo.
+Bug reports and pull requests are welcome on GitHub at https://github.com/rubakas/ultimate_json_rpc.

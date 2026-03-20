@@ -98,7 +98,7 @@ class TestParamValidationType < Minitest::Test
   private
 
   def build_server(name, **, &)
-    server = Reclamo::Server.new(expose_errors: true)
+    server = UltimateJsonRpc::Server.new(expose_errors: true)
     server.expose_method(name, **, &)
     server
   end
@@ -117,14 +117,14 @@ class TestParamValidationType < Minitest::Test
   def assert_invalid_params(server, method, params, message_pattern)
     response = call(server, method, params)
 
-    assert_equal Reclamo::Core::INVALID_PARAMS, response.dig("error", "code")
+    assert_equal UltimateJsonRpc::Core::INVALID_PARAMS, response.dig("error", "code")
     assert_match message_pattern, response.dig("error", "data")
   end
 end
 
 class TestParamValidationEnum < Minitest::Test
   def test_enum_passes
-    server = Reclamo::Server.new(expose_errors: true)
+    server = UltimateJsonRpc::Server.new(expose_errors: true)
     server.expose_method("color", params_schema: { c: { "enum" => %w[red green blue] } }) { |c| c }
     response = call(server, "color", ["red"])
 
@@ -132,29 +132,29 @@ class TestParamValidationEnum < Minitest::Test
   end
 
   def test_enum_fails
-    server = Reclamo::Server.new(expose_errors: true)
+    server = UltimateJsonRpc::Server.new(expose_errors: true)
     server.expose_method("color", params_schema: { c: { "enum" => %w[red green blue] } }) { |c| c }
     response = call(server, "color", ["yellow"])
 
-    assert_equal Reclamo::Core::INVALID_PARAMS, response.dig("error", "code")
+    assert_equal UltimateJsonRpc::Core::INVALID_PARAMS, response.dig("error", "code")
     assert_match(/parameter 'c' must be one of/, response.dig("error", "data"))
   end
 
   def test_enum_with_type
-    server = Reclamo::Server.new(expose_errors: true)
+    server = UltimateJsonRpc::Server.new(expose_errors: true)
     server.expose_method("level", params_schema: { n: { "type" => "integer", "enum" => [1, 2, 3] } }) { |n| n }
     response = call(server, "level", ["not_int"])
 
-    assert_equal Reclamo::Core::INVALID_PARAMS, response.dig("error", "code")
+    assert_equal UltimateJsonRpc::Core::INVALID_PARAMS, response.dig("error", "code")
     assert_match(/must be integer/, response.dig("error", "data"))
   end
 
   def test_type_passes_but_enum_fails
-    server = Reclamo::Server.new(expose_errors: true)
+    server = UltimateJsonRpc::Server.new(expose_errors: true)
     server.expose_method("level", params_schema: { n: { "type" => "integer", "enum" => [1, 2, 3] } }) { |n| n }
     response = call(server, "level", [99])
 
-    assert_equal Reclamo::Core::INVALID_PARAMS, response.dig("error", "code")
+    assert_equal UltimateJsonRpc::Core::INVALID_PARAMS, response.dig("error", "code")
     assert_match(/must be one of/, response.dig("error", "data"))
   end
 
@@ -168,7 +168,7 @@ end
 
 class TestParamValidationKeywordParams < Minitest::Test
   def test_keyword_params_pass
-    server = Reclamo::Server.new(expose_errors: true)
+    server = UltimateJsonRpc::Server.new(expose_errors: true)
     server.expose_method("greet", params_schema: { name: { "type" => "string" } }) { |name:| "Hi #{name}" }
     response = call(server, "greet", { "name" => "Alice" })
 
@@ -176,11 +176,11 @@ class TestParamValidationKeywordParams < Minitest::Test
   end
 
   def test_keyword_params_fail
-    server = Reclamo::Server.new(expose_errors: true)
+    server = UltimateJsonRpc::Server.new(expose_errors: true)
     server.expose_method("greet", params_schema: { name: { "type" => "string" } }) { |name:| "Hi #{name}" }
     response = call(server, "greet", { "name" => 123 })
 
-    assert_equal Reclamo::Core::INVALID_PARAMS, response.dig("error", "code")
+    assert_equal UltimateJsonRpc::Core::INVALID_PARAMS, response.dig("error", "code")
     assert_match(/parameter 'name' must be string/, response.dig("error", "data"))
   end
 
@@ -194,18 +194,18 @@ end
 
 class TestParamValidationExpose < Minitest::Test
   def test_expose_with_params_schema
-    server = Reclamo::Server.new(expose_errors: true)
+    server = UltimateJsonRpc::Server.new(expose_errors: true)
     server.expose(Calculator, params_schema: {
                     add: { left: { "type" => "number" }, right: { "type" => "number" } }
                   })
     response = call(server, "add", ["not_a_number", 2])
 
-    assert_equal Reclamo::Core::INVALID_PARAMS, response.dig("error", "code")
+    assert_equal UltimateJsonRpc::Core::INVALID_PARAMS, response.dig("error", "code")
     assert_match(/parameter 'left' must be number/, response.dig("error", "data"))
   end
 
   def test_expose_with_params_schema_passes
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     server.expose(Calculator, params_schema: {
                     add: { left: { "type" => "number" }, right: { "type" => "number" } }
                   })
@@ -215,23 +215,23 @@ class TestParamValidationExpose < Minitest::Test
   end
 
   def test_expose_with_namespace
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     server.expose(Calculator, namespace: "math", params_schema: {
                     add: { left: { "type" => "number" }, right: { "type" => "number" } }
                   })
     response = call(server, "math.add", ["bad", 2])
 
-    assert_equal Reclamo::Core::INVALID_PARAMS, response.dig("error", "code")
+    assert_equal UltimateJsonRpc::Core::INVALID_PARAMS, response.dig("error", "code")
   end
 
   def test_expose_string_keys
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     server.expose(Calculator, params_schema: {
                     "add" => { "left" => { "type" => "number" }, "right" => { "type" => "number" } }
                   })
     response = call(server, "add", ["nope", 2])
 
-    assert_equal Reclamo::Core::INVALID_PARAMS, response.dig("error", "code")
+    assert_equal UltimateJsonRpc::Core::INVALID_PARAMS, response.dig("error", "code")
   end
 
   private
@@ -244,7 +244,7 @@ end
 
 class TestParamValidationEdgeCases < Minitest::Test
   def test_no_schema_no_validation
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     server.expose_method("echo") { |x| x }
     response = call(server, "echo", ["anything"])
 
@@ -252,7 +252,7 @@ class TestParamValidationEdgeCases < Minitest::Test
   end
 
   def test_partial_schema_only_validates_specified
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     server.expose_method("pair", params_schema: { a: { "type" => "string" } }) { |a, b| [a, b] }
     response = call(server, "pair", ["hello", 42])
 
@@ -260,15 +260,15 @@ class TestParamValidationEdgeCases < Minitest::Test
   end
 
   def test_partial_schema_catches_violation
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     server.expose_method("pair", params_schema: { a: { "type" => "string" } }) { |a, b| [a, b] }
     response = call(server, "pair", [42, "hello"])
 
-    assert_equal Reclamo::Core::INVALID_PARAMS, response.dig("error", "code")
+    assert_equal UltimateJsonRpc::Core::INVALID_PARAMS, response.dig("error", "code")
   end
 
   def test_nil_params_skips_validation
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     server.expose_method("ping", params_schema: { x: { "type" => "string" } }) { "pong" }
     response = call(server, "ping", nil)
 
@@ -276,7 +276,7 @@ class TestParamValidationEdgeCases < Minitest::Test
   end
 
   def test_unknown_type_in_schema_skips_check
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     server.expose_method("echo", params_schema: { x: { "type" => "custom" } }) { |x| x }
     response = call(server, "echo", [42])
 
@@ -285,20 +285,20 @@ class TestParamValidationEdgeCases < Minitest::Test
 
   def test_validation_with_callable
     doubler = ->(n) { n * 2 }
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     server.expose_method("double", doubler, params_schema: { n: { "type" => "number" } })
     response = call(server, "double", ["bad"])
 
-    assert_equal Reclamo::Core::INVALID_PARAMS, response.dig("error", "code")
+    assert_equal UltimateJsonRpc::Core::INVALID_PARAMS, response.dig("error", "code")
   end
 
   def test_schema_survives_freeze
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     server.expose_method("add", params_schema: { a: { "type" => "number" } }) { |a| a }
     server.freeze
     response = call(server, "add", ["bad"])
 
-    assert_equal Reclamo::Core::INVALID_PARAMS, response.dig("error", "code")
+    assert_equal UltimateJsonRpc::Core::INVALID_PARAMS, response.dig("error", "code")
   end
 
   private
@@ -314,7 +314,7 @@ class TestParamValidationDiscover < Minitest::Test
   include DiscoverHelper
 
   def test_schema_appears_in_discover
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     server.expose_method("add", params_schema: {
                            a: { "type" => "number" }, b: { "type" => "number" }
                          }) { |a, b| a + b }
@@ -325,7 +325,7 @@ class TestParamValidationDiscover < Minitest::Test
   end
 
   def test_schema_omitted_when_not_set
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     server.expose_method("ping") { "pong" }
     method_info = discover_methods(server).find { |m| m["name"] == "ping" }
 
@@ -333,7 +333,7 @@ class TestParamValidationDiscover < Minitest::Test
   end
 
   def test_partial_schema_in_discover
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     server.expose_method("pair", params_schema: { a: { "type" => "string" } }) { |a, b| [a, b] }
     method_info = discover_methods(server).find { |m| m["name"] == "pair" }
 
@@ -342,7 +342,7 @@ class TestParamValidationDiscover < Minitest::Test
   end
 
   def test_expose_schema_in_discover
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     server.expose(Calculator, params_schema: {
                     add: { left: { "type" => "number" }, right: { "type" => "number" } }
                   })
@@ -352,7 +352,7 @@ class TestParamValidationDiscover < Minitest::Test
   end
 
   def test_schema_with_enum_in_discover
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     server.expose_method("color", params_schema: {
                            c: { "type" => "string", "enum" => %w[red green blue] }
                          }) { |c| c }

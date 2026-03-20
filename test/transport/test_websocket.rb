@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 require "test_helper"
-require "reclamo/transport/websocket"
+require "ultimate_json_rpc/transport/websocket"
 require "json"
 
 class TestWebSocket < Minitest::Test
@@ -86,8 +86,8 @@ class TestWebSocket < Minitest::Test
   end
 
   def test_server_accessor
-    server = Reclamo::Server.new
-    ws = Reclamo::Transport::WebSocket.new(server)
+    server = UltimateJsonRpc::Server.new
+    ws = UltimateJsonRpc::Transport::WebSocket.new(server)
 
     assert_equal server, ws.server
   end
@@ -124,8 +124,8 @@ class TestWebSocket < Minitest::Test
   private
 
   def build_ws
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     server.expose(Calculator)
-    Reclamo::Transport::WebSocket.new(server)
+    UltimateJsonRpc::Transport::WebSocket.new(server)
   end
 end

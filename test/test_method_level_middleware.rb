@@ -5,7 +5,7 @@ require "json"
 
 class TestMethodLevelMiddlewareOnly < Minitest::Test
   def setup
-    @server = Reclamo::Server.new
+    @server = UltimateJsonRpc::Server.new
     @server.expose(Calculator)
     @server.expose_method("ping") { "pong" }
   end
@@ -38,7 +38,7 @@ class TestMethodLevelMiddlewareOnly < Minitest::Test
   end
 
   def test_only_with_glob_pattern
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     server.expose(Calculator, namespace: "calc")
     server.expose_method("ping") { "pong" }
 
@@ -92,7 +92,7 @@ end
 
 class TestMethodLevelMiddlewareExcept < Minitest::Test
   def setup
-    @server = Reclamo::Server.new
+    @server = UltimateJsonRpc::Server.new
     @server.expose(Calculator)
     @server.expose_method("ping") { "pong" }
   end
@@ -112,7 +112,7 @@ class TestMethodLevelMiddlewareExcept < Minitest::Test
   end
 
   def test_except_with_glob_pattern
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     server.expose(Calculator, namespace: "calc")
     server.expose_method("ping") { "pong" }
 
@@ -152,7 +152,7 @@ end
 
 class TestMethodLevelMiddlewareEdgeCases < Minitest::Test
   def test_only_and_except_raises
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
 
     error = assert_raises(ArgumentError) do
       server.use(only: ["add"], except: ["divide"]) { |_r, n| n.call }
@@ -163,7 +163,7 @@ class TestMethodLevelMiddlewareEdgeCases < Minitest::Test
 
   def test_global_and_scoped_middleware_chain_order
     log = []
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     server.expose(Calculator)
 
     server.use do |_request, next_call|
@@ -185,7 +185,7 @@ class TestMethodLevelMiddlewareEdgeCases < Minitest::Test
   end
 
   def test_scoped_middleware_can_transform_result
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     server.expose(Calculator)
 
     server.use(only: ["add"]) do |_request, next_call|
@@ -200,11 +200,11 @@ class TestMethodLevelMiddlewareEdgeCases < Minitest::Test
   end
 
   def test_scoped_middleware_can_reject_request
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     server.expose(Calculator)
 
     server.use(only: ["divide"]) do |_request, _next_call|
-      raise Reclamo::Core::ApplicationError.new(code: 403, message: "Division forbidden")
+      raise UltimateJsonRpc::Core::ApplicationError.new(code: 403, message: "Division forbidden")
     end
 
     response = call_method("divide", [10, 2], server: server)
@@ -216,7 +216,7 @@ class TestMethodLevelMiddlewareEdgeCases < Minitest::Test
 
   def test_multiple_scoped_middleware_different_targets
     log = []
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     server.expose(Calculator)
 
     server.use(only: ["add"]) do |_request, next_call|
@@ -239,7 +239,7 @@ class TestMethodLevelMiddlewareEdgeCases < Minitest::Test
 
   def test_scoped_middleware_with_notifications
     called = false
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     server.expose(Calculator)
 
     server.use(only: ["add"]) do |_request, next_call|
@@ -254,7 +254,7 @@ class TestMethodLevelMiddlewareEdgeCases < Minitest::Test
 
   def test_scoped_middleware_skipped_for_notifications_on_non_matching
     called = false
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     server.expose(Calculator)
 
     server.use(only: ["divide"]) do |_request, next_call|
@@ -269,7 +269,7 @@ class TestMethodLevelMiddlewareEdgeCases < Minitest::Test
 
   def test_scoped_middleware_applies_to_rpc_discover
     called = false
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     server.expose(Calculator)
 
     server.use(only: ["rpc.discover"]) do |_request, next_call|
@@ -284,7 +284,7 @@ class TestMethodLevelMiddlewareEdgeCases < Minitest::Test
 
   def test_except_rpc_discover_skips_for_discover
     called = false
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     server.expose(Calculator)
 
     server.use(except: ["rpc.discover"]) do |_request, next_call|
@@ -300,7 +300,7 @@ class TestMethodLevelMiddlewareEdgeCases < Minitest::Test
   end
 
   def test_freeze_works_with_scoped_middleware
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     server.expose(Calculator)
     server.use(only: ["add"]) { |_r, n| n.call }
     server.freeze
@@ -312,20 +312,20 @@ class TestMethodLevelMiddlewareEdgeCases < Minitest::Test
   end
 
   def test_use_returns_self_with_only
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     result = server.use(only: ["add"]) { |_r, n| n.call }
     assert_equal server, result
   end
 
   def test_use_returns_self_with_except
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     result = server.use(except: ["add"]) { |_r, n| n.call }
     assert_equal server, result
   end
 
   def test_only_and_except_on_separate_middleware_compose
     log = []
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     server.expose(Calculator)
     server.expose_method("ping") { "pong" }
 
@@ -352,7 +352,7 @@ class TestMethodLevelMiddlewareEdgeCases < Minitest::Test
   end
 
   def test_glob_pattern_does_not_match_partial_name
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     server.expose_method("admin_panel") { "panel" }
     server.expose_method("admin.create") { "created" }
 

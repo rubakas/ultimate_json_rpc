@@ -5,7 +5,7 @@ require "json"
 
 class TestServerMiddleware < Minitest::Test
   def test_middleware_can_transform_result
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     server.expose(Calculator)
     server.use do |_request, next_call|
       result = next_call.call
@@ -19,10 +19,13 @@ class TestServerMiddleware < Minitest::Test
   end
 
   def test_middleware_can_reject_request
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     server.expose(Calculator)
     server.use do |request, next_call|
-      raise Reclamo::Core::ApplicationError.new(code: 403, message: "Forbidden") if request.method_name == "divide"
+      if request.method_name == "divide"
+        raise UltimateJsonRpc::Core::ApplicationError.new(code: 403,
+                                                          message: "Forbidden")
+      end
 
       next_call.call
     end
@@ -45,7 +48,7 @@ class TestServerMiddleware < Minitest::Test
   end
 
   def test_middleware_receives_request
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     server.expose(Calculator)
     captured_method = nil
 
@@ -61,20 +64,20 @@ class TestServerMiddleware < Minitest::Test
   end
 
   def test_use_returns_self
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
 
     result = server.use { |_req, next_call| next_call.call }
     assert_equal server, result
   end
 
   def test_use_without_block_raises
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
 
     assert_raises(ArgumentError) { server.use }
   end
 
   def test_middleware_runs_for_notifications
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     server.expose(Calculator)
     called = false
 
@@ -89,7 +92,7 @@ class TestServerMiddleware < Minitest::Test
   end
 
   def test_middleware_not_called_for_invalid_requests
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     server.expose(Calculator)
     called = false
 
@@ -106,7 +109,7 @@ class TestServerMiddleware < Minitest::Test
   private
 
   def build_logging_server(log)
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     server.expose(Calculator)
     add_logging_middleware(server, log, %w[first second])
     server
@@ -124,7 +127,7 @@ end
 
 class TestServerMiddlewareEdgeCases < Minitest::Test
   def test_middleware_runs_for_rpc_discover
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     server.expose(Calculator)
     called = false
     server.use { |_req, n| (called = true) && n.call }
@@ -136,7 +139,7 @@ class TestServerMiddlewareEdgeCases < Minitest::Test
   end
 
   def test_request_params_are_frozen
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     server.expose(Calculator)
     server.use do |request, next_call|
       assert_predicate request.params, :frozen?
@@ -148,7 +151,7 @@ class TestServerMiddlewareEdgeCases < Minitest::Test
   end
 
   def test_middleware_unexpected_error_returns_internal_error
-    server = Reclamo::Server.new(expose_errors: true)
+    server = UltimateJsonRpc::Server.new(expose_errors: true)
     server.expose(Calculator)
     server.use { |_request, _next_call| raise "middleware broke" }
 
@@ -160,9 +163,9 @@ class TestServerMiddlewareEdgeCases < Minitest::Test
   end
 
   def test_invalid_request_from_middleware_returns_internal_error
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     server.expose(Calculator)
-    server.use { |_request, _next_call| raise Reclamo::Core::InvalidRequest }
+    server.use { |_request, _next_call| raise UltimateJsonRpc::Core::InvalidRequest }
 
     request = { "jsonrpc" => "2.0", "method" => "add", "params" => [1, 2], "id" => 42 }
     response = JSON.parse(server.handle(JSON.generate(request)))
@@ -172,7 +175,7 @@ class TestServerMiddlewareEdgeCases < Minitest::Test
   end
 
   def test_nested_request_params_are_deeply_frozen
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     server.expose(Calculator)
     nested_frozen = nil
 
@@ -188,9 +191,9 @@ class TestServerMiddlewareEdgeCases < Minitest::Test
   end
 
   def test_server_error_from_middleware
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     server.expose(Calculator)
-    server.use { |_request, _next_call| raise Reclamo::Core::ServerError.new(code: -32_050, message: "Rate limited") }
+    server.use { |_request, _next_call| raise UltimateJsonRpc::Core::ServerError.new(code: -32_050, message: "Rate limited") }
 
     request = { "jsonrpc" => "2.0", "method" => "add", "params" => [1, 2], "id" => 1 }
     response = JSON.parse(server.handle(JSON.generate(request)))
@@ -200,10 +203,10 @@ class TestServerMiddlewareEdgeCases < Minitest::Test
   end
 
   def test_application_error_from_middleware
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     server.expose(Calculator)
     server.use do |request, _next_call|
-      raise Reclamo::Core::ApplicationError.new(code: 403, message: "Forbidden") if request.method_name == "add"
+      raise UltimateJsonRpc::Core::ApplicationError.new(code: 403, message: "Forbidden") if request.method_name == "add"
     end
 
     request = { "jsonrpc" => "2.0", "method" => "add", "params" => [1, 2], "id" => 1 }
@@ -214,7 +217,7 @@ class TestServerMiddlewareEdgeCases < Minitest::Test
   end
 
   def test_middleware_short_circuit_returns_custom_result
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     server.expose(Calculator)
     server.use { |_request, _next_call| "intercepted" }
 
@@ -226,7 +229,7 @@ class TestServerMiddlewareEdgeCases < Minitest::Test
   end
 
   def test_middleware_short_circuit_notification_returns_nil
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     server.expose(Calculator)
     server.use { |_request, _next_call| "intercepted" }
 
@@ -236,7 +239,7 @@ class TestServerMiddlewareEdgeCases < Minitest::Test
   end
 
   def test_middleware_can_write_and_read_request_context
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     server.expose(Calculator)
     captured_user = nil
     server.use { |req, n| req.context[:user] = "alice"; n.call } # rubocop:disable Style/Semicolon

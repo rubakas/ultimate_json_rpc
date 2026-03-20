@@ -16,8 +16,8 @@
 #     }
 #   }
 
-require "reclamo"
-require "reclamo/extras/mcp"
+require "ultimate_json_rpc"
+require "ultimate_json_rpc/extras/mcp"
 
 module MathTools
   def self.add(a, b) = a + b
@@ -30,7 +30,7 @@ module MathTools
   end
 end
 
-server = Reclamo::Server.new(name: "Math Tools", version: "1.0")
+server = UltimateJsonRpc::Server.new(name: "Math Tools", version: "1.0")
 server.expose(MathTools,
               descriptions: { add: "Add two numbers", subtract: "Subtract b from a",
                               multiply: "Multiply two numbers", divide: "Divide a by b" },
@@ -39,4 +39,4 @@ server.expose(MathTools,
                                multiply: { a: { "type" => "number" }, b: { "type" => "number" } },
                                divide: { a: { "type" => "number" }, b: { "type" => "number" } } })
 
-Reclamo::Extras::MCP.new(server).run
+UltimateJsonRpc::Extras::MCP.new(server).run

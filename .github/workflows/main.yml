@@ -32,4 +32,4 @@ jobs:
       - name: Validate RBS signatures
         run: bundle exec rbs -I sig validate
       - name: Verify gem builds
-        run: gem build reclamo.gemspec
+        run: gem build ultimate_json_rpc.gemspec

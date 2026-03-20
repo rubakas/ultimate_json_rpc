@@ -9,7 +9,7 @@ module SpecConformanceSetup
   private
 
   def build_spec_server
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     server.expose_method("subtract") do |*args, **kwargs|
       kwargs.any? ? kwargs[:minuend] - kwargs[:subtrahend] : args[0] - args[1]
     end
@@ -215,7 +215,7 @@ end
 
 class TestIntegration < Minitest::Test
   def setup
-    @server = Reclamo::Server.new
+    @server = UltimateJsonRpc::Server.new
     @server.expose(Calculator, namespace: "calc")
     @server.expose(Greeter.new("Hey"), namespace: "greeter")
     @server.expose_method("ping") { "pong" }
@@ -243,10 +243,13 @@ class TestIntegration < Minitest::Test
   end
 
   def test_middleware_auth_pattern
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     server.expose(Calculator)
     server.use do |request, next_call|
-      raise Reclamo::Core::ApplicationError.new(code: 401, message: "Unauthorized") if request.method_name == "divide"
+      if request.method_name == "divide"
+        raise UltimateJsonRpc::Core::ApplicationError.new(code: 401,
+                                                          message: "Unauthorized")
+      end
 
       next_call.call
     end

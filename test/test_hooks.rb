@@ -35,7 +35,7 @@ class TestHooksOnRequest < Minitest::Test
   private
 
   def build_server
-    Reclamo::Server.new.tap { |s| s.expose(Calculator) }
+    UltimateJsonRpc::Server.new.tap { |s| s.expose(Calculator) }
   end
 
   def call(server, method, params)
@@ -86,7 +86,7 @@ class TestHooksOnResponse < Minitest::Test
 
   private
 
-  def build_server = Reclamo::Server.new.tap { |s| s.expose(Calculator) }
+  def build_server = UltimateJsonRpc::Server.new.tap { |s| s.expose(Calculator) }
 
   def call(server, method, params = nil)
     request = { "jsonrpc" => "2.0", "method" => method, "id" => 1 }
@@ -112,7 +112,7 @@ class TestHooksOnError < Minitest::Test
 
     call(server, "nonexistent")
     assert_equal "nonexistent", captured[:method]
-    assert_equal Reclamo::Core::MethodNotFound, captured[:error_class]
+    assert_equal UltimateJsonRpc::Core::MethodNotFound, captured[:error_class]
     assert_kind_of Float, captured[:duration]
   end
 
@@ -122,7 +122,7 @@ class TestHooksOnError < Minitest::Test
     server.on(:error) { |_req, err, _dur| captured_error = err }
 
     notify(server, "nonexistent")
-    assert_instance_of Reclamo::Core::MethodNotFound, captured_error
+    assert_instance_of UltimateJsonRpc::Core::MethodNotFound, captured_error
   end
 
   def test_on_error_does_not_fire_on_success
@@ -136,7 +136,7 @@ class TestHooksOnError < Minitest::Test
 
   private
 
-  def build_server = Reclamo::Server.new.tap { |s| s.expose(Calculator) }
+  def build_server = UltimateJsonRpc::Server.new.tap { |s| s.expose(Calculator) }
 
   def call(server, method, params = nil)
     request = { "jsonrpc" => "2.0", "method" => method, "id" => 1 }
@@ -151,21 +151,21 @@ end
 
 class TestHooksEdgeCases < Minitest::Test
   def test_on_returns_self
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     assert_equal server, server.on(:request) { |x| x }
   end
 
   def test_on_without_block_raises
-    assert_raises(ArgumentError) { Reclamo::Server.new.on(:request) }
+    assert_raises(ArgumentError) { UltimateJsonRpc::Server.new.on(:request) }
   end
 
   def test_on_unknown_event_raises
-    error = assert_raises(ArgumentError) { Reclamo::Server.new.on(:unknown) { |x| x } }
+    error = assert_raises(ArgumentError) { UltimateJsonRpc::Server.new.on(:unknown) { |x| x } }
     assert_includes error.message, "unknown event"
   end
 
   def test_first_hook_error_does_not_break_second_hook
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     server.expose(Calculator)
     log = []
     server.on(:request) { |_req| raise "first broke" }
@@ -176,7 +176,7 @@ class TestHooksEdgeCases < Minitest::Test
   end
 
   def test_hook_error_does_not_break_dispatch
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     server.expose(Calculator)
     server.on(:request) { |_req| raise "hook broke" }
 
@@ -185,37 +185,37 @@ class TestHooksEdgeCases < Minitest::Test
   end
 
   def test_hook_error_warns
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     server.expose(Calculator)
     server.on(:request) { |_req| raise "hook broke" }
 
-    assert_output(nil, /Reclamo: request hook error: hook broke/) do
+    assert_output(nil, /UltimateJsonRpc: request hook error: hook broke/) do
       call(server, "add", [1, 2])
     end
   end
 
   def test_broken_response_hook_warns
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     server.expose(Calculator)
     server.on(:response) { |_req, _result, _dur| raise "response hook broke" }
 
-    assert_output(nil, /Reclamo: response hook error: response hook broke/) do
+    assert_output(nil, /UltimateJsonRpc: response hook error: response hook broke/) do
       call(server, "add", [1, 2])
     end
   end
 
   def test_broken_error_hook_warns
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     server.expose(Calculator)
     server.on(:error) { |_req, _err, _dur| raise "error hook broke" }
 
-    assert_output(nil, /Reclamo: error hook error: error hook broke/) do
+    assert_output(nil, /UltimateJsonRpc: error hook error: error hook broke/) do
       call(server, "nonexistent")
     end
   end
 
   def test_broken_response_hook_does_not_break_dispatch
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     server.expose(Calculator)
     server.on(:response) { |_req, _result, _dur| raise "response hook broke" }
 
@@ -224,7 +224,7 @@ class TestHooksEdgeCases < Minitest::Test
   end
 
   def test_hooks_survive_freeze
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     server.expose(Calculator)
     called = false
     server.on(:request) { |_req| called = true }
@@ -236,7 +236,7 @@ class TestHooksEdgeCases < Minitest::Test
   end
 
   def test_on_request_fires_for_rpc_discover
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     server.expose(Calculator)
     captured = nil
     server.on(:request) { |req| captured = req.method_name }

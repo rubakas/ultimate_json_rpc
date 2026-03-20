@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 require "test_helper"
-require "reclamo/extras/rate_limit"
+require "ultimate_json_rpc/extras/rate_limit"
 require "json"
 
 class TestRateLimit < Minitest::Test
@@ -34,10 +34,10 @@ class TestRateLimit < Minitest::Test
 
   def test_per_caller_with_symbol_key
     user = "alice"
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     server.expose(Calculator)
     server.use { |req, nxt| req.context[:user] = user; nxt.call } # rubocop:disable Style/Semicolon
-    Reclamo::Extras::RateLimiter.new(server, max: 1, period: 60, key: :user)
+    UltimateJsonRpc::Extras::RateLimiter.new(server, max: 1, period: 60, key: :user)
 
     assert call(server, "add", [1, 2]).key?("result")
     assert_equal 429, call(server, "add", [3, 4])["error"]["code"]
@@ -49,19 +49,19 @@ class TestRateLimit < Minitest::Test
 
   def test_per_caller_with_proc_key
     api_key = "key-a"
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     server.expose(Calculator)
     server.use { |req, nxt| req.context[:api_key] = api_key; nxt.call } # rubocop:disable Style/Semicolon
-    Reclamo::Extras::RateLimiter.new(server, max: 1, period: 60, key: ->(req) { req.context[:api_key] })
+    UltimateJsonRpc::Extras::RateLimiter.new(server, max: 1, period: 60, key: ->(req) { req.context[:api_key] })
 
     assert call(server, "add", [1, 2]).key?("result")
     assert_equal 429, call(server, "add", [3, 4])["error"]["code"]
   end
 
   def test_scoped_with_only
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     server.expose(Calculator)
-    Reclamo::Extras::RateLimiter.new(server, max: 1, period: 60, only: ["add"])
+    UltimateJsonRpc::Extras::RateLimiter.new(server, max: 1, period: 60, only: ["add"])
 
     call(server, "add", [1, 2])
     blocked = call(server, "add", [3, 4])
@@ -72,9 +72,9 @@ class TestRateLimit < Minitest::Test
   end
 
   def test_scoped_with_except
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     server.expose(Calculator)
-    Reclamo::Extras::RateLimiter.new(server, max: 1, period: 60, except: ["divide"])
+    UltimateJsonRpc::Extras::RateLimiter.new(server, max: 1, period: 60, except: ["divide"])
 
     call(server, "add", [1, 2])
     blocked = call(server, "add", [3, 4])
@@ -85,10 +85,10 @@ class TestRateLimit < Minitest::Test
   end
 
   def test_falsy_context_value_used_as_key
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     server.expose(Calculator)
     server.use { |req, nxt| req.context[:uid] = 0; nxt.call } # rubocop:disable Style/Semicolon
-    Reclamo::Extras::RateLimiter.new(server, max: 1, period: 60, key: :uid)
+    UltimateJsonRpc::Extras::RateLimiter.new(server, max: 1, period: 60, key: :uid)
 
     r1 = call(server, "add", [1, 2])
     r2 = call(server, "add", [3, 4])
@@ -97,9 +97,9 @@ class TestRateLimit < Minitest::Test
   end
 
   def test_custom_error_code_and_message
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     server.expose(Calculator)
-    Reclamo::Extras::RateLimiter.new(server, max: 1, period: 60, code: 1429, message: "Slow down")
+    UltimateJsonRpc::Extras::RateLimiter.new(server, max: 1, period: 60, code: 1429, message: "Slow down")
 
     call(server, "add", [1, 2])
     response = call(server, "add", [3, 4])
@@ -109,22 +109,22 @@ class TestRateLimit < Minitest::Test
   end
 
   def test_only_and_except_together_raises
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     assert_raises(ArgumentError) do
-      Reclamo::Extras::RateLimiter.new(server, max: 1, period: 60, only: ["add"], except: ["divide"])
+      UltimateJsonRpc::Extras::RateLimiter.new(server, max: 1, period: 60, only: ["add"], except: ["divide"])
     end
   end
 
   def test_invalid_key_type_raises
     assert_raises(ArgumentError) do
-      Reclamo::Extras::RateLimiter.new(Reclamo::Server.new, max: 1, period: 60, key: "string")
+      UltimateJsonRpc::Extras::RateLimiter.new(UltimateJsonRpc::Server.new, max: 1, period: 60, key: "string")
     end
   end
 
   def test_thread_safe
-    server = Reclamo::Server.new(concurrent_batches: true)
+    server = UltimateJsonRpc::Server.new(concurrent_batches: true)
     server.expose(Calculator)
-    Reclamo::Extras::RateLimiter.new(server, max: 5, period: 60)
+    UltimateJsonRpc::Extras::RateLimiter.new(server, max: 5, period: 60)
 
     batch = 10.times.map { |i| { "jsonrpc" => "2.0", "method" => "add", "params" => [i, 1], "id" => i } }
     responses = JSON.parse(server.handle(JSON.generate(batch)))
@@ -139,9 +139,9 @@ class TestRateLimit < Minitest::Test
   private
 
   def build_server(max:, period:)
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     server.expose(Calculator)
-    Reclamo::Extras::RateLimiter.new(server, max:, period:)
+    UltimateJsonRpc::Extras::RateLimiter.new(server, max:, period:)
     server
   end
 
@@ -153,13 +153,13 @@ end
 
 class TestRateLimiterEviction < Minitest::Test
   def test_stale_windows_evicted
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     server.expose(Calculator)
 
     110.times do |i|
       server.expose_method("m#{i}") { i }
     end
-    Reclamo::Extras::RateLimiter.new(server, max: 1, period: 0.001, key: :method_name.to_proc)
+    UltimateJsonRpc::Extras::RateLimiter.new(server, max: 1, period: 0.001, key: :method_name.to_proc)
 
     110.times do |i|
       request = { "jsonrpc" => "2.0", "method" => "m#{i}", "id" => i }
@@ -177,27 +177,27 @@ end
 class TestRateLimiterCodeValidation < Minitest::Test
   def test_reserved_code_raises
     assert_raises(ArgumentError) do
-      Reclamo::Extras::RateLimiter.new(Reclamo::Server.new, max: 10, period: 60, code: -32_000)
+      UltimateJsonRpc::Extras::RateLimiter.new(UltimateJsonRpc::Server.new, max: 10, period: 60, code: -32_000)
     end
   end
 
   def test_non_integer_code_raises
     assert_raises(ArgumentError) do
-      Reclamo::Extras::RateLimiter.new(Reclamo::Server.new, max: 10, period: 60, code: "429")
+      UltimateJsonRpc::Extras::RateLimiter.new(UltimateJsonRpc::Server.new, max: 10, period: 60, code: "429")
     end
   end
 
   def test_valid_code_succeeds
-    limiter = Reclamo::Extras::RateLimiter.new(Reclamo::Server.new, max: 10, period: 60, code: 429)
-    assert_instance_of Reclamo::Extras::RateLimiter, limiter
+    limiter = UltimateJsonRpc::Extras::RateLimiter.new(UltimateJsonRpc::Server.new, max: 10, period: 60, code: 429)
+    assert_instance_of UltimateJsonRpc::Extras::RateLimiter, limiter
   end
 
   def test_reserved_code_via_constructor_raises
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     server.expose(Calculator)
 
     assert_raises(ArgumentError) do
-      Reclamo::Extras::RateLimiter.new(server, max: 10, period: 60, code: -32_600)
+      UltimateJsonRpc::Extras::RateLimiter.new(server, max: 10, period: 60, code: -32_600)
     end
   end
 end

@@ -2,7 +2,7 @@
 
 require "timeout"
 
-module Reclamo
+module UltimateJsonRpc
   GENERIC_ERROR_DATA = "Internal server error"
   GENERIC_PARAMS_DATA = "Invalid method parameters"
   private_constant :GENERIC_ERROR_DATA, :GENERIC_PARAMS_DATA
@@ -300,7 +300,7 @@ module Reclamo
       @hooks[event].each do |hook|
         hook.call(*args)
       rescue StandardError => e
-        Kernel.warn "Reclamo: #{event} hook error: #{e.message}"
+        Kernel.warn "UltimateJsonRpc: #{event} hook error: #{e.message}"
       end
     end
 

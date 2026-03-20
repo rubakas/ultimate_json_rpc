@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-module Reclamo
+module UltimateJsonRpc
   module Transport
     class Rack
       CONTENT_TYPE = { "content-type" => "application/json" }.freeze

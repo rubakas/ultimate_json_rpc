@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-module Reclamo
+module UltimateJsonRpc
   module Extras
     class Docs
       def initialize(server, json: JSON)

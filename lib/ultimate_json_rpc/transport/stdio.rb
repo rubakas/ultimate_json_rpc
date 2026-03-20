@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-module Reclamo
+module UltimateJsonRpc
   module Transport
     class Stdio
       def initialize(server, input: $stdin, output: $stdout)

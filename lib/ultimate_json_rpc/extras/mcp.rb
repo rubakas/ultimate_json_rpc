@@ -2,7 +2,7 @@
 
 require_relative "../transport/stdio"
 
-module Reclamo
+module UltimateJsonRpc
   module Extras
     class MCP
       PROTOCOL_VERSION = "2024-11-05"
@@ -49,7 +49,7 @@ module Reclamo
           "protocolVersion" => PROTOCOL_VERSION,
           "capabilities" => { "tools" => {} },
           "serverInfo" => {
-            "name" => @app_server.name || "Reclamo MCP Server",
+            "name" => @app_server.name || "UltimateJsonRpc MCP Server",
             "version" => @app_server.version || "0.0.0"
           }
         }

@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project
 
-Reclamo is a Ruby gem that exposes Ruby objects (modules, classes, instances, namespaces) through JSON-RPC 2.0. It is network-agnostic — the gem handles JSON-RPC message parsing, method dispatch, and response serialization, while transport (HTTP, WebSocket, stdio, TCP, etc.) is the caller's responsibility.
+UltimateJsonRpc is a Ruby gem that exposes Ruby objects (modules, classes, instances, namespaces) through JSON-RPC 2.0. It is network-agnostic — the gem handles JSON-RPC message parsing, method dispatch, and response serialization, while transport (HTTP, WebSocket, stdio, TCP, etc.) is the caller's responsibility.
 
 Ruby >= 3.2 required.
 
@@ -15,8 +15,8 @@ bin/setup              # Install dependencies
 rake test              # Run all tests
 rake rubocop           # Run linter
 rake                   # Run tests + rubocop (default)
-ruby -Ilib:test test/test_reclamo.rb                    # Run a single test file
-ruby -Ilib:test test/test_reclamo.rb -n test_method     # Run a single test method
+ruby -Ilib:test test/test_ultimate_json_rpc.rb                    # Run a single test file
+ruby -Ilib:test test/test_ultimate_json_rpc.rb -n test_method     # Run a single test method
 bin/console            # Interactive console with gem loaded
 ```
 
@@ -33,32 +33,32 @@ bin/console            # Interactive console with gem loaded
 
 ### Library
 
-- `lib/reclamo.rb` — main entry point, defines Reclamo::Core::Error base class, requires all core components
-- `lib/reclamo/version.rb` — version constant
-- `lib/reclamo/core/errors.rb` — error codes, ERROR_MESSAGES, all error classes (Reclamo::Core::InvalidRequest, InvalidParams, MethodNotFound, ApplicationError, ServerError)
-- `lib/reclamo/core/request.rb` — JSON-RPC request parsing, validation, deep-frozen immutable attributes, mutable context (Reclamo::Core::Request)
-- `lib/reclamo/core/response.rb` — JSON-RPC response building (Reclamo::Core::Response)
-- `lib/reclamo/core/handler.rb` — method registry, dispatch, introspection, callable support, dangerous method denylist, param validation, freeze (Reclamo::Core::Handler)
-- `lib/reclamo/server.rb` — public API: expose, handle/call, middleware, rpc.discover, service metadata, max_batch_size, expose_errors, timeout, concurrent_batches, instrumentation hooks, freeze
-- `lib/reclamo/transport/rack.rb` — optional Rack adapter (Reclamo::Transport::Rack), NOT auto-required
-- `lib/reclamo/transport/stdio.rb` — optional stdio adapter (Reclamo::Transport::Stdio), NOT auto-required
-- `lib/reclamo/transport/tcp.rb` — optional TCP adapter (Reclamo::Transport::TCP), NOT auto-required
-- `lib/reclamo/transport/websocket.rb` — optional WebSocket adapter (Reclamo::Transport::WebSocket), NOT auto-required
-- `lib/reclamo/extras/docs.rb` — optional Markdown doc generator (Reclamo::Extras::Docs), NOT auto-required
-- `lib/reclamo/extras/logging.rb` — optional structured logging (Reclamo::Extras::Logging class), NOT auto-required
-- `lib/reclamo/extras/mcp.rb` — optional MCP protocol adapter (Reclamo::Extras::MCP), NOT auto-required; internally requires transport/stdio
-- `lib/reclamo/extras/profiler.rb` — optional per-method profiler (Reclamo::Extras::Profiler), NOT auto-required
-- `lib/reclamo/extras/rate_limit.rb` — optional rate limiter (Reclamo::Extras::RateLimiter class), NOT auto-required
-- `lib/reclamo/extras/recorder.rb` — optional exchange recorder (Reclamo::Extras::Recorder), NOT auto-required
-- `lib/reclamo/extras/test_helpers.rb` — optional test helpers (Reclamo::Extras::TestHelpers: rpc_call, rpc_notify, rpc_batch), NOT auto-required
-- `sig/reclamo.rbs` — RBS type signatures
+- `lib/ultimate_json_rpc.rb` — main entry point, defines UltimateJsonRpc::Core::Error base class, requires all core components
+- `lib/ultimate_json_rpc/version.rb` — version constant
+- `lib/ultimate_json_rpc/core/errors.rb` — error codes, ERROR_MESSAGES, all error classes (UltimateJsonRpc::Core::InvalidRequest, InvalidParams, MethodNotFound, ApplicationError, ServerError)
+- `lib/ultimate_json_rpc/core/request.rb` — JSON-RPC request parsing, validation, deep-frozen immutable attributes, mutable context (UltimateJsonRpc::Core::Request)
+- `lib/ultimate_json_rpc/core/response.rb` — JSON-RPC response building (UltimateJsonRpc::Core::Response)
+- `lib/ultimate_json_rpc/core/handler.rb` — method registry, dispatch, introspection, callable support, dangerous method denylist, param validation, freeze (UltimateJsonRpc::Core::Handler)
+- `lib/ultimate_json_rpc/server.rb` — public API: expose, handle/call, middleware, rpc.discover, service metadata, max_batch_size, expose_errors, timeout, concurrent_batches, instrumentation hooks, freeze
+- `lib/ultimate_json_rpc/transport/rack.rb` — optional Rack adapter (UltimateJsonRpc::Transport::Rack), NOT auto-required
+- `lib/ultimate_json_rpc/transport/stdio.rb` — optional stdio adapter (UltimateJsonRpc::Transport::Stdio), NOT auto-required
+- `lib/ultimate_json_rpc/transport/tcp.rb` — optional TCP adapter (UltimateJsonRpc::Transport::TCP), NOT auto-required
+- `lib/ultimate_json_rpc/transport/websocket.rb` — optional WebSocket adapter (UltimateJsonRpc::Transport::WebSocket), NOT auto-required
+- `lib/ultimate_json_rpc/extras/docs.rb` — optional Markdown doc generator (UltimateJsonRpc::Extras::Docs), NOT auto-required
+- `lib/ultimate_json_rpc/extras/logging.rb` — optional structured logging (UltimateJsonRpc::Extras::Logging class), NOT auto-required
+- `lib/ultimate_json_rpc/extras/mcp.rb` — optional MCP protocol adapter (UltimateJsonRpc::Extras::MCP), NOT auto-required; internally requires transport/stdio
+- `lib/ultimate_json_rpc/extras/profiler.rb` — optional per-method profiler (UltimateJsonRpc::Extras::Profiler), NOT auto-required
+- `lib/ultimate_json_rpc/extras/rate_limit.rb` — optional rate limiter (UltimateJsonRpc::Extras::RateLimiter class), NOT auto-required
+- `lib/ultimate_json_rpc/extras/recorder.rb` — optional exchange recorder (UltimateJsonRpc::Extras::Recorder), NOT auto-required
+- `lib/ultimate_json_rpc/extras/test_helpers.rb` — optional test helpers (UltimateJsonRpc::Extras::TestHelpers: rpc_call, rpc_notify, rpc_batch), NOT auto-required
+- `sig/ultimate_json_rpc.rbs` — RBS type signatures
 
 ### Tests
 
 - `test/test_helper.rb` — test setup, loads support fixtures
 - `test/support/fixtures.rb` — shared test fixtures (Calculator, Greeter)
 - `test/support/discover_helper.rb` — shared discover test helper
-- `test/core/test_reclamo.rb` — version, constants, error class hierarchy
+- `test/core/test_ultimate_json_rpc.rb` — version, constants, error class hierarchy
 - `test/core/test_request.rb` — Request unit tests: validation, notification?, freezing, edge cases
 - `test/core/test_response.rb` — Response module unit tests: success/error structure, data handling
 - `test/core/test_handler.rb` — handler unit tests, freeze, param descriptors, dangerous methods

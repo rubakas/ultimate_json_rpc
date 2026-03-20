@@ -1,14 +1,14 @@
 # frozen_string_literal: true
 
 require "test_helper"
-require "reclamo/transport/rack"
+require "ultimate_json_rpc/transport/rack"
 require "json"
 
 class TestRack < Minitest::Test
   def setup
-    server = Reclamo::Server.new(name: "Test API")
+    server = UltimateJsonRpc::Server.new(name: "Test API")
     server.expose(Calculator)
-    @app = Reclamo::Transport::Rack.new(server)
+    @app = UltimateJsonRpc::Transport::Rack.new(server)
   end
 
   def test_post_with_valid_request_returns_ok
@@ -118,14 +118,14 @@ class TestRack < Minitest::Test
   end
 
   def test_freeze_delegates_to_server
-    app = Reclamo::Transport::Rack.new(Reclamo::Server.new)
+    app = UltimateJsonRpc::Transport::Rack.new(UltimateJsonRpc::Server.new)
     app.freeze
 
     assert_predicate app, :frozen?
   end
 
   def test_frozen_rack_app_handles_requests
-    app = Reclamo::Transport::Rack.new(Reclamo::Server.new.tap { |s| s.expose(Calculator) })
+    app = UltimateJsonRpc::Transport::Rack.new(UltimateJsonRpc::Server.new.tap { |s| s.expose(Calculator) })
     app.freeze
 
     status, _, body = app.call(rack_env("add", [2, 3]))

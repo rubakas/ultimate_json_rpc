@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 require "test_helper"
-require "reclamo/extras/profiler"
+require "ultimate_json_rpc/extras/profiler"
 require "json"
 
 class TestProfiler < Minitest::Test
@@ -31,13 +31,13 @@ class TestProfiler < Minitest::Test
   end
 
   def test_min_max
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     server.expose_method("fast") { 1 }
     server.expose_method("slow") do
       sleep(0.15)
       2
     end
-    profiler = Reclamo::Extras::Profiler.new(server)
+    profiler = UltimateJsonRpc::Extras::Profiler.new(server)
 
     3.times { rpc(server, "fast", nil) }
     rpc(server, "slow", nil)
@@ -123,9 +123,9 @@ class TestProfiler < Minitest::Test
   end
 
   def test_thread_safe_with_concurrent_batches
-    server = Reclamo::Server.new(concurrent_batches: true)
+    server = UltimateJsonRpc::Server.new(concurrent_batches: true)
     server.expose(Calculator)
-    profiler = Reclamo::Extras::Profiler.new(server)
+    profiler = UltimateJsonRpc::Extras::Profiler.new(server)
 
     batch = 10.times.map { |i| { "jsonrpc" => "2.0", "method" => "add", "params" => [i, 1], "id" => i } }
     server.handle(JSON.generate(batch))
@@ -136,9 +136,9 @@ class TestProfiler < Minitest::Test
   private
 
   def build_profiled_server
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     server.expose(Calculator)
-    profiler = Reclamo::Extras::Profiler.new(server)
+    profiler = UltimateJsonRpc::Extras::Profiler.new(server)
     [server, profiler]
   end
 
@@ -151,9 +151,9 @@ end
 
 class TestProfilerMaxSamples < Minitest::Test
   def test_durations_capped_at_max_samples
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     server.expose(Calculator)
-    profiler = Reclamo::Extras::Profiler.new(server, max_samples: 5)
+    profiler = UltimateJsonRpc::Extras::Profiler.new(server, max_samples: 5)
 
     10.times do |i|
       request = { "jsonrpc" => "2.0", "method" => "add", "params" => [i, 1], "id" => i }
@@ -166,15 +166,15 @@ class TestProfilerMaxSamples < Minitest::Test
   end
 
   def test_default_max_samples
-    assert_equal 10_000, Reclamo::Extras::Profiler::DEFAULT_MAX_SAMPLES
+    assert_equal 10_000, UltimateJsonRpc::Extras::Profiler::DEFAULT_MAX_SAMPLES
   end
 end
 
 class TestProfilerSamplesField < Minitest::Test
   def test_samples_equals_count_within_max
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     server.expose(Calculator)
-    profiler = Reclamo::Extras::Profiler.new(server, max_samples: 100)
+    profiler = UltimateJsonRpc::Extras::Profiler.new(server, max_samples: 100)
 
     5.times do |i|
       request = { "jsonrpc" => "2.0", "method" => "add", "params" => [i, 1], "id" => i }
@@ -187,9 +187,9 @@ class TestProfilerSamplesField < Minitest::Test
   end
 
   def test_samples_capped_at_max_samples
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     server.expose(Calculator)
-    profiler = Reclamo::Extras::Profiler.new(server, max_samples: 3)
+    profiler = UltimateJsonRpc::Extras::Profiler.new(server, max_samples: 3)
 
     10.times do |i|
       request = { "jsonrpc" => "2.0", "method" => "add", "params" => [i, 1], "id" => i }

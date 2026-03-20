@@ -25,9 +25,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - Method-level middleware: `server.use(only: ["admin.*"])` and `server.use(except: ["ping"])` to scope middleware to specific methods or namespaces, with glob pattern support
-- `Reclamo::Transport::Rack` built-in Rack adapter: Content-Type handling, 200/204/405 responses, `require "reclamo/transport/rack"` to opt in
-- Test assertion helpers: `assert_rpc_success`, `assert_rpc_error`, `assert_rpc_notification` in `reclamo/test_helpers`
-- `Reclamo::Transport::Stdio` adapter: newline-delimited JSON-RPC over stdin/stdout with signal handling, `require "reclamo/transport/stdio"`
+- `UltimateJsonRpc::Transport::Rack` built-in Rack adapter: Content-Type handling, 200/204/405 responses, `require "ultimate_json_rpc/transport/rack"` to opt in
+- Test assertion helpers: `assert_rpc_success`, `assert_rpc_error`, `assert_rpc_notification` in `ultimate_json_rpc/test_helpers`
+- `UltimateJsonRpc::Transport::Stdio` adapter: newline-delimited JSON-RPC over stdin/stdout with signal handling, `require "ultimate_json_rpc/transport/stdio"`
 - Return type annotations: `returns:` keyword on `expose_method` and `returns:` hash on `expose`, appears in `rpc.discover`
 - OpenRPC 1.3.2 schema: `rpc.discover` now returns a full OpenRPC document with `openrpc` version, `info` object, and `result` contentDescriptors
 - Instrumentation hooks: `server.on(:request)`, `on(:response)`, `on(:error)` for read-only lifecycle observability with duration timing
@@ -39,15 +39,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Error catalog: `server.register_error(code, name, description)` registers application error codes that appear in `rpc.discover` under `components.errors`
 - Custom JSON serializer: `Server.new(json: Oj)` to swap JSON encoder/decoder, any object responding to `parse` and `generate`
 - Method-level authorization: `server.authorize("admin.*") { |req| req.context[:role] == :admin }` with glob patterns and custom error codes
-- Structured logging: `require "reclamo/extras/logging"` provides `Reclamo::Extras::Logging.new(server, logger)` for logger-agnostic observability
-- Request/response recorder: `require "reclamo/extras/recorder"` provides `Reclamo::Extras::Recorder.new(server)` capturing exchanges for replay testing, with optional JSONL file output
-- MCP (Model Context Protocol) adapter: `require "reclamo/extras/mcp"` provides `Reclamo::Extras::MCP.new(server)` for AI tool integration over stdio, mapping methods to MCP tools with schema support
-- Rate limiting: `require "reclamo/extras/rate_limit"` provides `Reclamo::Extras::RateLimiter.new(server, max:, period:)` with sliding window, per-caller keying, and per-method scoping
-- Per-method profiling: `require "reclamo/extras/profiler"` provides `Reclamo::Extras::Profiler.new(server)` collecting count, min/max/avg, and p50/p95/p99 per method
-- TCP server adapter: `require "reclamo/transport/tcp"` provides `Reclamo::Transport::TCP.new(server, port: 4000)` for newline-delimited JSON-RPC over TCP with multi-client threading
-- API documentation generation: `require "reclamo/extras/docs"` provides `Reclamo::Extras::Docs.new(server).to_markdown` generating Markdown from OpenRPC schema
+- Structured logging: `require "ultimate_json_rpc/extras/logging"` provides `UltimateJsonRpc::Extras::Logging.new(server, logger)` for logger-agnostic observability
+- Request/response recorder: `require "ultimate_json_rpc/extras/recorder"` provides `UltimateJsonRpc::Extras::Recorder.new(server)` capturing exchanges for replay testing, with optional JSONL file output
+- MCP (Model Context Protocol) adapter: `require "ultimate_json_rpc/extras/mcp"` provides `UltimateJsonRpc::Extras::MCP.new(server)` for AI tool integration over stdio, mapping methods to MCP tools with schema support
+- Rate limiting: `require "ultimate_json_rpc/extras/rate_limit"` provides `UltimateJsonRpc::Extras::RateLimiter.new(server, max:, period:)` with sliding window, per-caller keying, and per-method scoping
+- Per-method profiling: `require "ultimate_json_rpc/extras/profiler"` provides `UltimateJsonRpc::Extras::Profiler.new(server)` collecting count, min/max/avg, and p50/p95/p99 per method
+- TCP server adapter: `require "ultimate_json_rpc/transport/tcp"` provides `UltimateJsonRpc::Transport::TCP.new(server, port: 4000)` for newline-delimited JSON-RPC over TCP with multi-client threading
+- API documentation generation: `require "ultimate_json_rpc/extras/docs"` provides `UltimateJsonRpc::Extras::Docs.new(server).to_markdown` generating Markdown from OpenRPC schema
 - Usage examples: `examples/` directory with runnable patterns for Rack, MCP, multi-namespace/versioning, error handling, and testing
-- WebSocket adapter: `require "reclamo/transport/websocket"` provides `Reclamo::Transport::WebSocket` for JSON-RPC over WebSockets with any Rack-compatible library
+- WebSocket adapter: `require "ultimate_json_rpc/transport/websocket"` provides `UltimateJsonRpc::Transport::WebSocket` for JSON-RPC over WebSockets with any Rack-compatible library
 
 ### Fixed
 - MCP `inputSchema` now always included for zero-parameter tools (MCP spec compliance)

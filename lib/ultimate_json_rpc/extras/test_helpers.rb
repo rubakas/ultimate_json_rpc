@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-module Reclamo
+module UltimateJsonRpc
   module Extras
     module TestHelpers
       def rpc_call(server, method, params: nil, id: 1)

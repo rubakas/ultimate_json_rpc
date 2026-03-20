@@ -5,7 +5,7 @@ require "json"
 
 class TestServerExposeMethod < Minitest::Test
   def test_expose_block_as_method
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     server.expose_method("double") { |num| num * 2 }
 
     request = { "jsonrpc" => "2.0", "method" => "double", "params" => [5], "id" => 1 }
@@ -15,7 +15,7 @@ class TestServerExposeMethod < Minitest::Test
   end
 
   def test_expose_block_with_keyword_params
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     server.expose_method("greet") { |name:, greeting: "Hello"| "#{greeting}, #{name}!" }
 
     request = { "jsonrpc" => "2.0", "method" => "greet",
@@ -26,13 +26,13 @@ class TestServerExposeMethod < Minitest::Test
   end
 
   def test_expose_method_returns_self
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
 
     assert_equal server, server.expose_method("noop") { nil }
   end
 
   def test_expose_method_rejects_rpc_prefix
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
 
     assert_raises(ArgumentError) do
       server.expose_method("rpc.foo") { "bar" }
@@ -40,13 +40,13 @@ class TestServerExposeMethod < Minitest::Test
   end
 
   def test_expose_method_without_block_raises
-    handler = Reclamo::Core::Handler.new
+    handler = UltimateJsonRpc::Core::Handler.new
 
     assert_raises(ArgumentError) { handler.expose_method("foo") }
   end
 
   def test_expose_method_with_symbol_name
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     server.expose_method(:double) { |n| n * 2 }
 
     request = { "jsonrpc" => "2.0", "method" => "double", "params" => [5], "id" => 1 }
@@ -57,7 +57,7 @@ class TestServerExposeMethod < Minitest::Test
   end
 
   def test_expose_method_rejects_empty_name
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
 
     assert_raises(ArgumentError) do
       server.expose_method("") { "hidden" }
@@ -65,7 +65,7 @@ class TestServerExposeMethod < Minitest::Test
   end
 
   def test_expose_method_with_lambda
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     doubler = ->(n) { n * 2 }
     server.expose_method("double", doubler)
 
@@ -76,7 +76,7 @@ class TestServerExposeMethod < Minitest::Test
   end
 
   def test_expose_method_with_method_object
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     server.expose_method("add", Calculator.method(:add))
 
     request = { "jsonrpc" => "2.0", "method" => "add", "params" => [2, 3], "id" => 1 }
@@ -86,7 +86,7 @@ class TestServerExposeMethod < Minitest::Test
   end
 
   def test_expose_method_rejects_both_callable_and_block
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
 
     assert_raises(ArgumentError) do
       server.expose_method("double", ->(n) { n * 2 }) { |n| n * 3 }
@@ -94,13 +94,13 @@ class TestServerExposeMethod < Minitest::Test
   end
 
   def test_expose_method_rejects_neither_callable_nor_block
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
 
     assert_raises(ArgumentError) { server.expose_method("empty") }
   end
 
   def test_expose_method_rejects_non_callable
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
 
     assert_raises(ArgumentError) { server.expose_method("bad", "not callable") }
   end
@@ -108,7 +108,7 @@ end
 
 class TestServerMethodFiltering < Minitest::Test
   def test_expose_only
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     server.expose(Calculator, only: [:add])
 
     assert_includes server.methods_list, "add"
@@ -116,7 +116,7 @@ class TestServerMethodFiltering < Minitest::Test
   end
 
   def test_expose_except
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     server.expose(Calculator, except: [:divide])
 
     assert_includes server.methods_list, "add"
@@ -124,7 +124,7 @@ class TestServerMethodFiltering < Minitest::Test
   end
 
   def test_expose_only_with_strings
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     server.expose(Calculator, only: ["add"])
 
     assert_includes server.methods_list, "add"
@@ -132,7 +132,7 @@ class TestServerMethodFiltering < Minitest::Test
   end
 
   def test_expose_only_and_except_raises
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
 
     assert_raises(ArgumentError) do
       server.expose(Calculator, only: [:add], except: [:divide])
@@ -140,7 +140,7 @@ class TestServerMethodFiltering < Minitest::Test
   end
 
   def test_expose_only_with_namespace
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     server.expose(Calculator, namespace: "math", only: [:add])
 
     assert_includes server.methods_list, "math.add"
@@ -148,7 +148,7 @@ class TestServerMethodFiltering < Minitest::Test
   end
 
   def test_filtered_method_returns_not_found
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     server.expose(Calculator, only: [:add])
 
     request = { "jsonrpc" => "2.0", "method" => "divide", "params" => [10, 2], "id" => 1 }
@@ -158,7 +158,7 @@ class TestServerMethodFiltering < Minitest::Test
   end
 
   def test_expose_only_with_single_symbol
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     server.expose(Calculator, only: :add)
 
     assert_includes server.methods_list, "add"
@@ -166,7 +166,7 @@ class TestServerMethodFiltering < Minitest::Test
   end
 
   def test_expose_only_with_no_matches
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     _, err = capture_io { server.expose(Calculator, only: [:nonexistent]) }
 
     assert_equal 0, server.size
@@ -174,7 +174,7 @@ class TestServerMethodFiltering < Minitest::Test
   end
 
   def test_expose_except_with_single_symbol
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     server.expose(Calculator, except: :divide)
 
     assert_includes server.methods_list, "add"
@@ -194,7 +194,7 @@ class TestCallableMethodsNameOverride < Minitest::Test
       end
     end
 
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     server.expose(mod)
 
     assert server.method?("name"), "Module.name should be exposed"
@@ -212,7 +212,7 @@ class TestCallableMethodsNameOverride < Minitest::Test
       end
     end
 
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     server.expose(klass)
 
     assert server.method?("name"), "Class.name should be exposed"

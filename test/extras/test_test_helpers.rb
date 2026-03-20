@@ -1,13 +1,13 @@
 # frozen_string_literal: true
 
 require "test_helper"
-require "reclamo/extras/test_helpers"
+require "ultimate_json_rpc/extras/test_helpers"
 
 class TestTestHelpers < Minitest::Test
-  include Reclamo::Extras::TestHelpers
+  include UltimateJsonRpc::Extras::TestHelpers
 
   def setup
-    @server = Reclamo::Server.new
+    @server = UltimateJsonRpc::Server.new
     @server.expose(Calculator)
   end
 
@@ -25,7 +25,7 @@ class TestTestHelpers < Minitest::Test
   end
 
   def test_rpc_call_without_params
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     server.expose(Greeter.new("Hi"))
 
     response = rpc_call(server, "hello")
@@ -86,7 +86,7 @@ class TestTestHelpers < Minitest::Test
   end
 
   def test_assert_rpc_success_with_nil_result
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     server.expose_method("noop") { nil }
     response = rpc_call(server, "noop")
     assert_rpc_success(response, expected: nil)
@@ -131,7 +131,7 @@ class TestTestHelpers < Minitest::Test
   end
 
   def test_assert_rpc_notification_without_params
-    server = Reclamo::Server.new
+    server = UltimateJsonRpc::Server.new
     server.expose(Greeter.new("Hi"))
     assert_rpc_notification(server, "hello")
   end

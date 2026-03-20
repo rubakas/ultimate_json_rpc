@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-module Reclamo
+module UltimateJsonRpc
   module Extras
     class Profiler
       DEFAULT_MAX_SAMPLES = 10_000

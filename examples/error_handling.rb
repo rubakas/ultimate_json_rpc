@@ -5,25 +5,25 @@
 #
 # Run: ruby examples/error_handling.rb
 
-require "reclamo"
-require "reclamo/extras/logging"
+require "ultimate_json_rpc"
+require "ultimate_json_rpc/extras/logging"
 require "json"
 require "logger"
 
 module BankService
   def self.transfer(from:, to:, amount:)
-    raise Reclamo::Core::ApplicationError.new(code: 1001, message: "Insufficient funds", data: { balance: 50 }) if amount > 100
-    raise Reclamo::Core::ApplicationError.new(code: 1002, message: "Account frozen") if from == "frozen"
+    raise UltimateJsonRpc::Core::ApplicationError.new(code: 1001, message: "Insufficient funds", data: { balance: 50 }) if amount > 100
+    raise UltimateJsonRpc::Core::ApplicationError.new(code: 1002, message: "Account frozen") if from == "frozen"
 
     { from:, to:, amount:, status: "completed" }
   end
 end
 
-server = Reclamo::Server.new(name: "Bank API", version: "1.0", expose_errors: true)
+server = UltimateJsonRpc::Server.new(name: "Bank API", version: "1.0", expose_errors: true)
 server.expose(BankService, descriptions: { transfer: "Transfer money between accounts" })
 server.register_error(code: 1001, message: "InsufficientFunds", description: "Account balance too low for transfer")
 server.register_error(code: 1002, message: "AccountFrozen", description: "Account is frozen and cannot transact")
-Reclamo::Extras::Logging.new(server, Logger.new($stdout, level: :info))
+UltimateJsonRpc::Extras::Logging.new(server, Logger.new($stdout, level: :info))
 
 # Successful transfer
 puts "=== Successful transfer ==="
