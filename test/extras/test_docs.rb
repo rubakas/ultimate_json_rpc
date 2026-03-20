@@ -82,7 +82,6 @@ class TestDocs < Minitest::Test
   def test_return_type_from_string_value
     server = UltimateJsonRpc::Server.new
     server.expose_method("greet", returns: "string") { "hi" }
-
     assert_match(/\*\*Returns:\*\* `string`/, UltimateJsonRpc::Extras::Docs.new(server).to_markdown)
   end
 

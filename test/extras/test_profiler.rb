@@ -62,7 +62,6 @@ class TestProfiler < Minitest::Test
     stats = profiler["add"]
 
     expected_avg = stats[:total] / stats[:count]
-
     assert_in_delta expected_avg, stats[:avg], 0.000001
   end
 
@@ -104,7 +103,6 @@ class TestProfiler < Minitest::Test
     server, profiler = build_profiled_server
     rpc(server, "add", [1, 2])
     rpc(server, "divide", [6, 2])
-
     assert_equal %w[add divide], profiler.tracked_methods
   end
 
@@ -163,7 +161,6 @@ class TestProfilerMaxSamples < Minitest::Test
     end
 
     stats = profiler["add"]
-
     assert_equal 10, stats[:count]
     assert_equal 5, stats[:samples]
   end
@@ -185,7 +182,6 @@ class TestProfilerSamplesField < Minitest::Test
     end
 
     stats = profiler["add"]
-
     assert_equal 5, stats[:count]
     assert_equal 5, stats[:samples]
   end
@@ -201,7 +197,6 @@ class TestProfilerSamplesField < Minitest::Test
     end
 
     stats = profiler["add"]
-
     assert_equal 10, stats[:count]
     assert_equal 3, stats[:samples]
   end

@@ -67,7 +67,6 @@ class TestServerMiddleware < Minitest::Test
     server = UltimateJsonRpc::Server.new
 
     result = server.use { |_req, next_call| next_call.call }
-
     assert_equal server, result
   end
 
@@ -88,7 +87,6 @@ class TestServerMiddleware < Minitest::Test
     end
 
     request = { "jsonrpc" => "2.0", "method" => "add", "params" => [1, 2] }
-
     assert_nil server.handle(JSON.generate(request))
     assert called
   end
@@ -136,7 +134,6 @@ class TestServerMiddlewareEdgeCases < Minitest::Test
 
     request = { "jsonrpc" => "2.0", "method" => "rpc.discover", "id" => 1 }
     response = JSON.parse(server.handle(JSON.generate(request)))
-
     assert called
     assert response["result"].key?("methods")
   end
@@ -248,7 +245,6 @@ class TestServerMiddlewareEdgeCases < Minitest::Test
     server.use { |req, n| req.context[:user] = "alice"; n.call } # rubocop:disable Style/Semicolon
     server.use { |req, n| captured_user = req.context[:user]; n.call } # rubocop:disable Style/Semicolon
     server.handle(JSON.generate({ "jsonrpc" => "2.0", "method" => "add", "params" => [1, 2], "id" => 1 }))
-
     assert_equal "alice", captured_user
   end
 end

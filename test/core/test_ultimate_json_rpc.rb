@@ -18,7 +18,7 @@ class TestUltimateJsonRpc < Minitest::Test
   def test_server_error_range_constants
     assert_equal(-32_099, UltimateJsonRpc::Core::SERVER_ERROR_MIN)
     assert_equal(-32_000, UltimateJsonRpc::Core::SERVER_ERROR_MAX)
-    assert_operator UltimateJsonRpc::Core::SERVER_ERROR_MIN, :<, UltimateJsonRpc::Core::SERVER_ERROR_MAX
+    assert UltimateJsonRpc::Core::SERVER_ERROR_MIN < UltimateJsonRpc::Core::SERVER_ERROR_MAX
   end
 
   def test_reserved_error_range_constants

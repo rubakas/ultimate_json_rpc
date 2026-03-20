@@ -9,7 +9,6 @@ class TestRateLimit < Minitest::Test
     server = build_server(max: 3, period: 60)
     3.times do |i|
       response = call(server, "add", [i, 1])
-
       assert response.key?("result"), "Request #{i + 1} should succeed"
     end
   end
@@ -45,7 +44,6 @@ class TestRateLimit < Minitest::Test
 
     # Different user is allowed
     user = "bob"
-
     assert call(server, "add", [5, 6]).key?("result")
   end
 
@@ -94,7 +92,6 @@ class TestRateLimit < Minitest::Test
 
     r1 = call(server, "add", [1, 2])
     r2 = call(server, "add", [3, 4])
-
     assert r1.key?("result"), "First call should succeed"
     assert_equal 429, r2["error"]["code"], "Second call should be rate-limited under key 0, not :unknown"
   end
@@ -173,7 +170,6 @@ class TestRateLimiterEviction < Minitest::Test
 
     request = { "jsonrpc" => "2.0", "method" => "m0", "id" => 999 }
     response = JSON.parse(server.handle(JSON.generate(request)))
-
     assert_equal 0, response["result"]
   end
 end
@@ -193,7 +189,6 @@ class TestRateLimiterCodeValidation < Minitest::Test
 
   def test_valid_code_succeeds
     limiter = UltimateJsonRpc::Extras::RateLimiter.new(UltimateJsonRpc::Server.new, max: 10, period: 60, code: 429)
-
     assert_instance_of UltimateJsonRpc::Extras::RateLimiter, limiter
   end
 

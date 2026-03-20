@@ -48,7 +48,6 @@ class TestRecorder < Minitest::Test
 
     assert_equal 1, recorder.size
     exchange = recorder.exchanges[0]
-
     assert_equal "nonexistent", exchange["method"]
     assert exchange.key?("error")
     assert_equal "UltimateJsonRpc::Core::MethodNotFound", exchange["error"]["class"]
@@ -88,7 +87,6 @@ class TestRecorder < Minitest::Test
     server.handle('{"jsonrpc":"2.0","method":"add","params":[2,3],"id":1}')
 
     line = JSON.parse(output.string.strip)
-
     assert_equal "add", line["method"]
     assert_equal 5, line["result"]
   end
@@ -102,7 +100,6 @@ class TestRecorder < Minitest::Test
     server.handle('{"jsonrpc":"2.0","method":"add","params":[3,4],"id":2}')
 
     lines = output.string.strip.split("\n")
-
     assert_equal 2, lines.size
     assert_equal [1, 2], JSON.parse(lines[0])["params"]
     assert_equal [3, 4], JSON.parse(lines[1])["params"]
@@ -140,7 +137,7 @@ class TestRecorder < Minitest::Test
     recorder = UltimateJsonRpc::Extras::Recorder.new(server)
     server.handle('{"jsonrpc":"2.0","method":"falsy","id":1}')
 
-    refute recorder.exchanges[0]["result"]
+    assert_equal false, recorder.exchanges[0]["result"]
   end
 
   def test_records_zero_result
@@ -203,7 +200,6 @@ class TestRecorderMaxExchanges < Minitest::Test
     assert_equal 3, recorder.size
     # Should retain the most recent entries (oldest shifted out)
     methods = recorder.exchanges.map { |e| e["params"][0] }
-
     assert_equal [2, 3, 4], methods
   end
 
@@ -262,11 +258,9 @@ class TestRecorderThreadSafety < Minitest::Test
     server.handle(JSON.generate(request))
 
     snapshot = recorder.exchanges
-
     assert_equal 1, snapshot.size
 
     snapshot.clear
-
     assert_equal 1, recorder.size
   end
 
@@ -308,7 +302,6 @@ class TestRecorderConcurrentOutput < Minitest::Test
     server.handle(JSON.generate(requests))
 
     lines = output.string.split("\n").reject(&:empty?)
-
     assert_equal 10, lines.size
     lines.each { |line| assert_kind_of Hash, JSON.parse(line), "Each JSONL line must be a JSON object" }
   end

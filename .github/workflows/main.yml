@@ -27,6 +27,8 @@ jobs:
         with:
           ruby-version: ${{ matrix.ruby }}
           bundler-cache: true
+      - name: Clean stale gems
+        run: bundle clean --force
       - name: Run the default task
         run: bundle exec rake
       - name: Validate RBS signatures

@@ -16,7 +16,6 @@ class TestStdio < Minitest::Test
     UltimateJsonRpc::Transport::Stdio.new(@server, input: input, output: output).run
 
     response = parse_output(output)
-
     assert_equal 5, response["result"]
   end
 
@@ -26,7 +25,6 @@ class TestStdio < Minitest::Test
     UltimateJsonRpc::Transport::Stdio.new(@server, input: input, output: output).run
 
     responses = parse_all_output(output)
-
     assert_equal 2, responses.size
     assert_equal 3, responses[0]["result"]
     assert_equal 7, responses[1]["result"]
@@ -45,7 +43,6 @@ class TestStdio < Minitest::Test
     UltimateJsonRpc::Transport::Stdio.new(@server, input: input, output: output).run
 
     response = parse_output(output)
-
     assert_equal(-32_700, response["error"]["code"])
   end
 
@@ -55,7 +52,6 @@ class TestStdio < Minitest::Test
     UltimateJsonRpc::Transport::Stdio.new(@server, input: input, output: output).run
 
     responses = parse_all_output(output)
-
     assert_equal 1, responses.size
     assert_equal 3, responses[0]["result"]
   end
@@ -65,7 +61,6 @@ class TestStdio < Minitest::Test
     UltimateJsonRpc::Transport::Stdio.new(@server, input: input, output: output).run
 
     response = parse_output(output)
-
     assert_equal(-32_601, response["error"]["code"])
   end
 
@@ -74,7 +69,6 @@ class TestStdio < Minitest::Test
 
     refute_predicate adapter, :running?
     adapter.stop
-
     refute_predicate adapter, :running?
   end
 
@@ -113,7 +107,6 @@ class TestStdio < Minitest::Test
     UltimateJsonRpc::Transport::Stdio.new(@server, input: input, output: output).run
 
     responses = JSON.parse(parse_output_raw(output))
-
     assert_equal 2, responses.size
   end
 

@@ -34,7 +34,7 @@ class TestAuthorize < Minitest::Test
     server.authorize("add") { |_req| false }
     response = call(server, "divide", [6, 2])
 
-    assert_in_delta(3.0, response["result"])
+    assert_equal 3.0, response["result"]
   end
 
   def test_glob_pattern

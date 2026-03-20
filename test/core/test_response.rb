@@ -22,7 +22,7 @@ class TestResponseSuccess < Minitest::Test
   def test_success_with_false_result
     response = UltimateJsonRpc::Core::Response.success(false, 1)
 
-    refute response["result"]
+    assert_equal false, response["result"]
   end
 
   def test_success_with_null_id
@@ -64,7 +64,7 @@ class TestResponseError < Minitest::Test
   def test_error_with_false_data_includes_key
     response = UltimateJsonRpc::Core::Response.error(UltimateJsonRpc::Core::INTERNAL_ERROR, 1, data: false)
 
-    refute response["error"]["data"]
+    assert_equal false, response["error"]["data"]
   end
 
   def test_error_with_zero_data_includes_key

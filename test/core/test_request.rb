@@ -90,13 +90,11 @@ class TestRequestValidation < Minitest::Test
   def test_accepts_valid_id_types
     %w[string-id].each do |id|
       request = UltimateJsonRpc::Core::Request.new({ "jsonrpc" => "2.0", "method" => "foo", "id" => id })
-
       assert_equal id, request.id
     end
 
     [1, 0, -1, 42, 1.5].each do |id|
       request = UltimateJsonRpc::Core::Request.new({ "jsonrpc" => "2.0", "method" => "foo", "id" => id })
-
       assert_equal id, request.id
     end
   end
@@ -222,7 +220,6 @@ class TestRequestFreezing < Minitest::Test
   def test_hash_param_keys_are_frozen
     data = { "jsonrpc" => "2.0", "method" => "foo", "params" => { "key" => "val" }, "id" => 1 }
     request = UltimateJsonRpc::Core::Request.new(data)
-
     request.params.each_key { |k| assert_predicate k, :frozen? }
   end
 end
@@ -234,7 +231,6 @@ class TestRequestNestingLimit < Minitest::Test
     data = { "jsonrpc" => "2.0", "method" => "foo", "params" => nested, "id" => 1 }
 
     request = UltimateJsonRpc::Core::Request.new(data)
-
     assert_equal "foo", request.method_name
     assert_predicate request.params, :frozen?
   end

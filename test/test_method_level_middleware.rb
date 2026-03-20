@@ -177,12 +177,10 @@ class TestMethodLevelMiddlewareEdgeCases < Minitest::Test
     end
 
     call_method("add", [1, 2], server: server)
-
     assert_equal %w[global:before scoped:before scoped:after global:after], log
 
     log.clear
     call_method("divide", [10, 2], server: server)
-
     assert_equal %w[global:before global:after], log
   end
 
@@ -195,12 +193,10 @@ class TestMethodLevelMiddlewareEdgeCases < Minitest::Test
     end
 
     response = call_method("add", [2, 3], server: server)
-
     assert_equal 50, response["result"]
 
     response = call_method("divide", [10, 2], server: server)
-
-    assert_in_delta(5.0, response["result"])
+    assert_equal 5.0, response["result"]
   end
 
   def test_scoped_middleware_can_reject_request
@@ -212,11 +208,9 @@ class TestMethodLevelMiddlewareEdgeCases < Minitest::Test
     end
 
     response = call_method("divide", [10, 2], server: server)
-
     assert_equal 403, response["error"]["code"]
 
     response = call_method("add", [1, 2], server: server)
-
     assert_equal 3, response["result"]
   end
 
@@ -236,12 +230,10 @@ class TestMethodLevelMiddlewareEdgeCases < Minitest::Test
     end
 
     call_method("add", [1, 2], server: server)
-
     assert_equal ["add-mw"], log
 
     log.clear
     call_method("divide", [10, 2], server: server)
-
     assert_equal ["divide-mw"], log
   end
 
@@ -256,7 +248,6 @@ class TestMethodLevelMiddlewareEdgeCases < Minitest::Test
     end
 
     request = { "jsonrpc" => "2.0", "method" => "add", "params" => [1, 2] }
-
     assert_nil server.handle(JSON.generate(request))
     assert called
   end
@@ -273,7 +264,6 @@ class TestMethodLevelMiddlewareEdgeCases < Minitest::Test
 
     request = { "jsonrpc" => "2.0", "method" => "add", "params" => [1, 2] }
     server.handle(JSON.generate(request))
-
     refute called
   end
 
@@ -288,7 +278,6 @@ class TestMethodLevelMiddlewareEdgeCases < Minitest::Test
     end
 
     response = call_method("rpc.discover", nil, server: server)
-
     assert called
     assert response["result"].key?("methods")
   end
@@ -304,11 +293,9 @@ class TestMethodLevelMiddlewareEdgeCases < Minitest::Test
     end
 
     call_method("rpc.discover", nil, server: server)
-
     refute called
 
     call_method("add", [1, 2], server: server)
-
     assert called
   end
 
@@ -321,21 +308,18 @@ class TestMethodLevelMiddlewareEdgeCases < Minitest::Test
     assert_raises(FrozenError) { server.use { |_r, n| n.call } }
 
     response = call_method("add", [1, 2], server: server)
-
     assert_equal 3, response["result"]
   end
 
   def test_use_returns_self_with_only
     server = UltimateJsonRpc::Server.new
     result = server.use(only: ["add"]) { |_r, n| n.call }
-
     assert_equal server, result
   end
 
   def test_use_returns_self_with_except
     server = UltimateJsonRpc::Server.new
     result = server.use(except: ["add"]) { |_r, n| n.call }
-
     assert_equal server, result
   end
 
@@ -356,17 +340,14 @@ class TestMethodLevelMiddlewareEdgeCases < Minitest::Test
     end
 
     call_method("add", [1, 2], server: server)
-
     assert_equal %w[only:add except:add], log
 
     log.clear
     call_method("divide", [10, 2], server: server)
-
     assert_equal %w[only:divide], log
 
     log.clear
     call_method("ping", nil, server: server)
-
     assert_equal %w[except:ping], log
   end
 

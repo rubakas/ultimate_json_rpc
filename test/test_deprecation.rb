@@ -12,7 +12,7 @@ class TestMethodDeprecation < Minitest::Test
     server.expose_method("old_add", deprecated: true) { |a, b| a + b }
     method_info = discover_methods(server).find { |m| m["name"] == "old_add" }
 
-    assert method_info["deprecated"]
+    assert_equal true, method_info["deprecated"]
   end
 
   def test_expose_method_deprecated_string
@@ -28,7 +28,7 @@ class TestMethodDeprecation < Minitest::Test
     server.expose(Calculator, deprecated: { add: true, divide: "Use safe_divide" })
     methods = discover_methods(server)
 
-    assert methods.find { |m| m["name"] == "add" }["deprecated"]
+    assert_equal true, methods.find { |m| m["name"] == "add" }["deprecated"]
     assert_equal "Use safe_divide", methods.find { |m| m["name"] == "divide" }["deprecated"]
   end
 
@@ -36,7 +36,7 @@ class TestMethodDeprecation < Minitest::Test
     server = UltimateJsonRpc::Server.new
     server.expose(Calculator, deprecated: { "add" => true })
 
-    assert discover_methods(server).find { |m| m["name"] == "add" }["deprecated"]
+    assert_equal true, discover_methods(server).find { |m| m["name"] == "add" }["deprecated"]
   end
 
   def test_expose_with_deprecated_and_namespace
@@ -67,7 +67,6 @@ class TestMethodDeprecation < Minitest::Test
 
     request = { "jsonrpc" => "2.0", "method" => "old_add", "params" => [2, 3], "id" => 1 }
     response = JSON.parse(server.handle(JSON.generate(request)))
-
     assert_equal 5, response["result"]
   end
 
@@ -76,7 +75,7 @@ class TestMethodDeprecation < Minitest::Test
     server.expose_method("old", deprecated: true) { "old" }
     server.freeze
 
-    assert discover_methods(server).find { |m| m["name"] == "old" }["deprecated"]
+    assert_equal true, discover_methods(server).find { |m| m["name"] == "old" }["deprecated"]
   end
 
   def test_deprecated_with_description_and_returns
@@ -127,7 +126,7 @@ class TestDeprecatedNormalizationViaExpose < Minitest::Test
     alpha = methods.find { |m| m["name"] == "alpha" }
     beta = methods.find { |m| m["name"] == "beta" }
 
-    assert alpha["deprecated"]
+    assert_equal true, alpha["deprecated"]
     assert_equal "use_gamma", beta["deprecated"]
   end
 end

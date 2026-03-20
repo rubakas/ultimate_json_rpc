@@ -139,13 +139,13 @@ class TestConcurrentBatch < Minitest::Test
   def test_default_is_sequential
     server = UltimateJsonRpc::Server.new
 
-    refute_predicate server, :concurrent_batches?
+    refute server.concurrent_batches?
   end
 
   def test_concurrent_batches_predicate
     server = UltimateJsonRpc::Server.new(concurrent_batches: true)
 
-    assert_predicate server, :concurrent_batches?
+    assert server.concurrent_batches?
   end
 
   def test_concurrent_batch_error_preserves_id
@@ -161,7 +161,6 @@ class TestConcurrentBatch < Minitest::Test
     responses = JSON.parse(server.handle(JSON.generate(requests)))
 
     bad_resp = responses.find { |r| r["id"] == 42 }
-
     assert_equal(-32_603, bad_resp["error"]["code"])
     assert_equal 42, bad_resp["id"]
   end
@@ -324,7 +323,6 @@ class TestConcurrentBatchSafety < Minitest::Test
 
     assert_equal 4, responses.size
     unique_threads = thread_ids.size.times.map { thread_ids.pop }.uniq
-
     assert_operator unique_threads.size, :<=, 2
   end
 end
