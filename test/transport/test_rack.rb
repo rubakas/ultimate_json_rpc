@@ -17,6 +17,7 @@ class TestRack < Minitest::Test
     assert_equal 200, status
     assert_equal "application/json", headers["content-type"]
     response = JSON.parse(body.first)
+
     assert_equal 5, response["result"]
     assert_equal 1, response["id"]
   end
@@ -60,6 +61,7 @@ class TestRack < Minitest::Test
     assert_equal 200, status
     assert_equal "application/json", headers["content-type"]
     response = JSON.parse(body.first)
+
     assert_equal(-32_700, response["error"]["code"])
   end
 
@@ -73,6 +75,7 @@ class TestRack < Minitest::Test
 
     assert_equal 200, status
     responses = JSON.parse(body.first)
+
     assert_equal 2, responses.size
     assert_equal 3, responses[0]["result"]
     assert_equal 7, responses[1]["result"]
@@ -95,6 +98,7 @@ class TestRack < Minitest::Test
 
     assert_equal 200, status
     response = JSON.parse(body.first)
+
     assert_equal(-32_601, response["error"]["code"])
   end
 
@@ -129,6 +133,7 @@ class TestRack < Minitest::Test
     app.freeze
 
     status, _, body = app.call(rack_env("add", [2, 3]))
+
     assert_equal 200, status
     assert_equal 5, JSON.parse(body.first)["result"]
   end
@@ -136,6 +141,7 @@ class TestRack < Minitest::Test
   def test_response_headers_are_mutable
     _status, headers, _body = @app.call(rack_env("add", [2, 3]))
     headers["content-length"] = "42"
+
     assert_equal "42", headers["content-length"]
   end
 
@@ -143,6 +149,7 @@ class TestRack < Minitest::Test
     env = { "REQUEST_METHOD" => "HEAD", "rack.input" => StringIO.new("") }
     _status, headers, _body = @app.call(env)
     headers["content-length"] = "0"
+
     assert_equal "0", headers["content-length"]
   end
 
@@ -150,6 +157,7 @@ class TestRack < Minitest::Test
     env = { "REQUEST_METHOD" => "GET", "rack.input" => StringIO.new("") }
     _status, headers, _body = @app.call(env)
     headers["content-length"] = "99"
+
     assert_equal "99", headers["content-length"]
   end
 
@@ -161,6 +169,7 @@ class TestRack < Minitest::Test
     assert_equal 415, status
     assert_equal "application/json", headers["content-type"]
     response = JSON.parse(body.first)
+
     assert_equal "2.0", response["jsonrpc"]
     assert_equal(-32_600, response["error"]["code"])
     assert_includes response["error"]["message"], "Unsupported Media Type"
@@ -189,6 +198,7 @@ class TestRack < Minitest::Test
             "rack.input" => StringIO.new("") }
     _status, headers, _body = @app.call(env)
     headers["content-length"] = "99"
+
     assert_equal "99", headers["content-length"]
   end
 
@@ -198,6 +208,7 @@ class TestRack < Minitest::Test
 
     assert_equal 200, status
     response = JSON.parse(body.first)
+
     assert_equal(-32_700, response["error"]["code"])
   end
 
@@ -207,6 +218,7 @@ class TestRack < Minitest::Test
 
     assert_equal 200, status
     response = JSON.parse(body.first)
+
     assert_equal(-32_700, response["error"]["code"])
   end
 

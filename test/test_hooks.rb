@@ -10,6 +10,7 @@ class TestHooksOnRequest < Minitest::Test
     server.on(:request) { |req| captured = req.method_name }
 
     call(server, "add", [1, 2])
+
     assert_equal "add", captured
   end
 
@@ -19,6 +20,7 @@ class TestHooksOnRequest < Minitest::Test
     server.on(:request) { |_req| called = true }
 
     notify(server, "add", [1, 2])
+
     assert called
   end
 
@@ -29,6 +31,7 @@ class TestHooksOnRequest < Minitest::Test
     server.on(:request) { |_req| log << "second" }
 
     call(server, "add", [1, 2])
+
     assert_equal %w[first second], log
   end
 
@@ -60,6 +63,7 @@ class TestHooksOnResponse < Minitest::Test
     end
 
     call(server, "add", [2, 3])
+
     assert_equal "add", captured[:method]
     assert_equal 5, captured[:result]
     assert_kind_of Float, captured[:duration]
@@ -72,6 +76,7 @@ class TestHooksOnResponse < Minitest::Test
     server.on(:response) { |_req, result, _dur| captured_result = result }
 
     notify(server, "add", [1, 2])
+
     assert_equal 3, captured_result
   end
 
@@ -81,6 +86,7 @@ class TestHooksOnResponse < Minitest::Test
     server.on(:response) { |_req, _result, _dur| called = true }
 
     call(server, "nonexistent")
+
     refute called
   end
 
@@ -111,6 +117,7 @@ class TestHooksOnError < Minitest::Test
     end
 
     call(server, "nonexistent")
+
     assert_equal "nonexistent", captured[:method]
     assert_equal UltimateJsonRpc::Core::MethodNotFound, captured[:error_class]
     assert_kind_of Float, captured[:duration]
@@ -122,6 +129,7 @@ class TestHooksOnError < Minitest::Test
     server.on(:error) { |_req, err, _dur| captured_error = err }
 
     notify(server, "nonexistent")
+
     assert_instance_of UltimateJsonRpc::Core::MethodNotFound, captured_error
   end
 
@@ -131,6 +139,7 @@ class TestHooksOnError < Minitest::Test
     server.on(:error) { |_req, _err, _dur| called = true }
 
     call(server, "add", [1, 2])
+
     refute called
   end
 
@@ -152,6 +161,7 @@ end
 class TestHooksEdgeCases < Minitest::Test
   def test_on_returns_self
     server = UltimateJsonRpc::Server.new
+
     assert_equal server, server.on(:request) { |x| x }
   end
 
@@ -181,6 +191,7 @@ class TestHooksEdgeCases < Minitest::Test
     server.on(:request) { |_req| raise "hook broke" }
 
     response = JSON.parse(call(server, "add", [1, 2]))
+
     assert_equal 3, response["result"]
   end
 
@@ -220,6 +231,7 @@ class TestHooksEdgeCases < Minitest::Test
     server.on(:response) { |_req, _result, _dur| raise "response hook broke" }
 
     response = JSON.parse(call(server, "add", [1, 2]))
+
     assert_equal 3, response["result"]
   end
 
@@ -232,6 +244,7 @@ class TestHooksEdgeCases < Minitest::Test
 
     assert_raises(FrozenError) { server.on(:request) { |x| x } }
     call(server, "add", [1, 2])
+
     assert called
   end
 
@@ -242,6 +255,7 @@ class TestHooksEdgeCases < Minitest::Test
     server.on(:request) { |req| captured = req.method_name }
 
     call(server, "rpc.discover")
+
     assert_equal "rpc.discover", captured
   end
 

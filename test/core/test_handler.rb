@@ -14,12 +14,15 @@ class TestHandler < Minitest::Test
 
   def test_handler_size
     handler = UltimateJsonRpc::Core::Handler.new
+
     assert_equal 0, handler.size
 
     handler.expose(Calculator)
+
     assert_equal 2, handler.size
 
     handler.expose_method("ping") { "pong" }
+
     assert_equal 3, handler.size
   end
 
@@ -121,7 +124,7 @@ class TestHandler < Minitest::Test
     handler.expose(Greeter.new("Hi"))
     greet_info = handler.methods_info.find { |m| m["name"] == "greet" }
 
-    assert_equal true, greet_info["params"][0]["keyword"]
+    assert greet_info["params"][0]["keyword"]
   end
 
   def test_methods_info_omits_params_when_none
@@ -327,8 +330,8 @@ class TestHandlerParamDescriptors < Minitest::Test
     info = handler.methods_info.find { |m| m["name"] == "flexible" }
 
     assert_equal 1, info["params"].size
-    assert_equal true, info["params"][0]["variadic"]
-    assert_equal true, info["params"][0]["keyword"]
+    assert info["params"][0]["variadic"]
+    assert info["params"][0]["keyword"]
     assert_equal "opts", info["params"][0]["name"]
   end
 
@@ -339,9 +342,9 @@ class TestHandlerParamDescriptors < Minitest::Test
 
     assert_equal 3, info["params"].size
     refute info["params"][0].key?("keyword")
-    assert_equal true, info["params"][1]["keyword"]
-    assert_equal true, info["params"][1]["required"]
-    assert_equal true, info["params"][2]["keyword"]
+    assert info["params"][1]["keyword"]
+    assert info["params"][1]["required"]
+    assert info["params"][2]["keyword"]
     refute info["params"][2].key?("required")
   end
 
@@ -351,7 +354,7 @@ class TestHandlerParamDescriptors < Minitest::Test
     info = handler.methods_info.find { |m| m["name"] == "varargs" }
 
     assert_equal 1, info["params"].size
-    assert_equal true, info["params"][0]["variadic"]
+    assert info["params"][0]["variadic"]
     assert_equal "args", info["params"][0]["name"]
     refute info["params"][0].key?("keyword")
   end
@@ -395,6 +398,7 @@ class TestHandlerDangerousMethods < Minitest::Test
   def test_expose_allows_safe_name_evaluate
     handler = UltimateJsonRpc::Core::Handler.new
     handler.expose_method("evaluate") { "ok" }
+
     assert handler.method?("evaluate")
   end
 
@@ -402,6 +406,7 @@ class TestHandlerDangerousMethods < Minitest::Test
     handler = UltimateJsonRpc::Core::Handler.new
     %w[including extended prepending publicly privately].each do |safe_name|
       handler.expose_method(safe_name) { "ok" }
+
       assert handler.method?(safe_name)
     end
   end

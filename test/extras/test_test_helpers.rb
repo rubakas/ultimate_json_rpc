@@ -67,11 +67,13 @@ class TestTestHelpers < Minitest::Test
 
   def test_assert_rpc_success_passes_for_success_response
     response = rpc_call(@server, "add", params: [2, 3])
+
     assert_rpc_success(response)
   end
 
   def test_assert_rpc_success_with_expected_value
     response = rpc_call(@server, "add", params: [2, 3])
+
     assert_rpc_success(response, expected: 5)
   end
 
@@ -89,6 +91,7 @@ class TestTestHelpers < Minitest::Test
     server = UltimateJsonRpc::Server.new
     server.expose_method("noop") { nil }
     response = rpc_call(server, "noop")
+
     assert_rpc_success(response, expected: nil)
   end
 
@@ -96,21 +99,25 @@ class TestTestHelpers < Minitest::Test
 
   def test_assert_rpc_error_passes_for_error_response
     response = rpc_call(@server, "nonexistent")
+
     assert_rpc_error(response)
   end
 
   def test_assert_rpc_error_with_code
     response = rpc_call(@server, "nonexistent")
+
     assert_rpc_error(response, code: -32_601)
   end
 
   def test_assert_rpc_error_with_message
     response = rpc_call(@server, "nonexistent")
+
     assert_rpc_error(response, message: "Method not found")
   end
 
   def test_assert_rpc_error_with_code_and_message
     response = rpc_call(@server, "nonexistent")
+
     assert_rpc_error(response, code: -32_601, message: "Method not found")
   end
 
@@ -133,6 +140,7 @@ class TestTestHelpers < Minitest::Test
   def test_assert_rpc_notification_without_params
     server = UltimateJsonRpc::Server.new
     server.expose(Greeter.new("Hi"))
+
     assert_rpc_notification(server, "hello")
   end
 end

@@ -97,6 +97,7 @@ class TestServerCalls < Minitest::Test
 
   def test_server_empty
     empty_server = UltimateJsonRpc::Server.new
+
     assert_predicate empty_server, :empty?
     refute_predicate @server, :empty?
   end
@@ -204,6 +205,7 @@ class TestServerCallable < Minitest::Test
     server.expose(Calculator)
 
     request = JSON.generate({ "jsonrpc" => "2.0", "method" => "add", "params" => [2, 3], "id" => 1 })
+
     assert_equal server.handle(request), server.call(request)
   end
 
@@ -292,47 +294,54 @@ end
 class TestServerReaders < Minitest::Test
   def test_name_returns_configured_value
     server = UltimateJsonRpc::Server.new(name: "My API")
+
     assert_equal "My API", server.name
   end
 
   def test_version_returns_configured_value
     server = UltimateJsonRpc::Server.new(version: "1.2.3")
+
     assert_equal "1.2.3", server.version
   end
 
   def test_description_returns_configured_value
     server = UltimateJsonRpc::Server.new(description: "A test service")
+
     assert_equal "A test service", server.description
   end
 
   def test_name_defaults_to_nil
     server = UltimateJsonRpc::Server.new
+
     assert_nil server.name
   end
 
   def test_version_defaults_to_nil
     server = UltimateJsonRpc::Server.new
+
     assert_nil server.version
   end
 
   def test_max_batch_size_returns_configured_value
     server = UltimateJsonRpc::Server.new(max_batch_size: 50)
+
     assert_equal 50, server.max_batch_size
   end
 
   def test_timeout_returns_configured_value
     server = UltimateJsonRpc::Server.new(timeout: 5)
+
     assert_equal 5, server.timeout
   end
 
   def test_expose_errors_predicate
-    assert UltimateJsonRpc::Server.new(expose_errors: true).expose_errors?
-    refute UltimateJsonRpc::Server.new.expose_errors?
+    assert_predicate UltimateJsonRpc::Server.new(expose_errors: true), :expose_errors?
+    refute_predicate UltimateJsonRpc::Server.new, :expose_errors?
   end
 
   def test_concurrent_batches_predicate
-    assert UltimateJsonRpc::Server.new(concurrent_batches: true).concurrent_batches?
-    refute UltimateJsonRpc::Server.new.concurrent_batches?
+    assert_predicate UltimateJsonRpc::Server.new(concurrent_batches: true), :concurrent_batches?
+    refute_predicate UltimateJsonRpc::Server.new, :concurrent_batches?
   end
 end
 
@@ -358,10 +367,12 @@ class TestServerEdgeCases < Minitest::Test
 
     with_default = { "jsonrpc" => "2.0", "method" => "greet", "params" => ["World"], "id" => 1 }
     response = JSON.parse(server.handle(JSON.generate(with_default)))
+
     assert_equal "Hi, World!", response["result"]
 
     with_override = { "jsonrpc" => "2.0", "method" => "greet", "params" => %w[World Hey], "id" => 2 }
     response = JSON.parse(server.handle(JSON.generate(with_override)))
+
     assert_equal "Hey, World!", response["result"]
   end
 
@@ -394,7 +405,7 @@ class TestServerEdgeCases < Minitest::Test
     request = { "jsonrpc" => "2.0", "method" => "falsy", "id" => 1 }
     response = JSON.parse(server.handle(JSON.generate(request)))
 
-    assert_equal false, response["result"]
+    refute response["result"]
     assert response.key?("result")
     refute response.key?("error")
   end
@@ -536,7 +547,7 @@ class TestServerFreeze < Minitest::Test
     server.expose(Calculator)
     server.freeze
 
-    assert server.frozen?
+    assert_predicate server, :frozen?
   end
 
   def test_double_freeze_is_idempotent
@@ -546,9 +557,10 @@ class TestServerFreeze < Minitest::Test
 
     server.freeze # must not raise FrozenError
 
-    assert server.frozen?
+    assert_predicate server, :frozen?
     request = { "jsonrpc" => "2.0", "method" => "add", "params" => [2, 3], "id" => 1 }
     response = JSON.parse(server.handle(JSON.generate(request)))
+
     assert_equal 5, response["result"]
   end
 
@@ -598,6 +610,7 @@ class TestServerFreeze < Minitest::Test
         JSON.parse(server.handle(JSON.generate(req)))
       end
     end
+
     threads.map(&:value).each_with_index { |r, i| assert_equal i + 1, r["result"] }
   end
 end

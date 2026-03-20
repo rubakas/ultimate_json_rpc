@@ -154,7 +154,7 @@ class TestServerApplicationError < Minitest::Test
     request = { "jsonrpc" => "2.0", "method" => "fail_false", "id" => 1 }
     response = JSON.parse(server.handle(JSON.generate(request)))
 
-    assert_equal false, response["error"]["data"]
+    refute response["error"]["data"]
   end
 
   def test_application_error_with_zero_data
@@ -183,12 +183,15 @@ class TestServerApplicationError < Minitest::Test
 
   def test_application_error_allows_non_reserved_codes
     err = UltimateJsonRpc::Core::ApplicationError.new(code: -31_999, message: "Just outside range")
+
     assert_equal(-31_999, err.code)
 
     err2 = UltimateJsonRpc::Core::ApplicationError.new(code: -32_769, message: "Below range")
+
     assert_equal(-32_769, err2.code)
 
     err3 = UltimateJsonRpc::Core::ApplicationError.new(code: 1, message: "Positive code")
+
     assert_equal 1, err3.code
   end
 
@@ -243,6 +246,7 @@ class TestInvalidParams < Minitest::Test
     end
 
     request = { "jsonrpc" => "2.0", "method" => "validate", "params" => { "age" => -1 } }
+
     assert_nil server.handle(JSON.generate(request))
   end
 end
@@ -250,10 +254,12 @@ end
 class TestServerError < Minitest::Test
   def test_server_error_allows_server_error_range
     err = UltimateJsonRpc::Core::ServerError.new(code: -32_000, message: "Server busy")
+
     assert_equal(-32_000, err.code)
     assert_equal "Server busy", err.message
 
     err2 = UltimateJsonRpc::Core::ServerError.new(code: -32_099, message: "Edge of range")
+
     assert_equal(-32_099, err2.code)
   end
 
@@ -265,6 +271,7 @@ class TestServerError < Minitest::Test
 
   def test_server_error_with_data
     err = UltimateJsonRpc::Core::ServerError.new(code: -32_000, message: "Busy", data: { "retry_after" => 5 })
+
     assert_equal({ "retry_after" => 5 }, err.rpc_data)
   end
 
@@ -288,14 +295,15 @@ class TestServerError < Minitest::Test
     end
 
     request = { "jsonrpc" => "2.0", "method" => "shutdown" }
+
     assert_nil server.handle(JSON.generate(request))
   end
 end
 
 class TestExposeErrorsPredicate < Minitest::Test
   def test_expose_errors_predicate
-    refute UltimateJsonRpc::Server.new.expose_errors?
-    assert UltimateJsonRpc::Server.new(expose_errors: true).expose_errors?
+    refute_predicate UltimateJsonRpc::Server.new, :expose_errors?
+    assert_predicate UltimateJsonRpc::Server.new(expose_errors: true), :expose_errors?
   end
 end
 

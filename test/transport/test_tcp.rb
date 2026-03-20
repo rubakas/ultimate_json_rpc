@@ -80,11 +80,13 @@ class TestTCP < Minitest::Test
     # First connection should work
     sock1 = TCPSocket.open("127.0.0.1", port)
     sock1.puts('{"jsonrpc":"2.0","method":"add","params":[1,2],"id":1}')
+
     assert_equal 3, JSON.parse(sock1.gets.chomp)["result"]
 
     # Second connection should be rejected (closed by server)
     sock2 = TCPSocket.open("127.0.0.1", port)
     sleep(0.1) # Give server time to reject
+
     assert_nil sock2.gets, "Second connection should have been closed by server"
   ensure
     sock1&.close
@@ -129,11 +131,12 @@ class TestTCP < Minitest::Test
     deadline = Time.now + 5
     sleep(0.05) until tcp.running? || Time.now > deadline
 
-    assert tcp.running?
+    assert_predicate tcp, :running?
     tcp.stop
+
     assert thread.join(2), "TCP thread did not stop"
 
-    refute tcp.running?
+    refute_predicate tcp, :running?
   end
 
   private
@@ -182,7 +185,7 @@ class TestTCPStopRace < Minitest::Test
     tcp.stop
     thread.join(5)
 
-    refute thread.alive?, "TCP thread should have exited cleanly"
+    refute_predicate thread, :alive?, "TCP thread should have exited cleanly"
   end
 end
 

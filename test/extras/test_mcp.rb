@@ -202,7 +202,7 @@ class TestMCPToolsCall < Minitest::Test
     mcp = build_mcp
     result = mcp_call(mcp, "tools/call", { "name" => "nonexistent" })
 
-    assert_equal true, result["isError"]
+    assert result["isError"]
     assert_match(/not found/i, result["content"][0]["text"])
   end
 
@@ -210,7 +210,7 @@ class TestMCPToolsCall < Minitest::Test
     mcp = build_mcp
     result = mcp_call(mcp, "tools/call", { "name" => "nonexistent", "arguments" => { "x" => 1 } })
 
-    assert_equal true, result["isError"]
+    assert result["isError"]
   end
 
   def test_call_with_empty_arguments
@@ -256,7 +256,7 @@ class TestMCPToolsCall < Minitest::Test
     mcp = build_mcp
     result = mcp_call(mcp, "tools/call", { "name" => "add", "arguments" => { "left" => 2 } })
 
-    assert_equal true, result["isError"]
+    assert result["isError"]
   end
 
   def test_call_with_namespaced_method
@@ -317,7 +317,7 @@ class TestMCPLifecycle < Minitest::Test
     server.expose(Calculator)
     mcp = UltimateJsonRpc::Extras::MCP.new(server)
 
-    refute mcp.running?
+    refute_predicate mcp, :running?
   end
 
   def test_stop_before_run_does_not_raise

@@ -16,7 +16,7 @@ class TestServerDiscover < Minitest::Test
     add_method = methods.find { |m| m["name"] == "add" }
 
     assert_equal 2, add_method["params"].size
-    assert_equal true, add_method["params"][0]["required"]
+    assert add_method["params"][0]["required"]
   end
 
   def test_rpc_discover_includes_custom_methods
@@ -33,8 +33,8 @@ class TestServerDiscover < Minitest::Test
     greet_method = discover(server).find { |m| m["name"] == "greeter.greet" }
     name_param = greet_method["params"][0]
 
-    assert_equal true, name_param["required"]
-    assert_equal true, name_param["keyword"]
+    assert name_param["required"]
+    assert name_param["keyword"]
   end
 
   def test_rpc_discover_no_params_omits_key
@@ -50,7 +50,7 @@ class TestServerDiscover < Minitest::Test
     server.expose_method("sum") { |*nums| nums.sum }
     sum_method = discover(server).find { |m| m["name"] == "sum" }
 
-    assert_equal true, sum_method["params"][0]["variadic"]
+    assert sum_method["params"][0]["variadic"]
   end
 
   def test_rpc_discover_as_notification
@@ -145,6 +145,7 @@ class TestServerDiscoverOpenRPC < Minitest::Test
     assert_equal "1.3.2", result["openrpc"]
     assert_equal "Test", result["info"]["title"]
     method = result["methods"].first
+
     assert_equal "add", method["name"]
     assert_equal "Sum", method["description"]
     assert_equal "number", method["result"]["type"]
