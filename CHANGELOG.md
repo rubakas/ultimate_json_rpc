@@ -7,13 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.0] - 2026-03-20
+
 ### Added
 - `TCP#port` accessor for discovering the bound port at runtime
 
 ### Changed
+- Gem renamed from `reclamo` to `ultimate_json_rpc` (module `Reclamo` → `UltimateJsonRpc`)
 - `InvalidParams` error data is now gated by `expose_errors` (same as `InvalidRequest` and `ArgumentError`). `InvalidParams` is a protocol-level schema check, not an application validation error — use `ApplicationError` for business rule violations.
 
 ### Fixed
+- `Server#freeze` is now idempotent — calling freeze on an already-frozen server no longer raises `FrozenError`
 - RBS type signatures now correctly reflect Core/Extras/Transport namespace structure
 - RBS `Server` class no longer declares conditional `include` for extras
 - Recorder `max_exchanges:` and TCP `MAX_LINE_BYTES` added to RBS type signatures
