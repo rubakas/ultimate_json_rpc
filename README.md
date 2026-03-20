@@ -1,6 +1,11 @@
 # UltimateJsonRpc
 
 [![CI](https://github.com/rubakas/ultimate_json_rpc/actions/workflows/main.yml/badge.svg)](https://github.com/rubakas/ultimate_json_rpc/actions/workflows/main.yml)
+[![Gem Version](https://img.shields.io/gem/v/ultimate_json_rpc.svg)](https://rubygems.org/gems/ultimate_json_rpc)
+[![Downloads](https://img.shields.io/gem/dt/ultimate_json_rpc.svg)](https://rubygems.org/gems/ultimate_json_rpc)
+[![Ruby](https://img.shields.io/badge/ruby-%3E%3D%203.2-ruby.svg)](https://www.ruby-lang.org)
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](https://opensource.org/licenses/MIT)
+[![JSON-RPC 2.0](https://img.shields.io/badge/JSON--RPC-2.0-orange.svg)](https://www.jsonrpc.org/specification)
 
 Network-agnostic JSON-RPC 2.0 server that exposes Ruby modules, classes, and instances as callable RPC endpoints. UltimateJsonRpc handles JSON-RPC message parsing, method dispatch, and response serialization — transport (HTTP, WebSocket, stdio, TCP, etc.) is the caller's responsibility.
 
