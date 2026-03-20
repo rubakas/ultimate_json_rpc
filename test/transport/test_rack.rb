@@ -153,6 +153,45 @@ class TestRack < Minitest::Test
     assert_equal "99", headers["content-length"]
   end
 
+  def test_unsupported_media_type
+    env = { "REQUEST_METHOD" => "POST", "CONTENT_TYPE" => "text/plain",
+            "rack.input" => StringIO.new('{"jsonrpc":"2.0","method":"add","params":[1,2],"id":1}') }
+    status, headers, body = @app.call(env)
+
+    assert_equal 415, status
+    assert_equal "application/json", headers["content-type"]
+    response = JSON.parse(body.first)
+    assert_equal "2.0", response["jsonrpc"]
+    assert_equal(-32_600, response["error"]["code"])
+    assert_includes response["error"]["message"], "Unsupported Media Type"
+    assert_nil response["id"]
+  end
+
+  def test_unsupported_media_type_with_xml
+    env = { "REQUEST_METHOD" => "POST", "CONTENT_TYPE" => "application/xml",
+            "rack.input" => StringIO.new("") }
+    status, = @app.call(env)
+
+    assert_equal 415, status
+  end
+
+  def test_application_json_with_charset_is_accepted
+    env = { "REQUEST_METHOD" => "POST", "CONTENT_TYPE" => "application/json; charset=utf-8",
+            "rack.input" => StringIO.new(JSON.generate({ "jsonrpc" => "2.0", "method" => "add",
+                                                         "params" => [1, 2], "id" => 1 })) }
+    status, = @app.call(env)
+
+    assert_equal 200, status
+  end
+
+  def test_unsupported_media_type_headers_are_mutable
+    env = { "REQUEST_METHOD" => "POST", "CONTENT_TYPE" => "text/plain",
+            "rack.input" => StringIO.new("") }
+    _status, headers, _body = @app.call(env)
+    headers["content-length"] = "99"
+    assert_equal "99", headers["content-length"]
+  end
+
   def test_nil_rack_input
     env = { "REQUEST_METHOD" => "POST", "rack.input" => nil }
     status, _, body = @app.call(env)

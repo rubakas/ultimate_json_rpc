@@ -217,6 +217,8 @@ module Reclamo
     def concurrent_batches? = @concurrent_batches
 
     def freeze
+      return self if frozen?
+
       @hooks.each_value(&:freeze)
       [@handler, @middleware, @hooks].each(&:freeze)
       @error_catalog&.each(&:freeze)

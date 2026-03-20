@@ -1,5 +1,7 @@
 # Reclamo
 
+[![CI](https://github.com/rubakas/reclamo/actions/workflows/main.yml/badge.svg)](https://github.com/rubakas/reclamo/actions/workflows/main.yml)
+
 Network-agnostic JSON-RPC 2.0 server that exposes Ruby modules, classes, and instances as callable RPC endpoints. Reclamo handles JSON-RPC message parsing, method dispatch, and response serialization — transport (HTTP, WebSocket, stdio, TCP, etc.) is the caller's responsibility.
 
 ## Installation

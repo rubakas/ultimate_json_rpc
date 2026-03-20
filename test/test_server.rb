@@ -539,6 +539,19 @@ class TestServerFreeze < Minitest::Test
     assert server.frozen?
   end
 
+  def test_double_freeze_is_idempotent
+    server = Reclamo::Server.new
+    server.expose(Calculator)
+    server.freeze
+
+    server.freeze # must not raise FrozenError
+
+    assert server.frozen?
+    request = { "jsonrpc" => "2.0", "method" => "add", "params" => [2, 3], "id" => 1 }
+    response = JSON.parse(server.handle(JSON.generate(request)))
+    assert_equal 5, response["result"]
+  end
+
   def test_frozen_server_with_middleware_handles_requests
     server = Reclamo::Server.new
     server.expose(Calculator)
